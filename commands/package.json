@@ -1,0 +1,1895 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "package",
+  "commands": [
+    {
+      "id": "dnf",
+      "name": "dnf",
+      "aliases": [
+        "yum"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.install",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "RHEL 계열 패키지 설치·삭제·업데이트·검색",
+      "description": "RHEL 8 이후의 기본 패키지 관리자로, 저장소에서 패키지와 의존성을 함께 설치·삭제·업데이트합니다. 파일을 제공하는 패키지 찾기, 버전 목록 확인, 작업 이력 되돌리기도 가능합니다. RHEL 8·9 에서 yum 은 dnf 를 가리키는 링크라 같은 문법으로 동작합니다.",
+      "syntax": [
+        "dnf install|remove|update [-y] {{PACKAGE}}",
+        "dnf search|info|provides {{KEYWORD}}"
+      ],
+      "options": [
+        {
+          "flag": "install {{PACKAGE}}",
+          "desc": "패키지 설치 (로컬 .rpm 경로도 가능, 의존성 자동 해결)"
+        },
+        {
+          "flag": "remove {{PACKAGE}}",
+          "desc": "패키지 삭제 (이를 의존하는 패키지도 함께 삭제될 수 있음)"
+        },
+        {
+          "flag": "update [{{PACKAGE}}]",
+          "desc": "전체 또는 지정 패키지 업데이트 (upgrade 와 동일)"
+        },
+        {
+          "flag": "check-update",
+          "desc": "업데이트 가능한 패키지 목록 확인"
+        },
+        {
+          "flag": "provides {{FILE}}",
+          "desc": "해당 파일·명령을 제공하는 패키지 찾기"
+        },
+        {
+          "flag": "list --installed | --showduplicates {{PACKAGE}}",
+          "desc": "설치된 목록 / 저장소에 있는 모든 버전 확인"
+        },
+        {
+          "flag": "history [undo {{ID}}]",
+          "desc": "작업 이력 확인 / 특정 작업 되돌리기"
+        },
+        {
+          "flag": "repolist [all]",
+          "desc": "활성(전체) 저장소 목록"
+        },
+        {
+          "flag": "clean all; makecache",
+          "desc": "캐시 삭제 후 저장소 메타데이터 다시 받기"
+        },
+        {
+          "flag": "-y / --enablerepo={{REPO}} / --exclude={{PATTERN}}",
+          "desc": "확인 생략 / 일시 저장소 활성화 / 패키지 제외"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패키지 설치",
+          "command": "dnf install -y {{PACKAGE}}"
+        },
+        {
+          "title": "명령어가 어느 패키지에 있는지 찾기",
+          "command": "dnf provides '*/bin/netstat'",
+          "note": "결과: net-tools"
+        },
+        {
+          "title": "설치 가능한 모든 버전 확인 후 특정 버전 설치",
+          "command": "dnf list --showduplicates {{PACKAGE}}\ndnf install {{PACKAGE}}-{{VERSION}}"
+        },
+        {
+          "title": "커널 제외 전체 업데이트 / 보안 업데이트만",
+          "command": "dnf update --exclude=kernel*\ndnf update --security",
+          "note": "--security 는 RHEL 처럼 저장소가 보안 권고(updateinfo)를 제공할 때 의미 있음"
+        },
+        {
+          "title": "잘못된 설치 되돌리기",
+          "command": "dnf history\ndnf history undo {{ID}}"
+        }
+      ],
+      "cautions": [
+        "remove 는 해당 패키지를 필요로 하는 다른 패키지까지 함께 지울 수 있습니다. 실행 전 출력되는 삭제 목록을 반드시 확인하세요.",
+        "운영 서버의 전체 update 는 커널·라이브러리를 바꾸므로 점검 시간에 수행하고, 이후 needs-restarting -r 로 재부팅 필요 여부를 확인하세요.",
+        "RHEL 은 구독 등록(subscription-manager)이 되어야 Red Hat 저장소를 사용할 수 있습니다."
+      ],
+      "platformNotes": {
+        "rhel": "RHEL/CentOS 7 은 yum 을 사용합니다 (대부분 하위 명령 동일). 폐쇄망에서는 로컬 저장소(createrepo, ISO 마운트)를 구성해야 합니다."
+      },
+      "help": "man dnf, dnf help {{COMMAND}}",
+      "keywords": [
+        "패키지 설치",
+        "패키지 삭제",
+        "업데이트",
+        "패치",
+        "dnf",
+        "yum",
+        "rpm",
+        "의존성"
+      ],
+      "related": [
+        "rpm",
+        "etc-yum-reposd",
+        "needs-restarting",
+        "subscription-manager",
+        "createrepo"
+      ]
+    },
+    {
+      "id": "apt",
+      "name": "apt",
+      "aliases": [
+        "apt-get",
+        "apt-cache"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.install",
+      "platforms": [
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Ubuntu·Debian 패키지 설치·삭제·업데이트·검색",
+      "description": "Debian 계열의 패키지 관리자로, 저장소 목록을 갱신하고 패키지와 의존성을 설치·삭제·업그레이드합니다. apt 는 대화형 사용에 맞춘 명령이며, 스크립트에서는 출력 형식이 안정적인 apt-get·apt-cache 를 권장합니다.",
+      "syntax": [
+        "apt update",
+        "apt install|remove|purge [-y] {{PACKAGE}}",
+        "apt upgrade"
+      ],
+      "options": [
+        {
+          "flag": "update",
+          "desc": "저장소 패키지 목록 갱신 (설치·업그레이드 전에 실행)"
+        },
+        {
+          "flag": "install {{PACKAGE}}",
+          "desc": "패키지 설치 (./file.deb 처럼 로컬 파일도 가능)"
+        },
+        {
+          "flag": "remove {{PACKAGE}}",
+          "desc": "패키지 삭제 (설정 파일은 남음)"
+        },
+        {
+          "flag": "purge {{PACKAGE}}",
+          "desc": "설정 파일까지 삭제"
+        },
+        {
+          "flag": "upgrade",
+          "desc": "설치된 패키지 업그레이드 (기존 패키지 삭제는 하지 않음)"
+        },
+        {
+          "flag": "full-upgrade",
+          "desc": "필요하면 패키지 삭제를 포함해 업그레이드 (apt-get dist-upgrade)"
+        },
+        {
+          "flag": "autoremove",
+          "desc": "더 이상 필요 없는 의존성 패키지 삭제"
+        },
+        {
+          "flag": "search / show {{PACKAGE}}",
+          "desc": "패키지 검색 / 상세 정보"
+        },
+        {
+          "flag": "list --installed | --upgradable",
+          "desc": "설치된 / 업그레이드 가능한 패키지 목록"
+        },
+        {
+          "flag": "policy {{PACKAGE}}",
+          "desc": "설치 버전·후보 버전·저장소 우선순위 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "목록 갱신 후 설치",
+          "command": "apt update\napt install -y {{PACKAGE}}"
+        },
+        {
+          "title": "설치 가능한 버전 확인 후 특정 버전 설치",
+          "command": "apt policy {{PACKAGE}}\napt install {{PACKAGE}}={{VERSION}}"
+        },
+        {
+          "title": "업그레이드 대상 확인 후 업그레이드",
+          "command": "apt update\napt list --upgradable\napt upgrade"
+        },
+        {
+          "title": "특정 패키지 업그레이드 보류",
+          "command": "apt-mark hold {{PACKAGE}}\napt-mark showhold"
+        },
+        {
+          "title": "스크립트용 비대화형 설치",
+          "command": "DEBIAN_FRONTEND=noninteractive apt-get install -y {{PACKAGE}}"
+        }
+      ],
+      "cautions": [
+        "full-upgrade·autoremove 는 패키지를 삭제할 수 있으니 출력된 목록을 확인하세요.",
+        "다른 apt 작업(자동 업데이트 unattended-upgrades 등)이 실행 중이면 잠금(lock) 오류가 납니다. 강제로 lock 파일을 지우지 말고 끝나길 기다리세요."
+      ],
+      "platformNotes": {
+        "debian": "파일이 어느 패키지 것인지는 dpkg -S {{FILE}} 로 확인합니다. Ubuntu 는 기본으로 unattended-upgrades 가 보안 업데이트를 자동 설치합니다."
+      },
+      "help": "man apt, man apt-get",
+      "keywords": [
+        "패키지 설치",
+        "패키지 삭제",
+        "업데이트",
+        "업그레이드",
+        "apt",
+        "apt-get",
+        "deb",
+        "의존성"
+      ],
+      "related": [
+        "dpkg",
+        "etc-apt-sources-list",
+        "add-apt-repository",
+        "snap",
+        "dpkg-scanpackages"
+      ]
+    },
+    {
+      "id": "winget",
+      "name": "winget",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "package",
+      "task": "package.install",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "Windows 패키지 관리자로 프로그램 설치·업그레이드",
+      "description": "Windows 패키지 관리자(WinGet)로 프로그램을 검색·설치·업그레이드·삭제합니다. 7-Zip, Notepad++, PowerShell 7 같은 도구를 명령 한 줄로 설치할 수 있고, 설치 목록을 내보내 다른 PC 에 똑같이 설치할 수도 있습니다.",
+      "syntax": [
+        "winget search {{KEYWORD}}",
+        "winget install --id {{PACKAGE_ID}} -e",
+        "winget upgrade --all"
+      ],
+      "options": [
+        {
+          "flag": "search {{KEYWORD}}",
+          "desc": "패키지 검색"
+        },
+        {
+          "flag": "install --id {{PACKAGE_ID}} -e",
+          "desc": "ID 정확히 일치하는 패키지 설치"
+        },
+        {
+          "flag": "list",
+          "desc": "설치된 프로그램 목록 (winget 으로 설치하지 않은 것 포함)"
+        },
+        {
+          "flag": "upgrade [--all]",
+          "desc": "업그레이드 가능한 목록 확인 / 전체 업그레이드"
+        },
+        {
+          "flag": "uninstall --id {{PACKAGE_ID}}",
+          "desc": "프로그램 삭제"
+        },
+        {
+          "flag": "show --id {{PACKAGE_ID}}",
+          "desc": "패키지 상세 정보"
+        },
+        {
+          "flag": "--silent",
+          "desc": "설치 프로그램 UI 없이 설치"
+        },
+        {
+          "flag": "--accept-package-agreements --accept-source-agreements",
+          "desc": "라이선스·원본 약관 동의 (자동화용)"
+        },
+        {
+          "flag": "export -o {{FILE}} / import -i {{FILE}}",
+          "desc": "설치 목록 내보내기 / 가져와서 일괄 설치"
+        }
+      ],
+      "examples": [
+        {
+          "title": "검색 후 설치",
+          "command": "winget search 7zip\nwinget install --id 7zip.7zip -e"
+        },
+        {
+          "title": "무인 설치 (스크립트용)",
+          "command": "winget install --id Microsoft.PowerShell -e --silent --accept-package-agreements --accept-source-agreements"
+        },
+        {
+          "title": "업그레이드 가능한 프로그램 전체 업그레이드",
+          "command": "winget upgrade\nwinget upgrade --all"
+        }
+      ],
+      "cautions": [
+        "인터넷(winget 원본)에 접속해야 하므로 폐쇄망 서버에서는 사용할 수 없습니다.",
+        "설치 프로그램에 따라 관리자 권한 승격(UAC) 창이 뜰 수 있습니다."
+      ],
+      "install": {
+        "windows": {
+          "package": "앱 설치 관리자(App Installer)",
+          "preinstalled": true,
+          "note": "Windows 10 1809+/11 및 Server 2025 에 기본 포함. Server 2019·2022 는 기본 미포함"
+        }
+      },
+      "help": "winget --help, winget {{COMMAND}} --help",
+      "keywords": [
+        "패키지 설치",
+        "프로그램 설치",
+        "윈도우 패키지 관리자",
+        "winget",
+        "업그레이드"
+      ],
+      "related": [
+        "msiexec"
+      ]
+    },
+    {
+      "id": "msiexec",
+      "name": "msiexec",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "package",
+      "task": "package.install",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "MSI 설치 파일 무인 설치·삭제·로그 기록",
+      "description": "Windows Installer(.msi) 패키지를 설치·삭제·복구합니다. /qn 무인 설치와 /l*v 상세 로그로 에이전트·클라이언트 배포 자동화와 설치 실패 원인 분석에 많이 쓰입니다.",
+      "syntax": [
+        "msiexec /i {{FILE}}.msi [/qn] [/norestart] [/l*v {{LOG_FILE}}] [{{PROPERTY}}={{VALUE}}]",
+        "msiexec /x {{FILE}}.msi|{{PRODUCT_CODE}} [/qn]"
+      ],
+      "options": [
+        {
+          "flag": "/i {{FILE}}.msi",
+          "desc": "설치"
+        },
+        {
+          "flag": "/x {{FILE}}.msi|{{PRODUCT_CODE}}",
+          "desc": "삭제 (제품 코드 {GUID} 로도 가능)"
+        },
+        {
+          "flag": "/qn",
+          "desc": "UI 없이 완전 무인 실행"
+        },
+        {
+          "flag": "/passive",
+          "desc": "진행 표시줄만 보이는 무인 실행"
+        },
+        {
+          "flag": "/norestart",
+          "desc": "설치 후 자동 재시작 안 함"
+        },
+        {
+          "flag": "/l*v {{LOG_FILE}}",
+          "desc": "상세 설치 로그 기록"
+        },
+        {
+          "flag": "{{PROPERTY}}={{VALUE}}",
+          "desc": "MSI 속성 전달 (예: INSTALLDIR=, 제품별 서버 주소 등)"
+        },
+        {
+          "flag": "/fa {{FILE}}.msi",
+          "desc": "모든 파일 다시 설치(복구)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "무인 설치 + 상세 로그",
+          "command": "msiexec /i {{FILE}}.msi /qn /norestart /l*v C:\\temp\\install.log"
+        },
+        {
+          "title": "설치 폴더 지정해 설치",
+          "command": "msiexec /i {{FILE}}.msi INSTALLDIR=\"D:\\App\" /qn"
+        },
+        {
+          "title": "제품 코드로 무인 삭제",
+          "command": "msiexec /x {{PRODUCT_CODE}} /qn /norestart",
+          "note": "제품 코드는 레지스트리 HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall 에서 확인"
+        }
+      ],
+      "cautions": [
+        "종료 코드 0 은 성공, 3010 은 성공(재시작 필요), 1603 은 설치 중 치명적 오류입니다. 1603 이면 /l*v 로그에서 'Return value 3' 부분을 찾아보세요.",
+        "/qn 으로 실행하면 오류 메시지 창도 뜨지 않으므로 반드시 로그를 남기세요."
+      ],
+      "help": "msiexec /?",
+      "keywords": [
+        "MSI 설치",
+        "무인 설치",
+        "자동 설치",
+        "프로그램 삭제",
+        "설치 로그",
+        "msiexec",
+        "silent install"
+      ],
+      "related": [
+        "winget",
+        "dism"
+      ]
+    },
+    {
+      "id": "rpm",
+      "name": "rpm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.single",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "rpm 패키지 조회·단일 설치·파일 소유 패키지 확인",
+      "description": "RPM 패키지 데이터베이스를 직접 조회하거나 .rpm 파일 하나를 설치·삭제합니다. 설치 목록, 패키지에 포함된 파일, 특정 파일이 속한 패키지, 변경된 파일 검증 같은 조회에 특히 유용합니다. 의존성 자동 해결은 하지 않으므로 설치는 보통 dnf 를 사용합니다.",
+      "syntax": [
+        "rpm -q[a|i|l|f|c] {{PACKAGE}}",
+        "rpm -ivh|-Uvh {{FILE}}.rpm",
+        "rpm -e {{PACKAGE}}"
+      ],
+      "options": [
+        {
+          "flag": "-qa",
+          "desc": "설치된 전체 패키지 목록"
+        },
+        {
+          "flag": "-qi {{PACKAGE}}",
+          "desc": "패키지 상세 정보 (버전·설치일·벤더)"
+        },
+        {
+          "flag": "-ql {{PACKAGE}}",
+          "desc": "패키지에 포함된 파일 목록"
+        },
+        {
+          "flag": "-qf {{FILE}}",
+          "desc": "파일이 속한 패키지 확인"
+        },
+        {
+          "flag": "-qc {{PACKAGE}}",
+          "desc": "패키지의 설정 파일 목록"
+        },
+        {
+          "flag": "-qpl {{FILE}}.rpm",
+          "desc": "설치 전 rpm 파일 내용 확인"
+        },
+        {
+          "flag": "-ivh / -Uvh {{FILE}}.rpm",
+          "desc": "설치 / 업그레이드(없으면 설치)"
+        },
+        {
+          "flag": "-e {{PACKAGE}}",
+          "desc": "패키지 삭제"
+        },
+        {
+          "flag": "-V {{PACKAGE}}",
+          "desc": "설치 후 변경된 파일 검증 (크기·권한·해시)"
+        },
+        {
+          "flag": "--import {{KEY_FILE}}",
+          "desc": "GPG 서명 키 가져오기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일이 어느 패키지 것인지 확인",
+          "command": "rpm -qf /etc/ssh/sshd_config",
+          "output": "openssh-server-8.7p1-38.el9.x86_64"
+        },
+        {
+          "title": "설치된 커널 버전 목록",
+          "command": "rpm -qa kernel"
+        },
+        {
+          "title": "최근 설치·업데이트된 패키지",
+          "command": "rpm -qa --last | head -20"
+        },
+        {
+          "title": "설치 전 rpm 파일 정보·의존성 확인",
+          "command": "rpm -qpi {{FILE}}.rpm\nrpm -qpR {{FILE}}.rpm"
+        },
+        {
+          "title": "패키지 파일 변조 여부 검증",
+          "command": "rpm -V {{PACKAGE}}",
+          "note": "출력이 없으면 변경 없음. 5 는 해시, M 은 권한, c 는 설정 파일 표시"
+        }
+      ],
+      "cautions": [
+        "--nodeps, --force 로 설치·삭제하면 의존성이 깨져 시스템이 불안정해질 수 있습니다.",
+        "로컬 rpm 설치도 의존성 해결을 위해 dnf install ./{{FILE}}.rpm 을 권장합니다."
+      ],
+      "help": "man rpm",
+      "keywords": [
+        "패키지 조회",
+        "설치 목록",
+        "파일 소유 패키지",
+        "rpm 설치",
+        "버전 확인",
+        "rpm",
+        "rpm -qa"
+      ],
+      "related": [
+        "dnf",
+        "createrepo"
+      ]
+    },
+    {
+      "id": "dpkg",
+      "name": "dpkg",
+      "aliases": [
+        "dpkg-query"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.single",
+      "platforms": [
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "deb 패키지 조회·단일 설치·파일 소유 패키지 확인",
+      "description": "Debian 계열의 하위 패키지 도구로 .deb 파일을 직접 설치·삭제하고, 설치 목록·패키지 파일 목록·파일이 속한 패키지를 조회합니다. 의존성은 자동으로 받지 않으므로 설치 후 apt -f install 로 보완하거나 apt install ./file.deb 를 사용합니다.",
+      "syntax": [
+        "dpkg -l [{{PATTERN}}]",
+        "dpkg -i {{FILE}}.deb",
+        "dpkg -S {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l [{{PATTERN}}]",
+          "desc": "설치된 패키지 목록 (ii = 정상 설치, rc = 삭제됐고 설정만 남음)"
+        },
+        {
+          "flag": "-s {{PACKAGE}}",
+          "desc": "패키지 상태·버전 정보"
+        },
+        {
+          "flag": "-L {{PACKAGE}}",
+          "desc": "패키지가 설치한 파일 목록"
+        },
+        {
+          "flag": "-S {{FILE}}",
+          "desc": "파일이 속한 패키지 찾기"
+        },
+        {
+          "flag": "-c {{FILE}}.deb",
+          "desc": "설치 전 deb 파일 내용 확인"
+        },
+        {
+          "flag": "-i {{FILE}}.deb",
+          "desc": "deb 파일 설치"
+        },
+        {
+          "flag": "-r / -P {{PACKAGE}}",
+          "desc": "삭제 / 설정 파일까지 삭제(purge)"
+        },
+        {
+          "flag": "--configure -a",
+          "desc": "설치 도중 중단된 패키지 설정 마무리"
+        },
+        {
+          "flag": "--get-selections",
+          "desc": "설치 패키지 선택 상태 목록 (다른 서버와 비교용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설치 여부·버전 확인",
+          "command": "dpkg -l | grep {{PACKAGE}}"
+        },
+        {
+          "title": "파일이 어느 패키지 것인지 확인",
+          "command": "dpkg -S /usr/sbin/sshd",
+          "output": "openssh-server: /usr/sbin/sshd"
+        },
+        {
+          "title": "deb 설치 후 누락 의존성 보완",
+          "command": "dpkg -i {{FILE}}.deb\napt -f install",
+          "note": "apt install ./{{FILE}}.deb 를 쓰면 의존성까지 한 번에 처리"
+        },
+        {
+          "title": "중단된 설치 복구",
+          "command": "dpkg --configure -a"
+        },
+        {
+          "title": "패키지 이름·버전만 깔끔하게 출력",
+          "command": "dpkg-query -W -f='${Package} ${Version}\\n' | sort"
+        }
+      ],
+      "cautions": [
+        "--force-* 옵션으로 의존성을 무시하면 패키지 시스템이 깨질 수 있습니다."
+      ],
+      "help": "man dpkg, man dpkg-query",
+      "keywords": [
+        "패키지 조회",
+        "설치 목록",
+        "파일 소유 패키지",
+        "deb 설치",
+        "버전 확인",
+        "dpkg",
+        "dpkg -l"
+      ],
+      "related": [
+        "apt",
+        "dpkg-scanpackages"
+      ]
+    },
+    {
+      "id": "etc-yum-reposd",
+      "name": "/etc/yum.repos.d",
+      "kind": "file",
+      "category": "package",
+      "task": "package.repo",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "dnf/yum 저장소 설정 디렉토리 (.repo 파일)",
+      "description": "dnf·yum 이 사용하는 저장소 정의 파일(*.repo)이 모이는 디렉토리입니다. 파일 하나에 여러 [저장소ID] 섹션을 둘 수 있으며, 주소(baseurl)·활성 여부·GPG 검증 등을 지정합니다. 사내 미러나 폐쇄망 로컬 저장소를 추가할 때 이곳에 .repo 파일을 만듭니다.",
+      "syntax": [
+        "/etc/yum.repos.d/{{REPO_NAME}}.repo"
+      ],
+      "options": [
+        {
+          "flag": "[{{REPO_ID}}]",
+          "desc": "저장소 ID (공백 없이 유일한 이름)"
+        },
+        {
+          "flag": "name={{NAME}}",
+          "desc": "표시용 이름"
+        },
+        {
+          "flag": "baseurl={{REPO_URL}}",
+          "desc": "저장소 주소 (http://, https://, file:///)"
+        },
+        {
+          "flag": "mirrorlist= / metalink=",
+          "desc": "미러 목록 주소 (baseurl 대신 사용)"
+        },
+        {
+          "flag": "enabled=1|0",
+          "desc": "저장소 사용 여부"
+        },
+        {
+          "flag": "gpgcheck=1|0",
+          "desc": "패키지 GPG 서명 검증 여부"
+        },
+        {
+          "flag": "gpgkey={{KEY_URL}}",
+          "desc": "GPG 키 위치 (예: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release)"
+        },
+        {
+          "flag": "sslverify=1|0",
+          "desc": "HTTPS 인증서 검증 여부"
+        },
+        {
+          "flag": "priority={{N}}",
+          "desc": "저장소 우선순위 (낮을수록 우선, 기본 99)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사내 미러 저장소 추가",
+          "command": "cat > /etc/yum.repos.d/internal.repo <<'EOF'\n[internal-baseos]\nname=Internal BaseOS\nbaseurl={{REPO_URL}}/BaseOS/\nenabled=1\ngpgcheck=1\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release\nEOF\ndnf clean all\ndnf repolist"
+        },
+        {
+          "title": "저장소 목록·상세(주소) 확인",
+          "command": "dnf repolist all\ndnf repolist -v {{REPO_ID}}"
+        },
+        {
+          "title": "저장소 비활성화",
+          "command": "dnf config-manager --set-disabled {{REPO_ID}}",
+          "note": "config-manager 는 dnf-plugins-core 패키지 제공"
+        },
+        {
+          "title": "URL 로 .repo 파일 추가",
+          "command": "dnf config-manager --add-repo {{REPO_URL}}"
+        }
+      ],
+      "cautions": [
+        "파일 확장자가 .repo 가 아니면 읽지 않습니다.",
+        "gpgcheck=0 은 서명 검증을 끄므로 신뢰할 수 있는 내부 저장소에만 사용하세요.",
+        "RHEL 의 redhat.repo 는 subscription-manager 가 자동 관리하므로 직접 수정하지 마세요."
+      ],
+      "platformNotes": {
+        "rhel": "Rocky 는 rocky.repo 등, RHEL 은 redhat.repo(구독 기반)가 기본 저장소 파일입니다. RHEL 8·9 의 주요 저장소는 BaseOS 와 AppStream 입니다."
+      },
+      "help": "man dnf.conf (REPO OPTIONS 항목)",
+      "keywords": [
+        "저장소 설정",
+        "레포 추가",
+        "repo 파일",
+        "로컬 저장소",
+        "미러",
+        "yum.repos.d",
+        "baseurl"
+      ],
+      "related": [
+        "dnf",
+        "createrepo",
+        "subscription-manager"
+      ]
+    },
+    {
+      "id": "etc-apt-sources-list",
+      "name": "/etc/apt/sources.list",
+      "kind": "file",
+      "category": "package",
+      "task": "package.repo",
+      "platforms": [
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "apt 저장소 목록 파일 (sources.list, .sources)",
+      "description": "apt 가 패키지를 받아올 저장소 주소를 정의합니다. 전통적인 한 줄 형식(sources.list, *.list)과 Ubuntu 24.04 부터 기본이 된 deb822 형식(/etc/apt/sources.list.d/*.sources)이 있습니다. 미러 변경이나 사내·로컬 저장소 추가 시 수정하고 apt update 로 반영합니다.",
+      "syntax": [
+        "deb [signed-by={{KEYRING}}] {{REPO_URL}} {{SUITE}} {{COMPONENTS}}",
+        "/etc/apt/sources.list.d/ubuntu.sources"
+      ],
+      "options": [
+        {
+          "flag": "deb / deb-src",
+          "desc": "바이너리 / 소스 패키지 저장소 (한 줄 형식)"
+        },
+        {
+          "flag": "[signed-by={{KEYRING}}]",
+          "desc": "저장소 서명 키 파일 지정 (예: /usr/share/keyrings/x.gpg)"
+        },
+        {
+          "flag": "[trusted=yes]",
+          "desc": "서명 검증 생략 (로컬 저장소용)"
+        },
+        {
+          "flag": "{{SUITE}}",
+          "desc": "배포판 코드명 (jammy, noble, bookworm, noble-updates, noble-security 등)"
+        },
+        {
+          "flag": "{{COMPONENTS}}",
+          "desc": "구성요소 (Ubuntu: main restricted universe multiverse / Debian: main contrib non-free non-free-firmware)"
+        },
+        {
+          "flag": "Types: / URIs: / Suites: / Components: / Signed-By:",
+          "desc": "deb822 형식(.sources)의 필드"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Ubuntu 22.04 미러를 카카오 미러로 변경",
+          "command": "cp /etc/apt/sources.list /etc/apt/sources.list.bak\nsed -i 's|http://archive.ubuntu.com|http://mirror.kakao.com|g' /etc/apt/sources.list\napt update"
+        },
+        {
+          "title": "Ubuntu 24.04 미러 변경 (deb822)",
+          "command": "sed -i 's|http://archive.ubuntu.com|http://mirror.kakao.com|g' /etc/apt/sources.list.d/ubuntu.sources\napt update"
+        },
+        {
+          "title": "로컬 디렉토리 저장소 추가",
+          "command": "echo 'deb [trusted=yes] file:/opt/localrepo ./' > /etc/apt/sources.list.d/local.list\napt update"
+        },
+        {
+          "title": "사용 중인 저장소 확인",
+          "command": "grep -rhv '^#' /etc/apt/sources.list /etc/apt/sources.list.d/ | grep -v '^$'"
+        }
+      ],
+      "cautions": [
+        "서로 다른 배포판 코드명(예: jammy 와 noble)을 섞으면 의존성이 꼬여 시스템이 깨질 수 있습니다.",
+        "같은 저장소가 .list 와 .sources 에 중복되면 apt update 에서 경고가 납니다."
+      ],
+      "platformNotes": {
+        "debian": "Ubuntu 24.04 는 /etc/apt/sources.list 가 비어 있고 /etc/apt/sources.list.d/ubuntu.sources(deb822)를 사용합니다. Ubuntu 22.04·Debian 12 는 /etc/apt/sources.list 한 줄 형식이 기본입니다."
+      },
+      "help": "man sources.list",
+      "keywords": [
+        "저장소 설정",
+        "미러 변경",
+        "sources.list",
+        "레포 추가",
+        "로컬 저장소",
+        "deb822",
+        "ubuntu.sources"
+      ],
+      "related": [
+        "apt",
+        "add-apt-repository",
+        "dpkg-scanpackages"
+      ]
+    },
+    {
+      "id": "add-apt-repository",
+      "name": "add-apt-repository",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.repo",
+      "platforms": [
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PPA·저장소 구성요소(universe 등) 추가·제거",
+      "description": "Ubuntu 에서 PPA 나 저장소 라인, universe·multiverse 같은 구성요소를 추가·제거합니다. PPA 의 경우 서명 키 등록과 sources.list.d 파일 생성까지 자동으로 처리합니다.",
+      "syntax": [
+        "add-apt-repository [-y] ppa:{{PPA_USER}}/{{PPA_NAME}}",
+        "add-apt-repository [-y] universe",
+        "add-apt-repository --remove ppa:{{PPA_USER}}/{{PPA_NAME}}"
+      ],
+      "options": [
+        {
+          "flag": "ppa:{{PPA_USER}}/{{PPA_NAME}}",
+          "desc": "Launchpad PPA 추가"
+        },
+        {
+          "flag": "universe | multiverse | restricted",
+          "desc": "Ubuntu 저장소 구성요소 활성화"
+        },
+        {
+          "flag": "-y",
+          "desc": "확인 질문 없이 진행"
+        },
+        {
+          "flag": "-r, --remove",
+          "desc": "추가했던 저장소 제거"
+        }
+      ],
+      "examples": [
+        {
+          "title": "universe 구성요소 활성화",
+          "command": "add-apt-repository -y universe\napt update"
+        },
+        {
+          "title": "PPA 추가 후 설치",
+          "command": "add-apt-repository -y ppa:{{PPA_USER}}/{{PPA_NAME}}\napt update\napt install {{PACKAGE}}"
+        },
+        {
+          "title": "PPA 제거",
+          "command": "add-apt-repository --remove ppa:{{PPA_USER}}/{{PPA_NAME}}"
+        }
+      ],
+      "cautions": [
+        "PPA 는 개인·외부 저장소이므로 운영 서버에는 신뢰할 수 있는 것만 추가하세요.",
+        "인터넷(Launchpad)에 접속해야 하므로 폐쇄망에서는 키 등록이 실패합니다."
+      ],
+      "install": {
+        "debian": {
+          "package": "software-properties-common",
+          "preinstalled": true,
+          "note": "Ubuntu Server 기본 포함. Debian 은 apt install software-properties-common 필요(PPA 는 Ubuntu 전용)"
+        }
+      },
+      "help": "add-apt-repository --help",
+      "keywords": [
+        "저장소 추가",
+        "PPA 추가",
+        "universe",
+        "레포 추가",
+        "add-apt-repository"
+      ],
+      "related": [
+        "etc-apt-sources-list",
+        "apt"
+      ]
+    },
+    {
+      "id": "needs-restarting",
+      "name": "needs-restarting",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.update",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "업데이트 후 재부팅·서비스 재시작 필요 여부 확인",
+      "description": "dnf update 이후 커널·핵심 라이브러리 변경으로 재부팅이 필요한지, 또는 이전 라이브러리를 계속 쓰고 있어 재시작이 필요한 서비스·프로세스가 있는지 알려줍니다. 패치 작업 후 점검 절차에 넣어 두면 좋습니다.",
+      "syntax": [
+        "needs-restarting [-r] [-s]",
+        "dnf needs-restarting -r"
+      ],
+      "options": [
+        {
+          "flag": "-r",
+          "desc": "재부팅 필요 여부만 확인 (필요하면 종료 코드 1, 아니면 0)"
+        },
+        {
+          "flag": "-s",
+          "desc": "재시작이 필요한 systemd 서비스 목록"
+        },
+        {
+          "flag": "-u",
+          "desc": "현재 사용자의 프로세스만 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패치 후 재부팅 필요 여부 확인",
+          "command": "dnf update -y\nneeds-restarting -r",
+          "output": "Core libraries or services have been updated since boot-up:\n  * kernel\n\nReboot is required to fully utilize these updates."
+        },
+        {
+          "title": "스크립트에서 종료 코드로 판단",
+          "command": "needs-restarting -r >/dev/null || echo 'reboot required'"
+        },
+        {
+          "title": "재시작해야 할 서비스 목록",
+          "command": "needs-restarting -s"
+        }
+      ],
+      "cautions": [
+        "-r 결과가 재부팅 필요여도 자동으로 재부팅하지 않습니다. 서비스 영향 확인 후 직접 재부팅하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "yum-utils (dnf-utils)",
+          "preinstalled": false,
+          "note": "dnf install yum-utils. dnf-plugins-core 가 있으면 dnf needs-restarting 형태로도 실행 가능"
+        }
+      },
+      "platformNotes": {
+        "rhel": "Ubuntu 에서는 /var/run/reboot-required 파일 존재 여부로 재부팅 필요를 확인합니다."
+      },
+      "help": "needs-restarting --help",
+      "keywords": [
+        "재부팅 필요",
+        "재시작 필요",
+        "패치 후 점검",
+        "업데이트 확인",
+        "needs-restarting",
+        "reboot required"
+      ],
+      "related": [
+        "dnf"
+      ]
+    },
+    {
+      "id": "get-hotfix",
+      "name": "Get-HotFix",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "package",
+      "task": "package.update",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "설치된 Windows 업데이트(KB) 목록 확인",
+      "description": "로컬 또는 원격 컴퓨터에 설치된 핫픽스(Windows 업데이트, KB 번호) 목록과 설치 날짜를 조회합니다. 특정 보안 패치 적용 여부나 마지막 패치 날짜를 확인할 때 씁니다.",
+      "syntax": [
+        "Get-HotFix [-Id {{KB_ID}}] [-ComputerName {{HOST}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Id {{KB_ID}}",
+          "desc": "특정 KB 번호 조회 (예: KB5034441)"
+        },
+        {
+          "flag": "-ComputerName {{HOST}}",
+          "desc": "원격 컴퓨터 조회"
+        },
+        {
+          "flag": "-Description {{TEXT}}",
+          "desc": "설명으로 필터 (Security Update, Update 등)"
+        },
+        {
+          "flag": "-Credential {{USER}}",
+          "desc": "다른 계정으로 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "최근 설치된 업데이트 순으로 보기",
+          "command": "Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 10"
+        },
+        {
+          "title": "특정 KB 설치 여부 확인",
+          "command": "Get-HotFix -Id {{KB_ID}}"
+        },
+        {
+          "title": "CMD 에서 같은 정보 보기",
+          "command": "wmic qfe list brief",
+          "note": "wmic 는 최신 Windows 에서 제거 중이므로 Get-HotFix 권장"
+        }
+      ],
+      "cautions": [
+        "Win32_QuickFixEngineering 기준이라 Defender 정의·드라이버·일부 업데이트는 표시되지 않습니다. 전체 이력은 설정 > Windows 업데이트 > 업데이트 기록에서 확인하세요."
+      ],
+      "help": "Get-Help Get-HotFix -Full",
+      "keywords": [
+        "업데이트 확인",
+        "패치 확인",
+        "KB 확인",
+        "핫픽스",
+        "Get-HotFix",
+        "Windows Update",
+        "설치된 업데이트"
+      ],
+      "related": [
+        "wusa",
+        "sconfig",
+        "dism"
+      ]
+    },
+    {
+      "id": "wusa",
+      "name": "wusa",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "package",
+      "task": "package.update",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "MSU 업데이트 파일 수동 설치·KB 제거",
+      "description": "Windows 업데이트 독립 실행형 설치 관리자로, 카탈로그에서 받은 .msu 파일을 수동 설치하거나 설치된 KB 를 제거합니다. 인터넷이 막힌 폐쇄망 서버에 패치를 적용할 때 주로 사용합니다.",
+      "syntax": [
+        "wusa {{FILE}}.msu [/quiet] [/norestart]",
+        "wusa /uninstall /kb:{{KB_NUMBER}} [/quiet] [/norestart]"
+      ],
+      "options": [
+        {
+          "flag": "{{FILE}}.msu",
+          "desc": "설치할 업데이트 파일"
+        },
+        {
+          "flag": "/quiet",
+          "desc": "사용자 입력 없이 설치 (필요 시 자동 재시작)"
+        },
+        {
+          "flag": "/norestart",
+          "desc": "자동 재시작 안 함 (/quiet 과 함께)"
+        },
+        {
+          "flag": "/uninstall /kb:{{KB_NUMBER}}",
+          "desc": "KB 번호로 업데이트 제거 (숫자만, 예: /kb:5034441)"
+        },
+        {
+          "flag": "/log:{{LOG_FILE}}",
+          "desc": "설치 로그 저장 (.evtx 형식)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폐쇄망에서 MSU 패치 무인 설치",
+          "command": "wusa C:\\patch\\{{FILE}}.msu /quiet /norestart"
+        },
+        {
+          "title": "문제 있는 업데이트 제거",
+          "command": "wusa /uninstall /kb:{{KB_NUMBER}} /norestart"
+        }
+      ],
+      "cautions": [
+        "서비스 스택 업데이트(SSU)가 통합된 최신 누적 업데이트는 wusa 로 제거되지 않을 수 있습니다. 이 경우 DISM /Online /Remove-Package 를 사용하세요.",
+        "/norestart 없이 /quiet 만 쓰면 설치 후 바로 재부팅될 수 있습니다."
+      ],
+      "help": "wusa /?",
+      "keywords": [
+        "업데이트 설치",
+        "패치 설치",
+        "msu 설치",
+        "KB 제거",
+        "업데이트 삭제",
+        "wusa",
+        "폐쇄망 패치"
+      ],
+      "related": [
+        "get-hotfix",
+        "dism",
+        "sconfig"
+      ]
+    },
+    {
+      "id": "sconfig",
+      "name": "sconfig",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "package",
+      "task": "package.update",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Server Core 메뉴형 설정 도구 (업데이트·네트워크 등)",
+      "description": "Windows Server(특히 GUI 가 없는 Server Core)에서 번호 메뉴로 업데이트 설치, 컴퓨터 이름·도메인, 네트워크, 원격 데스크톱, 원격 관리 등을 설정하는 도구입니다. Server Core 초기 구축과 패치 작업에 많이 쓰입니다.",
+      "syntax": [
+        "sconfig"
+      ],
+      "options": [
+        {
+          "flag": "1",
+          "desc": "도메인/작업 그룹 가입"
+        },
+        {
+          "flag": "2",
+          "desc": "컴퓨터 이름 변경"
+        },
+        {
+          "flag": "4",
+          "desc": "원격 관리(WinRM 등) 구성"
+        },
+        {
+          "flag": "5",
+          "desc": "Windows 업데이트 설정 (자동/다운로드만/수동)"
+        },
+        {
+          "flag": "6",
+          "desc": "업데이트 검색·설치"
+        },
+        {
+          "flag": "7",
+          "desc": "원격 데스크톱 허용"
+        },
+        {
+          "flag": "8",
+          "desc": "네트워크 설정 (IP·DNS)"
+        },
+        {
+          "flag": "9",
+          "desc": "날짜 및 시간"
+        },
+        {
+          "flag": "13 / 14",
+          "desc": "서버 다시 시작 / 종료"
+        }
+      ],
+      "examples": [
+        {
+          "title": "메뉴 실행",
+          "command": "sconfig",
+          "note": "메뉴 번호는 Windows Server 2022 기준이며 버전에 따라 조금 다를 수 있음"
+        }
+      ],
+      "cautions": [
+        "업데이트 설치(6) 후 재부팅을 묻는 경우가 있으니 서비스 영향 시간을 고려하세요."
+      ],
+      "platformNotes": {
+        "windows": "Windows Server 2022 부터 sconfig 는 PowerShell 기반으로 바뀌었고 Server Core 로그인 시 자동 실행됩니다. 메뉴 15 로 PowerShell 에 나갈 수 있습니다."
+      },
+      "help": "sconfig 메뉴 화면에서 번호 선택",
+      "keywords": [
+        "서버 코어 설정",
+        "Server Core",
+        "업데이트 설치",
+        "sconfig",
+        "초기 설정",
+        "Windows Update"
+      ],
+      "related": [
+        "get-hotfix",
+        "wusa",
+        "install-windowsfeature"
+      ]
+    },
+    {
+      "id": "subscription-manager",
+      "name": "subscription-manager",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.subscription",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "RHEL 구독 등록·상태 확인·저장소 활성화",
+      "description": "RHEL 시스템을 Red Hat 고객 포털(또는 Satellite)에 등록하고 구독 상태를 확인하며, 사용할 Red Hat 저장소를 켜고 끕니다. 등록하지 않으면 RHEL 공식 저장소에서 패키지를 받을 수 없습니다.",
+      "syntax": [
+        "subscription-manager register --username {{USER}}",
+        "subscription-manager register --org {{ORG_ID}} --activationkey {{KEY}}",
+        "subscription-manager repos --enable {{REPO_ID}}"
+      ],
+      "options": [
+        {
+          "flag": "register --username {{USER}}",
+          "desc": "Red Hat 계정으로 시스템 등록 (암호 입력)"
+        },
+        {
+          "flag": "register --org {{ORG_ID}} --activationkey {{KEY}}",
+          "desc": "활성화 키로 등록 (자동화용)"
+        },
+        {
+          "flag": "status",
+          "desc": "구독·등록 상태 확인"
+        },
+        {
+          "flag": "identity",
+          "desc": "등록된 시스템 ID·조직 확인"
+        },
+        {
+          "flag": "repos --list-enabled",
+          "desc": "활성화된 저장소 목록"
+        },
+        {
+          "flag": "repos --enable={{REPO_ID}} / --disable={{REPO_ID}}",
+          "desc": "저장소 활성화 / 비활성화"
+        },
+        {
+          "flag": "release --set={{VERSION}}",
+          "desc": "마이너 버전 고정 (예: 9.4, EUS 등)"
+        },
+        {
+          "flag": "refresh",
+          "desc": "구독 정보 새로 고침"
+        },
+        {
+          "flag": "unregister",
+          "desc": "등록 해제 (서버 폐기·복제 전)"
+        },
+        {
+          "flag": "config --server.proxy_hostname={{HOST}} --server.proxy_port={{PORT}}",
+          "desc": "프록시 설정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "계정으로 등록 후 상태 확인",
+          "command": "subscription-manager register --username {{USER}}\nsubscription-manager status"
+        },
+        {
+          "title": "CodeReady Builder 저장소 활성화 (RHEL 9)",
+          "command": "subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms"
+        },
+        {
+          "title": "프록시 환경에서 등록",
+          "command": "subscription-manager config --server.proxy_hostname={{PROXY_HOST}} --server.proxy_port={{PORT}}\nsubscription-manager register --org {{ORG_ID}} --activationkey {{KEY}}"
+        }
+      ],
+      "cautions": [
+        "VM 템플릿으로 복제하기 전에는 unregister 하세요. 같은 시스템 ID 로 여러 서버가 등록되는 문제가 생깁니다.",
+        "release --set 으로 버전을 고정하면 그 이후 마이너 버전 업데이트를 받지 않습니다."
+      ],
+      "platformNotes": {
+        "rhel": "RHEL 전용입니다. Rocky·AlmaLinux 는 구독 없이 공개 저장소를 사용하므로 필요 없습니다. Simple Content Access(SCA) 조직은 attach 없이 등록만 하면 저장소를 사용할 수 있습니다."
+      },
+      "help": "man subscription-manager",
+      "keywords": [
+        "구독 등록",
+        "RHEL 등록",
+        "레드햇 구독",
+        "저장소 활성화",
+        "subscription-manager",
+        "activation key",
+        "RHSM"
+      ],
+      "related": [
+        "dnf",
+        "etc-yum-reposd",
+        "leapp"
+      ]
+    },
+    {
+      "id": "snap",
+      "name": "snap",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.subscription",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Snap 패키지 설치·목록·자동 업데이트 관리",
+      "description": "Ubuntu 의 Snap 패키지(의존성을 포함한 독립 패키지)를 설치·삭제·업데이트합니다. Snap 은 백그라운드에서 자동 갱신되므로 운영 서버에서는 갱신 시간을 조정하거나 보류해야 할 때가 있습니다.",
+      "syntax": [
+        "snap install [--classic] {{PACKAGE}}",
+        "snap list",
+        "snap refresh [{{PACKAGE}}]"
+      ],
+      "options": [
+        {
+          "flag": "find {{KEYWORD}}",
+          "desc": "스토어에서 snap 검색"
+        },
+        {
+          "flag": "install {{PACKAGE}}",
+          "desc": "설치 (--classic: 시스템 제한 없는 클래식 모드)"
+        },
+        {
+          "flag": "list [--all]",
+          "desc": "설치된 snap 목록 (--all 은 이전 리비전 포함)"
+        },
+        {
+          "flag": "info {{PACKAGE}}",
+          "desc": "채널·버전 정보"
+        },
+        {
+          "flag": "refresh [{{PACKAGE}}]",
+          "desc": "업데이트 (--channel= 로 채널 변경)"
+        },
+        {
+          "flag": "refresh --hold[={{DURATION}}]",
+          "desc": "자동 업데이트 보류"
+        },
+        {
+          "flag": "revert {{PACKAGE}}",
+          "desc": "이전 리비전으로 되돌리기"
+        },
+        {
+          "flag": "remove {{PACKAGE}}",
+          "desc": "삭제"
+        },
+        {
+          "flag": "services",
+          "desc": "snap 이 제공하는 서비스 상태"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설치된 snap 확인",
+          "command": "snap list"
+        },
+        {
+          "title": "자동 업데이트 일정 확인·보류",
+          "command": "snap refresh --time\nsnap refresh --hold=72h"
+        },
+        {
+          "title": "업데이트 후 문제 시 되돌리기",
+          "command": "snap revert {{PACKAGE}}"
+        }
+      ],
+      "cautions": [
+        "snap 은 기본적으로 하루 여러 번 자동 업데이트를 확인합니다. 운영 중 서비스 재시작을 피하려면 refresh.timer 설정이나 --hold 를 고려하세요."
+      ],
+      "install": {
+        "debian": {
+          "package": "snapd",
+          "preinstalled": true,
+          "note": "Ubuntu 기본 포함. Debian 은 apt install snapd 필요"
+        }
+      },
+      "platformNotes": {
+        "debian": "Ubuntu 22.04 이후 일부 패키지(예: firefox, lxd)는 apt 로 설치해도 snap 으로 설치됩니다."
+      },
+      "help": "snap help, snap help {{COMMAND}}",
+      "keywords": [
+        "스냅",
+        "snap 설치",
+        "snap 패키지",
+        "자동 업데이트",
+        "snapd",
+        "snap"
+      ],
+      "related": [
+        "apt"
+      ]
+    },
+    {
+      "id": "install-windowsfeature",
+      "name": "Install-WindowsFeature",
+      "aliases": [
+        "Add-WindowsFeature"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "package",
+      "task": "package.subscription",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Windows Server 역할·기능 설치 (IIS, .NET 3.5 등)",
+      "description": "Windows Server 에 역할(IIS, DNS, AD DS 등)과 기능(.NET Framework 3.5, Telnet 클라이언트 등)을 설치합니다. Get-WindowsFeature 로 설치 가능 목록과 상태를 확인하고, Uninstall-WindowsFeature 로 제거합니다. 서버 관리자의 역할 추가 마법사와 같은 작업입니다.",
+      "syntax": [
+        "Install-WindowsFeature -Name {{FEATURE}} [-IncludeManagementTools] [-Restart]",
+        "Get-WindowsFeature [{{PATTERN}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Name {{FEATURE}}",
+          "desc": "설치할 역할·기능 이름 (쉼표로 여러 개)"
+        },
+        {
+          "flag": "-IncludeManagementTools",
+          "desc": "관리 도구(콘솔·PowerShell 모듈)도 함께 설치"
+        },
+        {
+          "flag": "-IncludeAllSubFeature",
+          "desc": "하위 기능 모두 설치"
+        },
+        {
+          "flag": "-Source {{PATH}}",
+          "desc": "설치 원본 지정 (예: ISO 의 D:\\sources\\sxs)"
+        },
+        {
+          "flag": "-Restart",
+          "desc": "필요하면 자동 재시작"
+        },
+        {
+          "flag": "-WhatIf",
+          "desc": "실제 설치 없이 결과 미리 보기"
+        },
+        {
+          "flag": "-ComputerName {{HOST}}",
+          "desc": "원격 서버에 설치"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설치된 기능 확인",
+          "command": "Get-WindowsFeature | Where-Object Installed"
+        },
+        {
+          "title": "IIS 와 관리 도구 설치",
+          "command": "Install-WindowsFeature -Name Web-Server -IncludeManagementTools"
+        },
+        {
+          "title": "폐쇄망에서 .NET 3.5 설치 (ISO 원본 사용)",
+          "command": "Install-WindowsFeature -Name NET-Framework-Core -Source D:\\sources\\sxs",
+          "note": "D: 는 마운트한 Windows Server ISO 드라이브"
+        },
+        {
+          "title": "기능 제거",
+          "command": "Uninstall-WindowsFeature -Name {{FEATURE}} -Restart"
+        }
+      ],
+      "cautions": [
+        "Windows Server 전용입니다. Windows 10/11 에서는 Enable-WindowsOptionalFeature 또는 dism 을 사용하세요.",
+        "AD DS·Hyper-V 등 일부 역할은 설치 후 재부팅과 추가 구성이 필요합니다."
+      ],
+      "platformNotes": {
+        "windows": "ServerManager 모듈 명령으로 Windows Server 에서만 사용할 수 있습니다."
+      },
+      "help": "Get-Help Install-WindowsFeature -Full",
+      "keywords": [
+        "역할 설치",
+        "기능 설치",
+        "IIS 설치",
+        ".NET 3.5",
+        "Windows 기능",
+        "Install-WindowsFeature",
+        "서버 역할"
+      ],
+      "related": [
+        "dism",
+        "sconfig"
+      ]
+    },
+    {
+      "id": "dism",
+      "name": "dism",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "package",
+      "task": "package.subscription",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Windows 기능·패키지·이미지 관리 및 구성요소 복구",
+      "description": "배포 이미지 서비스 및 관리 도구로, 실행 중인 Windows(/Online) 또는 오프라인 이미지에 기능·업데이트 패키지·선택적 기능(Capability)을 추가·제거합니다. 구성요소 저장소 손상을 복구(/RestoreHealth)할 때도 씁니다. Windows 클라이언트와 서버 모두에서 사용할 수 있습니다.",
+      "syntax": [
+        "dism /Online /Get-Features",
+        "dism /Online /Enable-Feature /FeatureName:{{FEATURE}} [/All] [/Source:{{PATH}}] [/LimitAccess]",
+        "dism /Online /Cleanup-Image /RestoreHealth"
+      ],
+      "options": [
+        {
+          "flag": "/Online",
+          "desc": "현재 실행 중인 Windows 대상"
+        },
+        {
+          "flag": "/Get-Features [/Format:Table]",
+          "desc": "기능 목록과 상태"
+        },
+        {
+          "flag": "/Enable-Feature /FeatureName:{{FEATURE}}",
+          "desc": "기능 활성화 (/All 은 상위 기능도 함께)"
+        },
+        {
+          "flag": "/Disable-Feature /FeatureName:{{FEATURE}}",
+          "desc": "기능 비활성화"
+        },
+        {
+          "flag": "/Source:{{PATH}} /LimitAccess",
+          "desc": "설치 원본 지정 + Windows Update 접근 안 함 (폐쇄망)"
+        },
+        {
+          "flag": "/Get-Packages",
+          "desc": "설치된 업데이트 패키지 목록"
+        },
+        {
+          "flag": "/Add-Package /PackagePath:{{FILE}}",
+          "desc": ".cab/.msu 업데이트 설치"
+        },
+        {
+          "flag": "/Remove-Package /PackageName:{{NAME}}",
+          "desc": "업데이트 패키지 제거"
+        },
+        {
+          "flag": "/Get-Capabilities / /Add-Capability /CapabilityName:{{NAME}}",
+          "desc": "선택적 기능(OpenSSH 등) 조회 / 추가"
+        },
+        {
+          "flag": "/Cleanup-Image /RestoreHealth",
+          "desc": "구성요소 저장소 손상 복구"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폐쇄망에서 .NET 3.5 활성화",
+          "command": "dism /Online /Enable-Feature /FeatureName:NetFx3 /All /Source:D:\\sources\\sxs /LimitAccess"
+        },
+        {
+          "title": "설치된 업데이트 패키지 확인 후 제거",
+          "command": "dism /Online /Get-Packages /Format:Table\ndism /Online /Remove-Package /PackageName:{{PACKAGE_NAME}}"
+        },
+        {
+          "title": "시스템 파일 손상 복구 순서",
+          "command": "dism /Online /Cleanup-Image /RestoreHealth\nsfc /scannow"
+        }
+      ],
+      "cautions": [
+        "/Remove-Package 로 업데이트를 제거하면 보안 패치가 사라지고 재부팅이 필요할 수 있습니다.",
+        "/RestoreHealth 는 기본적으로 Windows Update 에서 원본을 받으므로 폐쇄망에서는 /Source 로 ISO 의 install.wim 을 지정해야 합니다."
+      ],
+      "help": "dism /?, dism /Online /Enable-Feature /?",
+      "keywords": [
+        "기능 설치",
+        "Windows 기능",
+        ".NET 3.5",
+        "업데이트 제거",
+        "이미지 복구",
+        "dism",
+        "RestoreHealth"
+      ],
+      "related": [
+        "install-windowsfeature",
+        "wusa",
+        "sfc"
+      ]
+    },
+    {
+      "id": "leapp",
+      "name": "leapp",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.upgrade",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "RHEL 메이저 버전 인플레이스 업그레이드 (8→9 등)",
+      "description": "RHEL 7→8, 8→9 처럼 메이저 버전을 재설치 없이 올리는 인플레이스 업그레이드 도구입니다. preupgrade 로 사전 점검 보고서를 만들어 차단 요소(inhibitor)를 해결한 뒤 upgrade 를 실행하고 재부팅하면, 부팅 과정에서 실제 업그레이드가 진행됩니다.",
+      "syntax": [
+        "leapp preupgrade [--target {{VERSION}}]",
+        "leapp upgrade [--target {{VERSION}}]"
+      ],
+      "options": [
+        {
+          "flag": "preupgrade",
+          "desc": "사전 점검만 수행하고 보고서 생성 (시스템 변경 없음)"
+        },
+        {
+          "flag": "upgrade",
+          "desc": "업그레이드 준비 후 재부팅 시 업그레이드 진행"
+        },
+        {
+          "flag": "--target {{VERSION}}",
+          "desc": "대상 마이너 버전 지정 (예: 9.4)"
+        },
+        {
+          "flag": "--no-rhsm",
+          "desc": "구독(RHSM) 없이 로컬·사용자 저장소로 진행"
+        },
+        {
+          "flag": "answer --section {{SECTION}}={{VALUE}}",
+          "desc": "보고서가 요구한 질문에 답변 기록"
+        }
+      ],
+      "examples": [
+        {
+          "title": "RHEL 8 → 9 업그레이드 절차",
+          "command": "dnf update -y && reboot\ndnf install -y leapp-upgrade\nleapp preupgrade\ncat /var/log/leapp/leapp-report.txt\nleapp upgrade\nreboot",
+          "note": "보고서의 inhibitor 를 모두 해결해야 upgrade 가 진행됨"
+        },
+        {
+          "title": "사전 점검 답변 파일 처리 예",
+          "command": "leapp answer --section remove_pam_pkcs11_module_check.confirm=True"
+        },
+        {
+          "title": "업그레이드 후 버전 확인",
+          "command": "cat /etc/redhat-release\nuname -r"
+        }
+      ],
+      "cautions": [
+        "실패 시 시스템이 부팅되지 않을 수 있습니다. 반드시 전체 백업 또는 VM 스냅샷을 먼저 만드세요.",
+        "타사 패키지·커널 모듈·보안 에이전트는 업그레이드를 막거나 실패 원인이 될 수 있습니다. 보고서를 꼼꼼히 확인하세요.",
+        "업그레이드 중 재부팅 단계에서는 원격 접속이 불가하므로 콘솔 접근 수단을 확보하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "leapp-upgrade",
+          "preinstalled": false,
+          "note": "RHEL 은 dnf install leapp-upgrade. Rocky·AlmaLinux 는 AlmaLinux ELevate 프로젝트의 leapp 패키지 사용"
+        }
+      },
+      "platformNotes": {
+        "rhel": "로그와 보고서는 /var/log/leapp/ (leapp-report.txt, answerfile)에 생성됩니다. 폐쇄망은 --no-rhsm 과 대상 버전 저장소(/etc/leapp/files/leapp_upgrade_repositories.repo)가 필요합니다."
+      },
+      "help": "leapp --help, leapp upgrade --help",
+      "keywords": [
+        "메이저 업그레이드",
+        "OS 업그레이드",
+        "인플레이스 업그레이드",
+        "RHEL 8 to 9",
+        "leapp",
+        "ELevate"
+      ],
+      "related": [
+        "dnf",
+        "subscription-manager"
+      ]
+    },
+    {
+      "id": "do-release-upgrade",
+      "name": "do-release-upgrade",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.upgrade",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "Ubuntu 메이저(배포판) 버전 업그레이드",
+      "description": "Ubuntu 를 다음 배포판(예: 22.04 → 24.04)으로 업그레이드합니다. 저장소 전환, 패키지 업그레이드, 불필요 패키지 정리를 대화형으로 진행하며, SSH 로 실행하면 끊김에 대비해 1022 포트에 추가 sshd 를 띄웁니다.",
+      "syntax": [
+        "do-release-upgrade [-c] [-d] [-f {{FRONTEND}}]"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "새 배포판이 있는지만 확인"
+        },
+        {
+          "flag": "-d",
+          "desc": "개발 버전 또는 LTS 첫 포인트 릴리스(.1) 이전에 업그레이드"
+        },
+        {
+          "flag": "-f DistUpgradeViewNonInteractive",
+          "desc": "비대화형 모드로 실행"
+        },
+        {
+          "flag": "/etc/update-manager/release-upgrades",
+          "desc": "Prompt=lts|normal|never 로 업그레이드 대상 지정 (설정 파일)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "업그레이드 전 준비 후 실행",
+          "command": "apt update && apt full-upgrade -y\nreboot\ndo-release-upgrade -c\ndo-release-upgrade"
+        },
+        {
+          "title": "업그레이드 대상(LTS만/일반) 설정 확인",
+          "command": "grep Prompt /etc/update-manager/release-upgrades",
+          "output": "Prompt=lts"
+        },
+        {
+          "title": "업그레이드 후 버전 확인",
+          "command": "lsb_release -a\ncat /etc/os-release"
+        }
+      ],
+      "cautions": [
+        "실패 시 부팅·서비스 장애가 날 수 있습니다. 전체 백업 또는 VM 스냅샷을 먼저 만드세요.",
+        "PPA·타사 저장소는 업그레이드 중 비활성화됩니다. 완료 후 호환 여부를 확인하고 다시 켜세요.",
+        "LTS 간 업그레이드는 보통 새 LTS 의 첫 포인트 릴리스(예: 24.04.1)가 나온 뒤에 제공됩니다."
+      ],
+      "install": {
+        "debian": {
+          "package": "ubuntu-release-upgrader-core",
+          "preinstalled": true,
+          "note": "Ubuntu 기본 포함. Debian 에는 없음"
+        }
+      },
+      "platformNotes": {
+        "debian": "Ubuntu 전용입니다. Debian 은 sources.list 의 코드명을 바꾼 뒤(예: bookworm → trixie) apt update && apt full-upgrade 로 업그레이드합니다. SSH 접속 시 방화벽에서 1022 포트를 허용해 두면 안전합니다."
+      },
+      "help": "do-release-upgrade --help",
+      "keywords": [
+        "메이저 업그레이드",
+        "배포판 업그레이드",
+        "OS 업그레이드",
+        "Ubuntu 업그레이드",
+        "do-release-upgrade",
+        "22.04 to 24.04"
+      ],
+      "related": [
+        "apt",
+        "etc-apt-sources-list"
+      ]
+    },
+    {
+      "id": "createrepo",
+      "name": "createrepo",
+      "aliases": [
+        "createrepo_c"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.offline",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "rpm 디렉토리로 로컬 저장소 생성 (폐쇄망 설치)",
+      "description": "rpm 파일이 들어 있는 디렉토리에 저장소 메타데이터(repodata/)를 만들어 dnf 가 사용할 수 있는 로컬 저장소로 만듭니다. 인터넷이 없는 폐쇄망에서 미리 받아 온 패키지를 의존성까지 해결해 설치할 때 사용합니다. OS 설치 ISO 는 이미 메타데이터가 있어 마운트만 하면 저장소로 쓸 수 있습니다.",
+      "syntax": [
+        "createrepo [--update] {{DIR}}"
+      ],
+      "options": [
+        {
+          "flag": "{{DIR}}",
+          "desc": "rpm 파일이 있는 디렉토리 (repodata/ 생성)"
+        },
+        {
+          "flag": "--update",
+          "desc": "기존 메타데이터를 재사용해 변경분만 갱신 (빠름)"
+        },
+        {
+          "flag": "-o {{DIR}}",
+          "desc": "메타데이터 출력 위치 지정"
+        },
+        {
+          "flag": "-g {{COMPS_FILE}}",
+          "desc": "패키지 그룹 정의(comps.xml) 포함"
+        },
+        {
+          "flag": "--workers {{N}}",
+          "desc": "병렬 작업 수"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OS ISO 를 마운트해 로컬 저장소로 사용 (RHEL/Rocky 8·9)",
+          "command": "mkdir -p /mnt/iso\nmount -o loop,ro {{ISO_FILE}} /mnt/iso\ncat > /etc/yum.repos.d/local-iso.repo <<'EOF'\n[local-baseos]\nname=Local BaseOS\nbaseurl=file:///mnt/iso/BaseOS\nenabled=1\ngpgcheck=0\n\n[local-appstream]\nname=Local AppStream\nbaseurl=file:///mnt/iso/AppStream\nenabled=1\ngpgcheck=0\nEOF\ndnf clean all\ndnf --disablerepo='*' --enablerepo='local-*' install {{PACKAGE}}",
+          "note": "ISO 는 이미 repodata 가 있어 createrepo 불필요. 재부팅 후에도 쓰려면 /etc/fstab 에 마운트 등록"
+        },
+        {
+          "title": "인터넷 되는 서버에서 패키지와 의존성 받기",
+          "command": "dnf download --resolve --alldeps --destdir=/opt/localrepo {{PACKAGE}}",
+          "note": "dnf download 는 dnf-plugins-core 제공. 폐쇄망 서버와 같은 OS 버전에서 받아야 함"
+        },
+        {
+          "title": "받아 온 rpm 으로 로컬 저장소 만들기",
+          "command": "createrepo /opt/localrepo\ncat > /etc/yum.repos.d/localrepo.repo <<'EOF'\n[localrepo]\nname=Local Repo\nbaseurl=file:///opt/localrepo\nenabled=1\ngpgcheck=0\nEOF\ndnf install {{PACKAGE}}"
+        },
+        {
+          "title": "rpm 추가 후 메타데이터 갱신",
+          "command": "createrepo --update /opt/localrepo\ndnf clean all"
+        }
+      ],
+      "cautions": [
+        "rpm 을 추가·삭제한 뒤 createrepo --update 를 다시 실행하지 않으면 dnf 가 새 파일을 인식하지 못합니다.",
+        "gpgcheck=0 은 내부 검증된 패키지에만 사용하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "createrepo_c",
+          "preinstalled": false,
+          "note": "dnf install createrepo_c (createrepo 명령도 함께 제공). 폐쇄망이면 ISO 의 AppStream 에서 설치"
+        }
+      },
+      "help": "createrepo --help, man createrepo_c",
+      "keywords": [
+        "폐쇄망 설치",
+        "로컬 저장소",
+        "오프라인 설치",
+        "ISO 저장소",
+        "createrepo",
+        "createrepo_c",
+        "local repo"
+      ],
+      "related": [
+        "etc-yum-reposd",
+        "dnf",
+        "rpm",
+        "mount"
+      ]
+    },
+    {
+      "id": "dpkg-scanpackages",
+      "name": "dpkg-scanpackages",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.offline",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "deb 디렉토리로 로컬 apt 저장소 생성 (폐쇄망 설치)",
+      "description": ".deb 파일이 있는 디렉토리를 스캔해 apt 가 읽을 수 있는 Packages 인덱스를 만듭니다. 인터넷이 되는 서버에서 받아 온 패키지를 폐쇄망 서버에서 의존성까지 해결해 설치할 때 사용합니다.",
+      "syntax": [
+        "dpkg-scanpackages [-m] {{DIR}} [/dev/null] | gzip -9c > {{DIR}}/Packages.gz"
+      ],
+      "options": [
+        {
+          "flag": "{{DIR}}",
+          "desc": "deb 파일이 있는 디렉토리 (저장소 루트 기준 상대 경로)"
+        },
+        {
+          "flag": "/dev/null",
+          "desc": "override 파일 자리 (없을 때 관례적으로 지정)"
+        },
+        {
+          "flag": "-m, --multiversion",
+          "desc": "같은 패키지의 여러 버전을 모두 인덱스에 포함"
+        }
+      ],
+      "examples": [
+        {
+          "title": "인터넷 되는 서버에서 패키지와 의존성 받기",
+          "command": "apt-get install --download-only -y {{PACKAGE}}\nmkdir -p /opt/localrepo\ncp /var/cache/apt/archives/*.deb /opt/localrepo/",
+          "note": "이미 설치된 의존성은 받지 않으므로, 폐쇄망 서버와 같은 OS 버전의 깨끗한 서버에서 받는 것이 좋음"
+        },
+        {
+          "title": "로컬 저장소 만들고 등록",
+          "command": "cd /opt/localrepo\ndpkg-scanpackages . /dev/null | gzip -9c > Packages.gz\necho 'deb [trusted=yes] file:/opt/localrepo ./' > /etc/apt/sources.list.d/local.list\napt update\napt install {{PACKAGE}}"
+        }
+      ],
+      "cautions": [
+        "deb 파일을 추가하면 Packages.gz 를 다시 만들어야 apt 가 인식합니다.",
+        "[trusted=yes] 는 서명 검증을 생략하므로 내부 검증된 패키지에만 사용하세요."
+      ],
+      "install": {
+        "debian": {
+          "package": "dpkg-dev",
+          "preinstalled": false,
+          "note": "apt install dpkg-dev"
+        }
+      },
+      "help": "man dpkg-scanpackages",
+      "keywords": [
+        "폐쇄망 설치",
+        "로컬 저장소",
+        "오프라인 설치",
+        "deb 저장소",
+        "dpkg-scanpackages",
+        "local repo"
+      ],
+      "related": [
+        "etc-apt-sources-list",
+        "apt",
+        "dpkg"
+      ]
+    }
+  ]
+}

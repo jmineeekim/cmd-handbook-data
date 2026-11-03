@@ -1,0 +1,2061 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "text",
+  "commands": [
+    {
+      "id": "grep",
+      "name": "grep",
+      "aliases": [
+        "egrep",
+        "fgrep"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.search-string",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일·출력에서 문자열·정규식 검색",
+      "description": "파일이나 명령 출력에서 패턴과 일치하는 줄을 찾아 출력합니다. 로그에서 오류 찾기, 설정 값 확인, 하위 디렉토리 전체 검색, 다른 명령 출력 필터링 등 가장 많이 쓰는 텍스트 도구입니다.",
+      "syntax": [
+        "grep [{{OPTIONS}}] '{{PATTERN}}' {{FILE}}...",
+        "{{COMMAND}} | grep [{{OPTIONS}}] '{{PATTERN}}'"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "-r / -R",
+          "desc": "디렉토리 하위 전체 재귀 검색 (-R 은 심볼릭 링크도 따라감)"
+        },
+        {
+          "flag": "-n",
+          "desc": "줄 번호 표시"
+        },
+        {
+          "flag": "-v",
+          "desc": "패턴과 일치하지 않는 줄 출력"
+        },
+        {
+          "flag": "-E",
+          "desc": "확장 정규식 사용 (|, +, ? 등. egrep 과 동일)"
+        },
+        {
+          "flag": "-F",
+          "desc": "패턴을 정규식이 아닌 고정 문자열로 검색 (fgrep 과 동일)"
+        },
+        {
+          "flag": "-w",
+          "desc": "단어 단위로 일치"
+        },
+        {
+          "flag": "-l",
+          "desc": "일치하는 파일 이름만 출력"
+        },
+        {
+          "flag": "-c",
+          "desc": "일치하는 줄 수만 출력"
+        },
+        {
+          "flag": "-A {{N}} / -B {{N}} / -C {{N}}",
+          "desc": "일치한 줄의 뒤 / 앞 / 앞뒤 N줄도 함께 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그에서 오류 줄 찾기 (앞뒤 3줄 포함)",
+          "command": "grep -i -n -C 3 'error' /var/log/{{APP}}/{{LOG_FILE}}"
+        },
+        {
+          "title": "설정 디렉토리 전체에서 값 찾기",
+          "command": "grep -rn '{{PATTERN}}' /etc/{{APP}}/"
+        },
+        {
+          "title": "주석·빈 줄 제외하고 실제 설정만 보기",
+          "command": "grep -Ev '^\\s*(#|$)' /etc/{{FILE}}"
+        },
+        {
+          "title": "여러 키워드 중 하나라도 포함된 줄",
+          "command": "grep -E 'error|fail|timeout' {{FILE}}"
+        },
+        {
+          "title": "프로세스 목록에서 특정 프로세스 찾기",
+          "command": "ps -ef | grep '[j]ava'",
+          "note": "[j] 처럼 쓰면 grep 자기 자신은 결과에서 빠짐"
+        }
+      ],
+      "cautions": [
+        "패턴은 작은따옴표로 감싸세요. 따옴표가 없으면 셸이 *, $ 등을 먼저 해석합니다.",
+        "압축된 로그(.gz)는 zgrep 으로 검색합니다.",
+        "egrep·fgrep 은 최신 grep(3.8+, Ubuntu 24.04 등)에서 사용 중단 경고가 나옵니다. grep -E / grep -F 를 사용하세요."
+      ],
+      "help": "man grep",
+      "keywords": [
+        "문자열 검색",
+        "로그 검색",
+        "찾기",
+        "필터",
+        "정규식",
+        "grep",
+        "search",
+        "regex"
+      ],
+      "related": [
+        "find",
+        "awk",
+        "sed",
+        "less",
+        "tail",
+        "wc"
+      ]
+    },
+    {
+      "id": "findstr",
+      "name": "findstr",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "text",
+      "task": "text.search-string",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 파일·출력의 문자열 검색 (정규식 일부 지원)",
+      "description": "파일이나 명령 출력에서 문자열을 검색하는 CMD 도구로 grep 과 비슷하게 씁니다. 하위 폴더 재귀 검색, 대소문자 무시, 제한적인 정규식을 지원합니다.",
+      "syntax": [
+        "findstr [{{OPTIONS}}] \"{{PATTERN}}\" {{FILE}}...",
+        "{{COMMAND}} | findstr [{{OPTIONS}}] \"{{PATTERN}}\""
+      ],
+      "options": [
+        {
+          "flag": "/i",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "/s",
+          "desc": "현재 폴더와 하위 폴더 전체에서 검색"
+        },
+        {
+          "flag": "/n",
+          "desc": "줄 번호 표시"
+        },
+        {
+          "flag": "/v",
+          "desc": "일치하지 않는 줄 출력"
+        },
+        {
+          "flag": "/c:\"{{STRING}}\"",
+          "desc": "공백을 포함한 문자열을 하나의 검색어로 사용"
+        },
+        {
+          "flag": "/r",
+          "desc": "정규식으로 검색 (., *, ^, $, [ ] 정도만 지원)"
+        },
+        {
+          "flag": "/l",
+          "desc": "문자 그대로 검색 (정규식 해석 안 함)"
+        },
+        {
+          "flag": "/m",
+          "desc": "일치하는 파일 이름만 출력"
+        },
+        {
+          "flag": "/b / /e",
+          "desc": "줄 시작 / 줄 끝에서 일치"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 포트 사용 연결 찾기",
+          "command": "netstat -ano | findstr :{{PORT}}"
+        },
+        {
+          "title": "로그에서 오류 찾기 (줄 번호, 대소문자 무시)",
+          "command": "findstr /i /n \"error\" {{FILE}}"
+        },
+        {
+          "title": "폴더 전체에서 설정 값이 들어 있는 파일 찾기",
+          "command": "findstr /s /i /m \"{{PATTERN}}\" {{DIR}}\\*.config"
+        },
+        {
+          "title": "여러 단어 중 하나라도 포함 (공백은 OR)",
+          "command": "findstr /i \"error fail timeout\" {{FILE}}"
+        },
+        {
+          "title": "공백 포함 문장 그대로 검색",
+          "command": "findstr /i /c:\"connection refused\" {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "따옴표 안의 공백은 OR 조건입니다. 공백을 포함한 문구를 찾으려면 /c: 를 사용하세요.",
+        "UTF-16(유니코드) 로그 파일은 검색되지 않을 수 있습니다. PowerShell 의 Select-String 을 사용하세요.",
+        "| 를 사용한 OR, +, ? 같은 확장 정규식은 지원하지 않습니다."
+      ],
+      "help": "findstr /?",
+      "keywords": [
+        "문자열 검색",
+        "로그 검색",
+        "찾기",
+        "grep",
+        "findstr",
+        "필터"
+      ],
+      "related": [
+        "win-find",
+        "type",
+        "dir",
+        "select-string"
+      ]
+    },
+    {
+      "id": "win-find",
+      "name": "find",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "text",
+      "task": "text.search-string",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 고정 문자열 검색·일치 줄 수 세기",
+      "description": "파일이나 명령 출력에서 고정 문자열이 포함된 줄을 찾는 단순한 CMD 도구입니다. 정규식은 없지만 /c 로 일치하는 줄 수를 바로 셀 수 있습니다. Linux 의 find(파일 검색)와는 전혀 다른 명령입니다.",
+      "syntax": [
+        "find [/i] [/v] [/c] [/n] \"{{STRING}}\" [{{FILE}}...]",
+        "{{COMMAND}} | find [/i] \"{{STRING}}\""
+      ],
+      "options": [
+        {
+          "flag": "/i",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "/v",
+          "desc": "문자열이 없는 줄 출력"
+        },
+        {
+          "flag": "/c",
+          "desc": "일치하는 줄 수만 출력"
+        },
+        {
+          "flag": "/n",
+          "desc": "줄 번호 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "ESTABLISHED 연결 수 세기",
+          "command": "netstat -an | find /c \"ESTABLISHED\""
+        },
+        {
+          "title": "실행 중인 프로세스 확인",
+          "command": "tasklist | find /i \"{{PROCESS_NAME}}\""
+        }
+      ],
+      "cautions": [
+        "검색 문자열은 반드시 큰따옴표로 감싸야 합니다.",
+        "PowerShell 에서는 Linux 처럼 동작하지 않을 수 있으니 find.exe 로 실행하거나 Select-String 을 사용하세요."
+      ],
+      "help": "find /?",
+      "keywords": [
+        "문자열 검색",
+        "줄 수 세기",
+        "find",
+        "count",
+        "필터"
+      ],
+      "related": [
+        "findstr",
+        "select-string"
+      ]
+    },
+    {
+      "id": "select-string",
+      "name": "Select-String",
+      "aliases": [
+        "sls"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.search-string",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PowerShell 에서 파일·출력 문자열·정규식 검색",
+      "description": "파일이나 파이프 입력에서 정규식 패턴을 검색하는 PowerShell 의 grep 입니다. 기본이 대소문자 무시이며, 결과에 파일 이름·줄 번호가 함께 나옵니다. -Context 로 앞뒤 줄도 볼 수 있습니다.",
+      "syntax": [
+        "Select-String -Path {{FILE}} -Pattern '{{PATTERN}}' [{{OPTIONS}}]",
+        "{{COMMAND}} | Select-String -Pattern '{{PATTERN}}'"
+      ],
+      "options": [
+        {
+          "flag": "-Pattern '{{PATTERN}}'",
+          "desc": "검색할 정규식 (쉼표로 여러 개 지정 가능)"
+        },
+        {
+          "flag": "-Path {{FILE}}",
+          "desc": "검색할 파일 (와일드카드 가능)"
+        },
+        {
+          "flag": "-SimpleMatch",
+          "desc": "정규식이 아닌 문자 그대로 검색"
+        },
+        {
+          "flag": "-CaseSensitive",
+          "desc": "대소문자 구분 (기본은 무시)"
+        },
+        {
+          "flag": "-NotMatch",
+          "desc": "일치하지 않는 줄 출력"
+        },
+        {
+          "flag": "-Context {{BEFORE}},{{AFTER}}",
+          "desc": "일치한 줄 앞뒤 줄도 출력"
+        },
+        {
+          "flag": "-List",
+          "desc": "파일마다 첫 번째 일치만 출력 (파일 찾기용)"
+        },
+        {
+          "flag": "-AllMatches",
+          "desc": "한 줄 안의 모든 일치 항목 반환"
+        },
+        {
+          "flag": "-Encoding {{ENCODING}}",
+          "desc": "파일 인코딩 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그에서 오류 찾기 (앞뒤 2줄 포함)",
+          "command": "Select-String -Path {{FILE}} -Pattern 'error' -Context 2,2"
+        },
+        {
+          "title": "하위 폴더 전체 설정 파일에서 검색",
+          "command": "Get-ChildItem {{DIR}} -Recurse -Filter *.config | Select-String -Pattern '{{PATTERN}}'"
+        },
+        {
+          "title": "명령 출력 필터링 (grep 처럼)",
+          "command": "netstat -ano | Select-String ':{{PORT}}'"
+        },
+        {
+          "title": "여러 패턴 중 하나라도 일치",
+          "command": "Select-String -Path {{DIR}}\\*.log -Pattern 'error','fail','timeout'"
+        },
+        {
+          "title": "일치한 파일 이름만 나열",
+          "command": "Select-String -Path {{DIR}}\\* -Pattern '{{PATTERN}}' -List | Select-Object Path"
+        }
+      ],
+      "cautions": [
+        "기본이 정규식이므로 . [ ] ( ) \\ 같은 문자가 들어간 문자열은 -SimpleMatch 를 쓰세요.",
+        "-Path 에 폴더만 주면 하위 폴더를 검색하지 않습니다. 재귀 검색은 Get-ChildItem -Recurse 결과를 파이프로 넘기세요."
+      ],
+      "help": "Get-Help Select-String -Full",
+      "keywords": [
+        "문자열 검색",
+        "로그 검색",
+        "정규식",
+        "grep",
+        "sls",
+        "필터"
+      ],
+      "related": [
+        "get-content",
+        "get-childitem",
+        "where-object",
+        "findstr"
+      ]
+    },
+    {
+      "id": "find",
+      "name": "find",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.search-file",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "이름·크기·시간·권한 조건으로 파일 검색·일괄 처리",
+      "description": "디렉토리를 실시간으로 탐색해 이름, 종류, 크기, 수정 시간, 소유자, 권한 등의 조건에 맞는 파일을 찾습니다. -exec 나 -delete 로 찾은 파일에 바로 작업할 수 있어 큰 파일 찾기, 오래된 로그 정리에 필수입니다.",
+      "syntax": [
+        "find {{DIR}} [{{CONDITIONS}}] [{{ACTION}}]"
+      ],
+      "options": [
+        {
+          "flag": "-name '{{PATTERN}}'",
+          "desc": "이름 패턴 일치 (-iname 은 대소문자 무시)"
+        },
+        {
+          "flag": "-type f|d|l",
+          "desc": "종류: f 파일, d 디렉토리, l 심볼릭 링크"
+        },
+        {
+          "flag": "-size +{{N}}M",
+          "desc": "크기 조건 (+ 초과, - 미만, 단위 k M G)"
+        },
+        {
+          "flag": "-mtime +{{N}}",
+          "desc": "수정 후 N일 초과 (-N 은 N일 이내). -mmin 은 분 단위"
+        },
+        {
+          "flag": "-newer {{FILE}}",
+          "desc": "기준 파일보다 최근에 수정된 파일"
+        },
+        {
+          "flag": "-user {{USER}}",
+          "desc": "소유자 조건 (-nouser 는 소유자 없는 파일)"
+        },
+        {
+          "flag": "-perm -{{MODE}}",
+          "desc": "권한 조건 (예: -perm -4000 은 SUID 파일)"
+        },
+        {
+          "flag": "-maxdepth {{N}}",
+          "desc": "탐색 깊이 제한"
+        },
+        {
+          "flag": "-xdev",
+          "desc": "다른 파일시스템(마운트 지점)으로 내려가지 않음"
+        },
+        {
+          "flag": "-exec {{COMMAND}} {} \\;",
+          "desc": "찾은 파일마다 명령 실행 ({} + 로 끝내면 한꺼번에 실행), -delete 는 삭제"
+        }
+      ],
+      "examples": [
+        {
+          "title": "이름으로 파일 찾기",
+          "command": "find / -name '{{FILE_NAME}}' 2>/dev/null"
+        },
+        {
+          "title": "100MB 넘는 큰 파일 찾기 (현재 파일시스템만)",
+          "command": "find / -xdev -type f -size +100M -exec ls -lh {} + 2>/dev/null | sort -k5 -rh | head -n 20"
+        },
+        {
+          "title": "30일 지난 로그 확인 후 삭제",
+          "command": "find /var/log/{{APP}} -type f -name '*.log*' -mtime +30 -print\nfind /var/log/{{APP}} -type f -name '*.log*' -mtime +30 -delete"
+        },
+        {
+          "title": "최근 60분 내 변경된 설정 파일",
+          "command": "find /etc -type f -mmin -60"
+        },
+        {
+          "title": "SUID 파일 점검 (보안 점검)",
+          "command": "find / -xdev -type f -perm -4000 2>/dev/null"
+        }
+      ],
+      "cautions": [
+        "-delete 는 조건 뒤에 와야 합니다. -delete 를 앞에 쓰면 시작 디렉토리 아래 전체가 삭제됩니다. 항상 -print 로 먼저 확인하세요.",
+        "-name 패턴은 작은따옴표로 감싸세요. 따옴표가 없으면 현재 디렉토리 파일 이름으로 먼저 확장됩니다.",
+        "/ 에서 -xdev 없이 실행하면 /proc, NFS 마운트까지 탐색해 매우 느려질 수 있습니다."
+      ],
+      "help": "man find",
+      "keywords": [
+        "파일 검색",
+        "파일 찾기",
+        "큰 파일",
+        "오래된 파일",
+        "로그 정리",
+        "find",
+        "search file"
+      ],
+      "related": [
+        "locate",
+        "xargs",
+        "grep",
+        "du",
+        "rm",
+        "ls"
+      ]
+    },
+    {
+      "id": "locate",
+      "name": "locate",
+      "aliases": [
+        "plocate",
+        "mlocate"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.search-file",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 이름 DB 로 전체 디스크를 빠르게 검색",
+      "description": "미리 만들어 둔 파일 이름 데이터베이스에서 검색하므로 find 보다 훨씬 빠릅니다. 데이터베이스는 매일 자동 갱신되며, 방금 만든 파일을 찾으려면 updatedb 를 먼저 실행해야 합니다.",
+      "syntax": [
+        "locate [{{OPTIONS}}] {{PATTERN}}",
+        "sudo updatedb"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "-c",
+          "desc": "일치하는 개수만 출력"
+        },
+        {
+          "flag": "-b",
+          "desc": "경로가 아닌 파일 이름(basename)만으로 일치"
+        },
+        {
+          "flag": "-r {{REGEX}}",
+          "desc": "정규식으로 검색"
+        },
+        {
+          "flag": "-l {{N}}",
+          "desc": "결과를 N개로 제한"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 이름으로 빠르게 찾기",
+          "command": "locate {{FILE_NAME}}"
+        },
+        {
+          "title": "DB 갱신 후 검색 (방금 만든 파일)",
+          "command": "sudo updatedb\nlocate -i {{FILE_NAME}}"
+        },
+        {
+          "title": "정확히 그 이름인 파일만 찾기",
+          "command": "locate -b '\\{{FILE_NAME}}'"
+        }
+      ],
+      "cautions": [
+        "DB 는 하루 한 번 갱신되므로 최근에 생성·삭제된 파일은 결과가 맞지 않을 수 있습니다.",
+        "기본 설정에서 /tmp, NFS 등 일부 경로·파일시스템은 색인에서 제외됩니다 (/etc/updatedb.conf)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "mlocate",
+          "preinstalled": false,
+          "note": "dnf install mlocate 후 updatedb 로 DB 생성"
+        },
+        "debian": {
+          "package": "plocate",
+          "preinstalled": false,
+          "note": "apt install plocate (설치 시 DB 생성 타이머 등록)"
+        }
+      },
+      "platformNotes": {
+        "rhel": "RHEL 8·9 는 mlocate 패키지를 사용합니다. DB 갱신은 mlocate-updatedb.timer 로 매일 실행됩니다.",
+        "debian": "Ubuntu 22.04 이상·Debian 12 는 plocate 가 기본 구현입니다."
+      },
+      "help": "man locate",
+      "keywords": [
+        "파일 검색",
+        "빠른 검색",
+        "파일 찾기",
+        "locate",
+        "updatedb",
+        "mlocate",
+        "plocate"
+      ],
+      "related": [
+        "find",
+        "which",
+        "whereis"
+      ]
+    },
+    {
+      "id": "which",
+      "name": "which",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.locate-binary",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PATH 에서 실행되는 명령의 실제 경로 확인",
+      "description": "명령을 입력했을 때 PATH 에서 어떤 실행 파일이 실행되는지 경로를 보여줍니다. 같은 이름의 프로그램이 여러 버전 설치되어 있을 때(java, python 등) 어느 것이 쓰이는지 확인합니다.",
+      "syntax": [
+        "which [-a] {{COMMAND}}..."
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "PATH 에서 일치하는 모든 실행 파일 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "실행되는 java 경로 확인",
+          "command": "which java",
+          "output": "/usr/bin/java"
+        },
+        {
+          "title": "실제 설치 위치까지 따라가기 (alternatives 링크)",
+          "command": "readlink -f $(which java)"
+        },
+        {
+          "title": "PATH 상의 모든 python3 확인",
+          "command": "which -a python3"
+        }
+      ],
+      "cautions": [
+        "alias 나 셸 함수, 내장 명령은 제대로 보여주지 않을 수 있습니다. 정확한 판별은 type 을 사용하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "which",
+          "preinstalled": true,
+          "note": "컨테이너 이미지 등 최소 환경에는 없을 수 있음: dnf install which"
+        }
+      },
+      "platformNotes": {
+        "rhel": "GNU which 로, root 가 아닐 때 alias 정보도 함께 보여주도록 alias which 가 설정되어 있습니다.",
+        "debian": "debianutils 의 which 로 -a 외 옵션이 거의 없습니다."
+      },
+      "help": "man which",
+      "keywords": [
+        "명령 위치",
+        "실행 파일 경로",
+        "PATH",
+        "which",
+        "어디 설치"
+      ],
+      "related": [
+        "whereis",
+        "type-builtin",
+        "locate"
+      ]
+    },
+    {
+      "id": "whereis",
+      "name": "whereis",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.locate-binary",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "명령의 실행 파일·매뉴얼·소스 위치 찾기",
+      "description": "명령 이름으로 실행 파일, man 페이지, 소스 파일의 위치를 표준 경로에서 찾아 한 줄로 보여줍니다. PATH 와 상관없이 표준 시스템 경로를 검색합니다.",
+      "syntax": [
+        "whereis [-b|-m|-s] {{COMMAND}}..."
+      ],
+      "options": [
+        {
+          "flag": "-b",
+          "desc": "실행 파일만 검색"
+        },
+        {
+          "flag": "-m",
+          "desc": "매뉴얼(man) 페이지만 검색"
+        },
+        {
+          "flag": "-s",
+          "desc": "소스 파일만 검색"
+        },
+        {
+          "flag": "-l",
+          "desc": "검색하는 경로 목록 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "명령 관련 파일 위치 확인",
+          "command": "whereis sshd",
+          "output": "sshd: /usr/sbin/sshd /usr/share/man/man8/sshd.8.gz"
+        },
+        {
+          "title": "실행 파일 위치만 확인",
+          "command": "whereis -b nginx"
+        }
+      ],
+      "cautions": [],
+      "help": "man whereis",
+      "keywords": [
+        "명령 위치",
+        "실행 파일 경로",
+        "매뉴얼 위치",
+        "whereis"
+      ],
+      "related": [
+        "which",
+        "type-builtin",
+        "locate"
+      ]
+    },
+    {
+      "id": "type-builtin",
+      "name": "type",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.locate-binary",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "명령이 alias·함수·내장·실행 파일 중 무엇인지 확인",
+      "description": "bash 내장 명령으로, 입력한 이름이 alias, 셸 함수, 셸 내장 명령, 실행 파일 중 무엇으로 실행되는지 정확히 알려줍니다. rm 이 alias 로 rm -i 인지 확인하는 등 which 보다 정확합니다.",
+      "syntax": [
+        "type [-a|-t|-p|-P] {{NAME}}..."
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "alias·함수·내장·PATH 의 실행 파일까지 모든 후보 출력"
+        },
+        {
+          "flag": "-t",
+          "desc": "종류만 한 단어로 출력 (alias, function, builtin, file, keyword)"
+        },
+        {
+          "flag": "-p",
+          "desc": "실행 파일일 때 경로만 출력"
+        },
+        {
+          "flag": "-P",
+          "desc": "alias·함수와 상관없이 PATH 에서 실행 파일 경로 검색"
+        }
+      ],
+      "examples": [
+        {
+          "title": "rm 이 alias 인지 확인",
+          "command": "type rm",
+          "output": "rm is aliased to `rm -i'"
+        },
+        {
+          "title": "같은 이름의 모든 후보 보기",
+          "command": "type -a ls"
+        },
+        {
+          "title": "종류만 확인 (스크립트용)",
+          "command": "type -t {{NAME}}"
+        }
+      ],
+      "cautions": [
+        "셸 내장 명령이라 sh(dash) 에서는 -a, -t 등 옵션이 지원되지 않을 수 있습니다."
+      ],
+      "help": "help type",
+      "keywords": [
+        "명령 종류",
+        "alias 확인",
+        "내장 명령",
+        "실행 파일 경로",
+        "type"
+      ],
+      "related": [
+        "which",
+        "whereis",
+        "alias"
+      ]
+    },
+    {
+      "id": "where",
+      "name": "where",
+      "aliases": [
+        "where.exe"
+      ],
+      "kind": "command",
+      "shell": "cmd",
+      "category": "text",
+      "task": "text.locate-binary",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PATH·지정 폴더에서 실행 파일·파일 위치 찾기",
+      "description": "PATH 와 현재 폴더에서 실행 파일 위치를 찾아 줍니다(which 와 유사). /r 로 지정 폴더 아래를 재귀 검색할 수 있어 Windows 에서 파일 이름 검색 용도로도 씁니다.",
+      "syntax": [
+        "where [/r {{DIR}}] [/q] [/f] [/t] {{PATTERN}}"
+      ],
+      "options": [
+        {
+          "flag": "/r {{DIR}}",
+          "desc": "지정 폴더 아래를 재귀 검색"
+        },
+        {
+          "flag": "/q",
+          "desc": "출력 없이 종료 코드만 반환 (찾으면 0)"
+        },
+        {
+          "flag": "/f",
+          "desc": "결과를 큰따옴표로 감싸서 출력"
+        },
+        {
+          "flag": "/t",
+          "desc": "파일 크기와 수정 날짜·시간도 표시"
+        },
+        {
+          "flag": "$PATH:{{PATTERN}}",
+          "desc": "특정 환경 변수 경로 목록에서 검색"
+        }
+      ],
+      "examples": [
+        {
+          "title": "실행되는 java 위치 확인",
+          "command": "where java"
+        },
+        {
+          "title": "C 드라이브 전체에서 파일 찾기 (크기·날짜 포함)",
+          "command": "where /r C:\\ /t {{FILE_NAME}}"
+        },
+        {
+          "title": "특정 확장자 파일 재귀 검색",
+          "command": "where /r {{DIR}} *.log"
+        }
+      ],
+      "cautions": [
+        "PowerShell 에서 where 는 Where-Object 의 별칭이므로 반드시 where.exe 로 실행하세요."
+      ],
+      "help": "where /?",
+      "keywords": [
+        "명령 위치",
+        "실행 파일 경로",
+        "파일 찾기",
+        "which",
+        "PATH",
+        "where"
+      ],
+      "related": [
+        "get-command",
+        "dir",
+        "get-childitem"
+      ]
+    },
+    {
+      "id": "get-command",
+      "name": "Get-Command",
+      "aliases": [
+        "gcm"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.locate-binary",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "명령의 종류·경로 확인, 사용 가능한 cmdlet 검색",
+      "description": "이름에 해당하는 명령이 cmdlet, 함수, 별칭, 실행 파일 중 무엇인지와 실제 경로를 보여줍니다. 와일드카드나 모듈 이름으로 쓸 수 있는 명령을 찾고, -Syntax 로 사용법을 바로 확인할 수 있습니다.",
+      "syntax": [
+        "Get-Command [-Name] {{NAME}} [-CommandType {{TYPE}}] [-Module {{MODULE}}] [-Syntax]"
+      ],
+      "options": [
+        {
+          "flag": "-Name {{NAME}}",
+          "desc": "명령 이름 (와일드카드 가능, 예: *firewall*)"
+        },
+        {
+          "flag": "-CommandType {{TYPE}}",
+          "desc": "종류 필터 (Cmdlet, Function, Alias, Application)"
+        },
+        {
+          "flag": "-Module {{MODULE}}",
+          "desc": "특정 모듈의 명령만 표시"
+        },
+        {
+          "flag": "-Syntax",
+          "desc": "명령의 매개변수 구문 출력"
+        },
+        {
+          "flag": "-All",
+          "desc": "같은 이름의 모든 후보 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "실행 파일 경로 확인 (which 처럼)",
+          "command": "(Get-Command java).Source"
+        },
+        {
+          "title": "별칭이 실제로 무엇인지 확인",
+          "command": "Get-Command ls, where, sort"
+        },
+        {
+          "title": "방화벽 관련 명령 찾기",
+          "command": "Get-Command *firewall*"
+        },
+        {
+          "title": "cmdlet 사용 구문 확인",
+          "command": "Get-Command Get-ChildItem -Syntax"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Get-Command -Full",
+      "keywords": [
+        "명령 위치",
+        "실행 파일 경로",
+        "명령 찾기",
+        "which",
+        "cmdlet 검색",
+        "gcm"
+      ],
+      "related": [
+        "where",
+        "get-help"
+      ]
+    },
+    {
+      "id": "awk",
+      "name": "awk",
+      "aliases": [
+        "gawk",
+        "mawk"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "필드(열) 단위 추출·조건 필터·집계",
+      "description": "입력을 줄 단위로 읽어 공백(또는 지정 구분자)으로 필드를 나누고, 조건과 동작을 적용하는 텍스트 처리 언어입니다. 특정 열 추출, 조건에 맞는 줄 필터, 합계·개수 집계를 한 줄로 처리할 수 있습니다. $1, $2 는 필드, $0 은 전체 줄, NF 는 필드 수, NR 은 줄 번호입니다.",
+      "syntax": [
+        "awk [-F '{{SEP}}'] '[{{CONDITION}}] { {{ACTION}} }' {{FILE}}",
+        "{{COMMAND}} | awk '{ print $1 }'"
+      ],
+      "options": [
+        {
+          "flag": "-F '{{SEP}}'",
+          "desc": "필드 구분자 지정 (예: -F: , -F',')"
+        },
+        {
+          "flag": "-v {{VAR}}={{VALUE}}",
+          "desc": "awk 변수에 셸 값 전달"
+        },
+        {
+          "flag": "-f {{SCRIPT}}",
+          "desc": "awk 스크립트 파일 실행"
+        },
+        {
+          "flag": "$1 · $NF · $0",
+          "desc": "(스크립트 안) 첫 필드 · 마지막 필드 · 줄 전체"
+        },
+        {
+          "flag": "NR · NF",
+          "desc": "(스크립트 안) 현재 줄 번호 · 현재 줄의 필드 수"
+        },
+        {
+          "flag": "BEGIN{} · END{}",
+          "desc": "(스크립트 안) 입력 처리 전 · 처리 후 실행 블록"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그인 가능한 사용자 목록 (/etc/passwd 1·7번째 필드)",
+          "command": "awk -F: '$7 !~ /nologin|false/ { print $1, $7 }' /etc/passwd"
+        },
+        {
+          "title": "웹 로그 접속 IP 별 요청 수 상위 10개",
+          "command": "awk '{ print $1 }' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head -n 10"
+        },
+        {
+          "title": "HTTP 상태 코드가 5xx 인 요청만",
+          "command": "awk '$9 ~ /^5/' /var/log/nginx/access.log"
+        },
+        {
+          "title": "디스크 사용률 80% 넘는 파일시스템",
+          "command": "df -hP | awk 'NR>1 && $5+0 > 80 { print $6, $5 }'"
+        },
+        {
+          "title": "열 합계 계산",
+          "command": "awk '{ sum += $2 } END { print sum }' {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "스크립트는 작은따옴표로 감싸야 $1 등이 셸 변수로 해석되지 않습니다. 셸 값은 -v 로 넘기세요."
+      ],
+      "platformNotes": {
+        "rhel": "awk 는 GNU awk(gawk) 입니다.",
+        "debian": "Ubuntu·Debian 기본 awk 는 mawk 로, gawk 전용 기능(strftime, gensub, 배열 정렬 등)은 apt install gawk 가 필요합니다."
+      },
+      "help": "man awk",
+      "keywords": [
+        "열 추출",
+        "필드 추출",
+        "텍스트 가공",
+        "집계",
+        "awk",
+        "column",
+        "로그 분석"
+      ],
+      "related": [
+        "sed",
+        "cut",
+        "sort",
+        "uniq",
+        "grep"
+      ]
+    },
+    {
+      "id": "sed",
+      "name": "sed",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "문자열 치환·줄 삭제·특정 줄 출력 (파일 직접 수정 가능)",
+      "description": "입력을 줄 단위로 처리하는 스트림 편집기입니다. 문자열 치환(s), 줄 삭제(d), 특정 범위 출력(p)을 주로 쓰며, -i 옵션으로 설정 파일을 편집기 없이 직접 수정할 수 있어 자동화 스크립트에 많이 사용합니다.",
+      "syntax": [
+        "sed [{{OPTIONS}}] '{{SCRIPT}}' {{FILE}}",
+        "sed -i[.bak] 's/{{OLD}}/{{NEW}}/g' {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "파일을 직접 수정 (-i.bak 은 원본을 .bak 으로 백업)"
+        },
+        {
+          "flag": "-n",
+          "desc": "자동 출력 끄기 (p 명령과 함께 원하는 줄만 출력)"
+        },
+        {
+          "flag": "-E",
+          "desc": "확장 정규식 사용 (-r 과 동일)"
+        },
+        {
+          "flag": "-e '{{SCRIPT}}'",
+          "desc": "여러 편집 명령 지정"
+        },
+        {
+          "flag": "s/{{OLD}}/{{NEW}}/g",
+          "desc": "(스크립트) 치환, g 는 줄 안의 모든 일치 (구분자는 | # 등으로 바꿀 수 있음)"
+        },
+        {
+          "flag": "/{{PATTERN}}/d",
+          "desc": "(스크립트) 패턴이 있는 줄 삭제"
+        },
+        {
+          "flag": "{{N}},{{M}}p",
+          "desc": "(스크립트) N~M 번째 줄 출력 (-n 과 함께)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 값 바꾸기 (백업 남기고 직접 수정)",
+          "command": "sed -i.bak 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config\ndiff /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
+        },
+        {
+          "title": "수정 전 결과 미리 보기 (파일 변경 없음)",
+          "command": "sed 's/{{OLD}}/{{NEW}}/g' {{FILE}} | diff {{FILE}} -"
+        },
+        {
+          "title": "큰 로그의 특정 줄 범위만 출력",
+          "command": "sed -n '1000,1050p' {{FILE}}"
+        },
+        {
+          "title": "경로가 들어간 문자열 치환 (구분자 변경)",
+          "command": "sed -i 's|/old/path|/new/path|g' {{FILE}}"
+        },
+        {
+          "title": "Windows 줄바꿈(CRLF)을 LF 로 변환",
+          "command": "sed -i 's/\\r$//' {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "-i 는 확인 없이 파일을 덮어씁니다. 먼저 -i 없이 결과를 확인하거나 -i.bak 으로 백업을 남기세요.",
+        "-i 로 수정하면 새 파일로 교체되어 심볼릭 링크가 일반 파일로 바뀔 수 있습니다 (--follow-symlinks 로 방지)."
+      ],
+      "help": "man sed",
+      "keywords": [
+        "치환",
+        "바꾸기",
+        "문자열 변경",
+        "줄 삭제",
+        "설정 수정",
+        "sed",
+        "replace"
+      ],
+      "related": [
+        "awk",
+        "grep",
+        "tr",
+        "diff",
+        "vim"
+      ]
+    },
+    {
+      "id": "cut",
+      "name": "cut",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "구분자·문자 위치로 열(필드) 잘라내기",
+      "description": "각 줄에서 구분자로 나눈 특정 필드나 특정 문자 위치만 잘라냅니다. 콜론·쉼표처럼 구분자가 명확한 파일에 간단하고 빠릅니다. 공백이 여러 개 섞인 출력은 awk 가 더 적합합니다.",
+      "syntax": [
+        "cut -d '{{SEP}}' -f {{FIELDS}} {{FILE}}",
+        "cut -c {{RANGE}} {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-d '{{SEP}}'",
+          "desc": "구분자 지정 (한 글자, 기본은 탭)"
+        },
+        {
+          "flag": "-f {{FIELDS}}",
+          "desc": "출력할 필드 (예: 1,3 또는 2-4 또는 3-)"
+        },
+        {
+          "flag": "-c {{RANGE}}",
+          "desc": "문자 위치로 자르기 (예: 1-10)"
+        },
+        {
+          "flag": "-s",
+          "desc": "구분자가 없는 줄은 출력하지 않음"
+        },
+        {
+          "flag": "--complement",
+          "desc": "지정한 필드를 제외한 나머지 출력"
+        },
+        {
+          "flag": "--output-delimiter='{{SEP}}'",
+          "desc": "출력 구분자 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용자 이름과 홈 디렉토리만 출력",
+          "command": "cut -d: -f1,6 /etc/passwd"
+        },
+        {
+          "title": "CSV 2번째 열만 추출",
+          "command": "cut -d',' -f2 {{FILE}}"
+        },
+        {
+          "title": "로그 앞 19자(타임스탬프)만 추출",
+          "command": "cut -c1-19 {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "구분자가 연속된 공백이면 빈 필드로 처리되어 원하는 결과가 안 나옵니다. 이때는 awk '{print $N}' 을 사용하세요."
+      ],
+      "help": "man cut",
+      "keywords": [
+        "열 추출",
+        "필드 자르기",
+        "컬럼",
+        "cut",
+        "column",
+        "CSV"
+      ],
+      "related": [
+        "awk",
+        "sort",
+        "tr"
+      ]
+    },
+    {
+      "id": "sort",
+      "name": "sort",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "줄 정렬 (숫자·크기·버전·특정 열 기준)",
+      "description": "입력 줄을 정렬합니다. 숫자, 사람이 읽는 크기(K/M/G), 버전 번호, 특정 열 기준 정렬을 지원하고 중복 제거도 할 수 있습니다. uniq 앞에서 정렬할 때 반드시 필요합니다.",
+      "syntax": [
+        "sort [{{OPTIONS}}] [{{FILE}}...]"
+      ],
+      "options": [
+        {
+          "flag": "-n",
+          "desc": "숫자 크기로 정렬"
+        },
+        {
+          "flag": "-h",
+          "desc": "사람이 읽는 크기(1K, 2M, 3G) 기준 정렬"
+        },
+        {
+          "flag": "-V",
+          "desc": "버전 번호 순 정렬 (1.2 < 1.10)"
+        },
+        {
+          "flag": "-r",
+          "desc": "역순 정렬"
+        },
+        {
+          "flag": "-k {{N}}[,{{M}}]",
+          "desc": "N 번째(~M 번째) 필드 기준 정렬"
+        },
+        {
+          "flag": "-t '{{SEP}}'",
+          "desc": "필드 구분자 지정"
+        },
+        {
+          "flag": "-u",
+          "desc": "중복 줄 제거"
+        },
+        {
+          "flag": "-f",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "-o {{FILE}}",
+          "desc": "결과를 파일로 저장 (입력 파일과 같아도 안전)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디렉토리 용량 큰 순 정렬",
+          "command": "du -sh {{DIR}}/* | sort -rh | head -n 10"
+        },
+        {
+          "title": "UID 숫자 순으로 사용자 정렬",
+          "command": "sort -t: -k3 -n /etc/passwd"
+        },
+        {
+          "title": "메모리 사용량 상위 프로세스 (6번째 열 RSS)",
+          "command": "ps aux | sort -k6 -rn | head -n 10"
+        },
+        {
+          "title": "파일을 정렬·중복 제거해 덮어쓰기",
+          "command": "sort -u {{FILE}} -o {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "sort {{FILE}} > {{FILE}} 처럼 같은 파일로 리다이렉트하면 내용이 비워집니다. -o 를 사용하세요.",
+        "로케일에 따라 정렬 순서가 달라질 수 있습니다. 스크립트에서는 LC_ALL=C sort 로 고정하면 빠르고 일관됩니다."
+      ],
+      "help": "man sort",
+      "keywords": [
+        "정렬",
+        "순서",
+        "크기순",
+        "숫자 정렬",
+        "sort",
+        "중복 제거"
+      ],
+      "related": [
+        "uniq",
+        "head",
+        "awk",
+        "du"
+      ]
+    },
+    {
+      "id": "uniq",
+      "name": "uniq",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "연속된 중복 줄 제거·개수 집계",
+      "description": "연속으로 반복되는 같은 줄을 하나로 합칩니다. -c 로 각 줄의 반복 횟수를 세어 IP별 접속 수, 오류 유형별 건수 같은 집계를 만들 때 sort 와 함께 씁니다.",
+      "syntax": [
+        "sort {{FILE}} | uniq [{{OPTIONS}}]"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "각 줄 앞에 반복 횟수 표시"
+        },
+        {
+          "flag": "-d",
+          "desc": "중복된 줄만 한 번씩 출력"
+        },
+        {
+          "flag": "-u",
+          "desc": "한 번만 나온 줄만 출력"
+        },
+        {
+          "flag": "-i",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "-f {{N}}",
+          "desc": "앞의 N개 필드는 무시하고 비교"
+        }
+      ],
+      "examples": [
+        {
+          "title": "접속 IP 별 요청 수 집계",
+          "command": "awk '{ print $1 }' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head"
+        },
+        {
+          "title": "인증 실패 IP 집계 (SSH 무차별 대입 확인)",
+          "command": "grep 'Failed password' /var/log/secure | awk '{ print $(NF-3) }' | sort | uniq -c | sort -rn",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "인증 실패 IP 집계 (SSH 무차별 대입 확인)",
+          "command": "grep 'Failed password' /var/log/auth.log | awk '{ print $(NF-3) }' | sort | uniq -c | sort -rn",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "중복된 줄만 찾기",
+          "command": "sort {{FILE}} | uniq -d"
+        }
+      ],
+      "cautions": [
+        "인접한 줄만 비교하므로 반드시 sort 를 먼저 거쳐야 전체 중복이 제거됩니다."
+      ],
+      "help": "man uniq",
+      "keywords": [
+        "중복 제거",
+        "개수 집계",
+        "카운트",
+        "uniq",
+        "count",
+        "통계"
+      ],
+      "related": [
+        "sort",
+        "awk",
+        "wc"
+      ]
+    },
+    {
+      "id": "tr",
+      "name": "tr",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "문자 단위 변환·삭제·압축 (대소문자, 구분자)",
+      "description": "표준 입력의 문자를 다른 문자로 바꾸거나 삭제하거나 반복을 하나로 줄입니다. 대소문자 변환, 구분자 변경, CR 문자 제거처럼 문자 단위 작업에 씁니다. 파일 인자를 받지 않고 입력 리다이렉트나 파이프로만 동작합니다.",
+      "syntax": [
+        "tr [{{OPTIONS}}] '{{SET1}}' ['{{SET2}}'] < {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-d '{{SET}}'",
+          "desc": "지정한 문자 삭제"
+        },
+        {
+          "flag": "-s '{{SET}}'",
+          "desc": "연속으로 반복되는 문자를 하나로 압축"
+        },
+        {
+          "flag": "-c",
+          "desc": "SET1 의 여집합(지정하지 않은 문자) 사용"
+        },
+        {
+          "flag": "'[:lower:]' '[:upper:]'",
+          "desc": "문자 클래스 (소문자, 대문자, [:digit:], [:space:] 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "소문자를 대문자로",
+          "command": "echo '{{TEXT}}' | tr '[:lower:]' '[:upper:]'"
+        },
+        {
+          "title": "Windows 줄바꿈의 CR 문자 제거",
+          "command": "tr -d '\\r' < {{FILE}} > {{FILE}}.unix"
+        },
+        {
+          "title": "PATH 를 한 줄에 하나씩 보기",
+          "command": "echo \"$PATH\" | tr ':' '\\n'"
+        },
+        {
+          "title": "연속 공백을 하나로 줄인 뒤 cut 으로 열 추출",
+          "command": "{{COMMAND}} | tr -s ' ' | cut -d' ' -f{{N}}"
+        }
+      ],
+      "cautions": [
+        "tr 은 문자 단위 변환입니다. 단어·문자열 치환은 sed 를 사용하세요."
+      ],
+      "help": "man tr",
+      "keywords": [
+        "문자 변환",
+        "대소문자 변환",
+        "문자 삭제",
+        "줄바꿈 변환",
+        "tr",
+        "translate"
+      ],
+      "related": [
+        "sed",
+        "cut",
+        "awk"
+      ]
+    },
+    {
+      "id": "win-sort",
+      "name": "sort",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 텍스트 줄 정렬",
+      "description": "파일이나 명령 출력의 줄을 알파벳(문자) 순으로 정렬합니다. 숫자 크기 정렬이나 필드 구분자 지정은 지원하지 않고, 특정 문자 위치부터 비교하는 기능만 있습니다.",
+      "syntax": [
+        "sort [/r] [/+{{N}}] [/o {{OUTPUT_FILE}}] [{{FILE}}]",
+        "{{COMMAND}} | sort"
+      ],
+      "options": [
+        {
+          "flag": "/r",
+          "desc": "역순 정렬"
+        },
+        {
+          "flag": "/+{{N}}",
+          "desc": "각 줄의 N 번째 문자부터 비교"
+        },
+        {
+          "flag": "/o {{OUTPUT_FILE}}",
+          "desc": "결과를 파일로 저장"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 정렬 후 저장",
+          "command": "sort {{FILE}} /o {{OUTPUT_FILE}}"
+        },
+        {
+          "title": "명령 출력 역순 정렬",
+          "command": "dir /b | sort /r"
+        }
+      ],
+      "cautions": [
+        "숫자도 문자로 비교하므로 10 이 9 보다 앞에 옵니다. 숫자 정렬은 PowerShell 의 Sort-Object 를 사용하세요.",
+        "PowerShell 에서 sort 는 Sort-Object 의 별칭입니다. CMD 버전이 필요하면 sort.exe 로 실행하세요."
+      ],
+      "help": "sort /?",
+      "keywords": [
+        "정렬",
+        "순서",
+        "sort"
+      ],
+      "related": [
+        "sort-object",
+        "findstr"
+      ]
+    },
+    {
+      "id": "sort-object",
+      "name": "Sort-Object",
+      "aliases": [
+        "sort"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "객체를 속성 기준으로 정렬·중복 제거",
+      "description": "파이프로 받은 객체를 하나 이상의 속성 기준으로 정렬합니다. 숫자·날짜 형식을 그대로 비교하므로 크기 순, 시간 순 정렬이 정확하며, -Unique 로 중복을 제거할 수 있습니다.",
+      "syntax": [
+        "{{COMMAND}} | Sort-Object [-Property] {{PROPERTY}} [-Descending] [-Unique]"
+      ],
+      "options": [
+        {
+          "flag": "-Property {{PROPERTY}}",
+          "desc": "정렬 기준 속성 (쉼표로 여러 개)"
+        },
+        {
+          "flag": "-Descending",
+          "desc": "내림차순 정렬"
+        },
+        {
+          "flag": "-Unique",
+          "desc": "중복 제거"
+        },
+        {
+          "flag": "-CaseSensitive",
+          "desc": "대소문자 구분"
+        },
+        {
+          "flag": "-Top {{N}} / -Bottom {{N}}",
+          "desc": "상위 / 하위 N개만 (PowerShell 7 이상)"
+        },
+        {
+          "flag": "@{Expression={{EXPR}}; Descending=$true}",
+          "desc": "계산식·속성별 정렬 방향 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "메모리 사용량 상위 10개 프로세스",
+          "command": "Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 10 Name, Id, @{n='MB';e={[int]($_.WorkingSet64/1MB)}}"
+        },
+        {
+          "title": "최근 수정 파일 순 정렬",
+          "command": "Get-ChildItem {{DIR}} -File | Sort-Object LastWriteTime -Descending"
+        },
+        {
+          "title": "텍스트 줄 정렬·중복 제거",
+          "command": "Get-Content {{FILE}} | Sort-Object -Unique"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Sort-Object -Full",
+      "keywords": [
+        "정렬",
+        "크기순",
+        "시간순",
+        "중복 제거",
+        "sort",
+        "order by"
+      ],
+      "related": [
+        "select-object",
+        "where-object",
+        "measure-object"
+      ]
+    },
+    {
+      "id": "select-object",
+      "name": "Select-Object",
+      "aliases": [
+        "select"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "원하는 속성(열)만 선택, 앞·뒤 N개 추출",
+      "description": "객체에서 원하는 속성만 골라 출력하거나(awk·cut 역할), 처음·마지막 N개만 가져옵니다(head·tail 역할). 계산 속성을 추가하거나 -ExpandProperty 로 값만 꺼낼 수도 있습니다.",
+      "syntax": [
+        "{{COMMAND}} | Select-Object [-Property] {{PROPERTY}}... [-First {{N}}] [-Last {{N}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Property {{PROPERTY}}",
+          "desc": "출력할 속성 (쉼표로 여러 개, * 는 전체)"
+        },
+        {
+          "flag": "-First {{N}}",
+          "desc": "처음 N개"
+        },
+        {
+          "flag": "-Last {{N}}",
+          "desc": "마지막 N개"
+        },
+        {
+          "flag": "-Skip {{N}}",
+          "desc": "앞의 N개 건너뛰기"
+        },
+        {
+          "flag": "-Unique",
+          "desc": "중복 제거"
+        },
+        {
+          "flag": "-ExpandProperty {{PROPERTY}}",
+          "desc": "속성 값만 꺼내기 (문자열 목록 등)"
+        },
+        {
+          "flag": "-ExcludeProperty {{PROPERTY}}",
+          "desc": "제외할 속성"
+        },
+        {
+          "flag": "@{Name='{{NAME}}'; Expression={ {{EXPR}} }}",
+          "desc": "계산 속성 추가 (n=, e= 로 줄여 쓸 수 있음)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서비스 이름과 상태만 보기",
+          "command": "Get-Service | Select-Object Name, Status, StartType"
+        },
+        {
+          "title": "객체의 모든 속성 확인",
+          "command": "Get-Process -Name {{PROCESS_NAME}} | Select-Object *"
+        },
+        {
+          "title": "이름 값만 문자열로 꺼내기",
+          "command": "Get-ChildItem {{DIR}} | Select-Object -ExpandProperty Name"
+        },
+        {
+          "title": "큰 파일 상위 5개, 크기를 MB 로 표시",
+          "command": "Get-ChildItem {{DIR}} -File | Sort-Object Length -Descending | Select-Object -First 5 Name, @{n='MB';e={[math]::Round($_.Length/1MB,2)}}"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Select-Object -Full",
+      "keywords": [
+        "속성 선택",
+        "열 선택",
+        "상위 N개",
+        "head",
+        "tail",
+        "select",
+        "column"
+      ],
+      "related": [
+        "sort-object",
+        "where-object"
+      ]
+    },
+    {
+      "id": "where-object",
+      "name": "Where-Object",
+      "aliases": [
+        "where",
+        "?"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.transform",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "조건에 맞는 객체만 걸러내기 (필터)",
+      "description": "파이프로 받은 객체 중 조건을 만족하는 것만 통과시킵니다. 속성 값 비교(-eq, -gt, -like, -match 등)로 중지된 서비스, 큰 파일, 특정 상태의 연결 등을 걸러낼 때 사용합니다. $_ 는 현재 객체입니다.",
+      "syntax": [
+        "{{COMMAND}} | Where-Object {{PROPERTY}} -{{OPERATOR}} {{VALUE}}",
+        "{{COMMAND}} | Where-Object { $_.{{PROPERTY}} -{{OPERATOR}} {{VALUE}} }"
+      ],
+      "options": [
+        {
+          "flag": "-eq / -ne",
+          "desc": "같음 / 다름 (문자열은 대소문자 무시)"
+        },
+        {
+          "flag": "-gt / -ge / -lt / -le",
+          "desc": "초과 / 이상 / 미만 / 이하"
+        },
+        {
+          "flag": "-like / -notlike",
+          "desc": "와일드카드(*, ?) 일치"
+        },
+        {
+          "flag": "-match / -notmatch",
+          "desc": "정규식 일치"
+        },
+        {
+          "flag": "-in / -contains",
+          "desc": "목록 포함 여부"
+        },
+        {
+          "flag": "-and / -or",
+          "desc": "(스크립트 블록 안) 여러 조건 결합"
+        }
+      ],
+      "examples": [
+        {
+          "title": "자동 시작인데 중지된 서비스 찾기",
+          "command": "Get-Service | Where-Object { $_.StartType -eq 'Automatic' -and $_.Status -ne 'Running' }"
+        },
+        {
+          "title": "1GB 넘는 파일 찾기",
+          "command": "Get-ChildItem {{DIR}} -Recurse -File -ErrorAction SilentlyContinue | Where-Object Length -gt 1GB"
+        },
+        {
+          "title": "특정 포트로 연결된 TCP 세션",
+          "command": "Get-NetTCPConnection | Where-Object RemotePort -eq {{PORT}}"
+        }
+      ],
+      "cautions": [
+        "가능하면 Get-ChildItem -Filter, Get-WinEvent -FilterHashtable 처럼 원본 명령의 필터를 먼저 쓰는 것이 훨씬 빠릅니다."
+      ],
+      "help": "Get-Help Where-Object -Full",
+      "keywords": [
+        "필터",
+        "조건 검색",
+        "걸러내기",
+        "where",
+        "filter",
+        "grep"
+      ],
+      "related": [
+        "select-object",
+        "sort-object",
+        "foreach-object",
+        "select-string"
+      ]
+    },
+    {
+      "id": "xargs",
+      "name": "xargs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.pipe",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "입력 목록을 다른 명령의 인자로 넘겨 일괄 실행",
+      "description": "표준 입력으로 받은 목록(파일 이름, 호스트 등)을 다른 명령의 인자로 붙여 실행합니다. find·grep 결과에 일괄 작업을 하거나 -P 로 병렬 실행할 때 사용합니다.",
+      "syntax": [
+        "{{COMMAND}} | xargs [{{OPTIONS}}] {{TARGET_COMMAND}}"
+      ],
+      "options": [
+        {
+          "flag": "-0",
+          "desc": "널 문자로 구분된 입력 처리 (find -print0 과 함께, 공백 파일명 안전)"
+        },
+        {
+          "flag": "-I {}",
+          "desc": "입력 항목을 {} 위치에 넣어 항목마다 실행"
+        },
+        {
+          "flag": "-n {{N}}",
+          "desc": "한 번에 넘길 인자 수"
+        },
+        {
+          "flag": "-P {{N}}",
+          "desc": "최대 N개 병렬 실행"
+        },
+        {
+          "flag": "-r",
+          "desc": "입력이 비어 있으면 명령을 실행하지 않음"
+        },
+        {
+          "flag": "-t",
+          "desc": "실행하는 명령을 화면에 출력"
+        },
+        {
+          "flag": "-p",
+          "desc": "실행 전마다 확인"
+        },
+        {
+          "flag": "-d '{{SEP}}'",
+          "desc": "입력 구분자 지정 (예: -d '\\n')"
+        }
+      ],
+      "examples": [
+        {
+          "title": "find 결과 파일 안에서 문자열 검색",
+          "command": "find {{DIR}} -name '*.conf' -print0 | xargs -0 grep -l '{{PATTERN}}'"
+        },
+        {
+          "title": "여러 서버에 ping 확인 (병렬)",
+          "command": "cat hosts.txt | xargs -P 10 -I {} ping -c 1 -W 1 {}"
+        },
+        {
+          "title": "오래된 로그를 압축 (입력 없으면 실행 안 함)",
+          "command": "find /var/log/{{APP}} -name '*.log' -mtime +7 -print0 | xargs -0 -r gzip"
+        },
+        {
+          "title": "실행할 명령을 먼저 확인",
+          "command": "find {{DIR}} -name '*.tmp' | xargs -t -p rm"
+        }
+      ],
+      "cautions": [
+        "-0 없이 쓰면 공백·따옴표가 든 파일명이 잘못 쪼개져 엉뚱한 파일이 처리될 수 있습니다. find -print0 | xargs -0 조합을 쓰세요.",
+        "입력이 비었을 때도 명령이 한 번 실행되므로(GNU 기본), 삭제 등에는 -r 을 붙이세요."
+      ],
+      "help": "man xargs",
+      "keywords": [
+        "일괄 실행",
+        "인자 전달",
+        "병렬 실행",
+        "파이프",
+        "xargs",
+        "batch"
+      ],
+      "related": [
+        "find",
+        "grep",
+        "tee"
+      ]
+    },
+    {
+      "id": "tee",
+      "name": "tee",
+      "kind": "command",
+      "shell": "sh",
+      "category": "text",
+      "task": "text.pipe",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "출력을 화면과 파일에 동시에 기록",
+      "description": "표준 입력을 화면(표준 출력)으로 내보내면서 동시에 파일에 저장합니다. 작업 결과를 보면서 로그로 남기거나, sudo 와 함께 root 권한 파일에 내용을 쓸 때 사용합니다.",
+      "syntax": [
+        "{{COMMAND}} | tee [-a] {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "덮어쓰지 않고 파일 끝에 추가"
+        },
+        {
+          "flag": "-i",
+          "desc": "인터럽트(Ctrl+C) 신호 무시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "작업 결과를 보면서 로그 파일로 저장",
+          "command": "{{COMMAND}} 2>&1 | tee /tmp/{{TASK}}_$(date +%Y%m%d_%H%M).log"
+        },
+        {
+          "title": "root 권한 파일에 한 줄 추가 (sudo + 리다이렉트 대신)",
+          "command": "echo '{{IP}} {{HOSTNAME}}' | sudo tee -a /etc/hosts"
+        },
+        {
+          "title": "root 권한으로 설정 파일 작성",
+          "command": "sudo tee /etc/sysctl.d/99-custom.conf > /dev/null <<'EOF'\nnet.ipv4.ip_forward = 1\nEOF"
+        }
+      ],
+      "cautions": [
+        "-a 없이 쓰면 대상 파일을 덮어씁니다. /etc/hosts 등에 추가할 때는 반드시 -a 를 붙이세요.",
+        "sudo echo ... > {{FILE}} 은 리다이렉트가 일반 사용자 권한으로 처리되어 실패합니다. sudo tee 를 사용하세요."
+      ],
+      "help": "man tee",
+      "keywords": [
+        "동시 저장",
+        "출력 저장",
+        "로그 남기기",
+        "sudo 쓰기",
+        "tee",
+        "pipe"
+      ],
+      "related": [
+        "xargs",
+        "sudo"
+      ]
+    },
+    {
+      "id": "foreach-object",
+      "name": "ForEach-Object",
+      "aliases": [
+        "%",
+        "foreach"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.pipe",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "파이프로 받은 각 항목마다 작업 실행",
+      "description": "파이프로 들어온 객체 하나하나에 대해 스크립트 블록을 실행합니다($_ 가 현재 항목). 여러 서버·파일에 같은 작업을 반복하거나, PowerShell 7 의 -Parallel 로 병렬 처리할 때 사용합니다.",
+      "syntax": [
+        "{{COMMAND}} | ForEach-Object { {{SCRIPT}} }",
+        "{{COMMAND}} | ForEach-Object -Parallel { {{SCRIPT}} } -ThrottleLimit {{N}}"
+      ],
+      "options": [
+        {
+          "flag": "-Process { }",
+          "desc": "각 항목마다 실행할 스크립트 블록 (기본 위치 매개변수)"
+        },
+        {
+          "flag": "-Begin { } / -End { }",
+          "desc": "처리 시작 전 / 끝난 후 한 번 실행"
+        },
+        {
+          "flag": "-MemberName {{NAME}}",
+          "desc": "각 항목의 속성 값 꺼내기 또는 메서드 호출"
+        },
+        {
+          "flag": "-Parallel { }",
+          "desc": "항목을 병렬로 처리 (PowerShell 7 이상, 변수는 $using: 으로 전달)"
+        },
+        {
+          "flag": "-ThrottleLimit {{N}}",
+          "desc": "-Parallel 동시 실행 수 (기본 5)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서버 목록에 포트 연결 확인",
+          "command": "Get-Content servers.txt | ForEach-Object { Test-NetConnection $_ -Port {{PORT}} -InformationLevel Quiet }"
+        },
+        {
+          "title": "파일마다 이름에 날짜 붙이기",
+          "command": "Get-ChildItem {{DIR}} -Filter *.log | ForEach-Object { Rename-Item $_.FullName -NewName (\"{0}_{1}\" -f (Get-Date -Format yyyyMMdd), $_.Name) }"
+        },
+        {
+          "title": "1부터 5까지 반복",
+          "command": "1..5 | ForEach-Object { \"Line $_\" }"
+        }
+      ],
+      "cautions": [
+        "-Parallel 블록 안에서는 바깥 변수를 바로 쓸 수 없고 $using:{{VAR}} 로 참조해야 합니다."
+      ],
+      "help": "Get-Help ForEach-Object -Full",
+      "keywords": [
+        "반복",
+        "일괄 실행",
+        "각 항목",
+        "병렬 처리",
+        "foreach",
+        "loop",
+        "xargs"
+      ],
+      "related": [
+        "where-object",
+        "select-object",
+        "tee-object"
+      ]
+    },
+    {
+      "id": "tee-object",
+      "name": "Tee-Object",
+      "aliases": [
+        "tee"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "text",
+      "task": "text.pipe",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "파이프 출력을 파일·변수에 저장하면서 계속 전달",
+      "description": "파이프로 받은 출력을 파일이나 변수에 저장하는 동시에 다음 파이프나 화면으로 그대로 넘깁니다. 작업 결과를 보면서 기록으로 남길 때 사용합니다.",
+      "syntax": [
+        "{{COMMAND}} | Tee-Object -FilePath {{FILE}} [-Append]",
+        "{{COMMAND}} | Tee-Object -Variable {{VAR_NAME}}"
+      ],
+      "options": [
+        {
+          "flag": "-FilePath {{FILE}}",
+          "desc": "저장할 파일 경로"
+        },
+        {
+          "flag": "-Append",
+          "desc": "파일을 덮어쓰지 않고 끝에 추가"
+        },
+        {
+          "flag": "-Variable {{VAR_NAME}}",
+          "desc": "변수에 저장 ($ 없이 이름만)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서비스 상태를 보면서 파일로 저장",
+          "command": "Get-Service | Tee-Object -FilePath C:\\Temp\\services.txt"
+        },
+        {
+          "title": "결과를 변수에 저장하고 계속 필터링",
+          "command": "Get-Process | Tee-Object -Variable procs | Where-Object CPU -gt 100"
+        },
+        {
+          "title": "점검 결과를 로그에 계속 추가",
+          "command": "Test-NetConnection {{HOST}} -Port {{PORT}} | Tee-Object -FilePath C:\\Temp\\check.log -Append"
+        }
+      ],
+      "cautions": [
+        "Windows PowerShell 5.1 의 Tee-Object 는 파일을 UTF-16(Unicode)으로 저장합니다. 다른 도구에서 읽을 파일은 Out-File -Encoding UTF8 등을 고려하세요."
+      ],
+      "help": "Get-Help Tee-Object -Full",
+      "keywords": [
+        "동시 저장",
+        "출력 저장",
+        "로그 남기기",
+        "tee",
+        "pipe"
+      ],
+      "related": [
+        "foreach-object",
+        "get-content"
+      ]
+    }
+  ]
+}

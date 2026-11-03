@@ -1,0 +1,891 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "archive",
+  "commands": [
+    {
+      "id": "tar",
+      "name": "tar",
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.tar-gz",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "파일·디렉토리를 하나로 묶고 압축·해제 (tar.gz 등)",
+      "description": "여러 파일과 디렉토리를 하나의 아카이브 파일로 묶거나 풉니다. -z(gzip), -j(bzip2), -J(xz) 옵션으로 압축을 함께 처리하며, 권한·소유자·링크 정보를 보존해 백업과 배포에 많이 쓰입니다.",
+      "syntax": [
+        "tar -czvf {{ARCHIVE}}.tar.gz {{DIR}}",
+        "tar -xzvf {{ARCHIVE}}.tar.gz [-C {{DEST_DIR}}]",
+        "tar -tzvf {{ARCHIVE}}.tar.gz"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "아카이브 생성"
+        },
+        {
+          "flag": "-x",
+          "desc": "아카이브 풀기"
+        },
+        {
+          "flag": "-t",
+          "desc": "아카이브 내용 목록 보기"
+        },
+        {
+          "flag": "-f {{ARCHIVE}}",
+          "desc": "아카이브 파일 이름 (옵션 묶음의 마지막에 위치)"
+        },
+        {
+          "flag": "-v",
+          "desc": "처리 중인 파일 목록 출력"
+        },
+        {
+          "flag": "-z / -j / -J",
+          "desc": "gzip / bzip2 / xz 압축 (풀 때는 GNU tar 가 자동 인식하므로 생략 가능)"
+        },
+        {
+          "flag": "-C {{DIR}}",
+          "desc": "지정한 디렉토리로 이동 후 작업 (풀 위치 지정)"
+        },
+        {
+          "flag": "-p",
+          "desc": "권한 보존 (root 로 풀 때는 기본)"
+        },
+        {
+          "flag": "--exclude={{PATTERN}}",
+          "desc": "제외할 파일·디렉토리 패턴"
+        },
+        {
+          "flag": "-r",
+          "desc": "압축하지 않은 tar 에 파일 추가"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디렉토리를 날짜 붙여 tar.gz 로 압축",
+          "command": "tar -czvf backup_$(date +%Y%m%d).tar.gz {{DIR}}"
+        },
+        {
+          "title": "지정 위치에 풀기",
+          "command": "tar -xzvf {{ARCHIVE}}.tar.gz -C {{DEST_DIR}}"
+        },
+        {
+          "title": "풀기 전에 내용 확인",
+          "command": "tar -tzvf {{ARCHIVE}}.tar.gz | head"
+        },
+        {
+          "title": "로그·캐시 제외하고 압축",
+          "command": "tar -czvf app.tar.gz --exclude='*.log' --exclude='{{DIR}}/cache' {{DIR}}",
+          "note": "--exclude 는 대상 경로보다 앞에 두는 것이 안전"
+        },
+        {
+          "title": "아카이브에서 특정 파일만 풀기",
+          "command": "tar -xzvf {{ARCHIVE}}.tar.gz {{DIR}}/conf/app.conf"
+        }
+      ],
+      "cautions": [
+        "풀 때 같은 이름의 파일은 확인 없이 덮어씁니다. 먼저 -t 로 내용을 확인하고 -C 로 위치를 지정하세요.",
+        "절대 경로로 묶으면 기본적으로 앞의 / 가 제거된 상대 경로로 저장됩니다 (Removing leading '/' 메시지)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "tar",
+          "preinstalled": false,
+          "note": "minimal 설치에는 빠져 있는 경우가 있음: dnf install tar"
+        },
+        "debian": {
+          "package": "tar",
+          "preinstalled": true
+        }
+      },
+      "help": "man tar, tar --help",
+      "keywords": [
+        "압축",
+        "압축 해제",
+        "묶기",
+        "아카이브",
+        "백업",
+        "tar",
+        "tar.gz",
+        "tgz",
+        "tarball"
+      ],
+      "related": [
+        "gzip",
+        "xz",
+        "bzip2",
+        "zip",
+        "rsync"
+      ]
+    },
+    {
+      "id": "gzip",
+      "name": "gzip",
+      "aliases": [
+        "gunzip",
+        "zcat"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.tar-gz",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "단일 파일 gzip 압축·해제 (gunzip, zcat 포함)",
+      "description": "파일 하나를 .gz 로 압축하거나 풉니다. 기본 동작은 원본 파일을 압축 파일로 '바꾸는' 것이라 원본이 사라집니다. gunzip 은 gzip -d 와 같고, zcat 은 압축을 풀지 않고 내용을 화면에 출력합니다. 디렉토리를 묶으려면 tar 와 함께 사용합니다.",
+      "syntax": [
+        "gzip [-k] [-9] {{FILE}}",
+        "gunzip {{FILE}}.gz",
+        "zcat {{FILE}}.gz"
+      ],
+      "options": [
+        {
+          "flag": "-d",
+          "desc": "압축 해제 (gunzip 과 동일)"
+        },
+        {
+          "flag": "-k",
+          "desc": "원본 파일 유지"
+        },
+        {
+          "flag": "-c",
+          "desc": "결과를 표준출력으로 (원본 유지, 리다이렉션과 함께)"
+        },
+        {
+          "flag": "-1 ~ -9",
+          "desc": "압축 수준 (1 빠름 ~ 9 최고 압축, 기본 6)"
+        },
+        {
+          "flag": "-r",
+          "desc": "디렉토리 안 파일들을 각각 재귀 압축"
+        },
+        {
+          "flag": "-l",
+          "desc": "압축 전후 크기·압축률 확인"
+        },
+        {
+          "flag": "-t",
+          "desc": "압축 파일 무결성 검사"
+        },
+        {
+          "flag": "-v",
+          "desc": "압축률 등 상세 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그 파일 압축 (원본 유지)",
+          "command": "gzip -k {{FILE}}"
+        },
+        {
+          "title": "압축 해제",
+          "command": "gunzip {{FILE}}.gz"
+        },
+        {
+          "title": "압축된 로그를 풀지 않고 검색",
+          "command": "zcat /var/log/messages-*.gz | grep -i error",
+          "note": "zgrep, zless 도 같은 용도로 사용 가능"
+        },
+        {
+          "title": "압축률 확인",
+          "command": "gzip -l {{FILE}}.gz"
+        }
+      ],
+      "cautions": [
+        "-k 없이 실행하면 원본 파일이 삭제되고 .gz 파일만 남습니다.",
+        "이미 같은 이름의 .gz 파일이 있으면 덮어쓸지 묻습니다 (-f 는 묻지 않고 덮어씀)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "gzip",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "gzip",
+          "preinstalled": true
+        }
+      },
+      "help": "man gzip",
+      "keywords": [
+        "압축",
+        "압축 해제",
+        "gz 풀기",
+        "로그 압축",
+        "gzip",
+        "gunzip",
+        "zcat"
+      ],
+      "related": [
+        "tar",
+        "xz",
+        "bzip2",
+        "zip"
+      ]
+    },
+    {
+      "id": "win-tar",
+      "name": "tar",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "archive",
+      "task": "archive.tar-gz",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "Windows 내장 tar(bsdtar)로 tar.gz·zip 묶기·풀기",
+      "description": "Windows 10 1803 / Server 2019 이후 기본 포함된 bsdtar 기반 tar.exe 입니다. Linux 에서 받은 tar.gz 를 별도 프로그램 없이 풀 수 있고, -a 옵션으로 확장자에 맞춰 zip 도 만들 수 있습니다.",
+      "syntax": [
+        "tar -czf {{ARCHIVE}}.tar.gz {{DIR}}",
+        "tar -xf {{ARCHIVE}}.tar.gz [-C {{DEST_DIR}}]"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "아카이브 생성"
+        },
+        {
+          "flag": "-x",
+          "desc": "아카이브 풀기 (gz·bz2·xz·zip 형식 자동 인식)"
+        },
+        {
+          "flag": "-t",
+          "desc": "내용 목록 보기"
+        },
+        {
+          "flag": "-f {{ARCHIVE}}",
+          "desc": "아카이브 파일 이름"
+        },
+        {
+          "flag": "-z",
+          "desc": "gzip 압축으로 생성"
+        },
+        {
+          "flag": "-a",
+          "desc": "출력 파일 확장자(.zip, .tar.gz 등)로 형식 자동 결정"
+        },
+        {
+          "flag": "-C {{DIR}}",
+          "desc": "풀 위치(작업 디렉토리) 지정"
+        },
+        {
+          "flag": "-v",
+          "desc": "처리 파일 목록 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Linux 에서 받은 tar.gz 풀기",
+          "command": "tar -xf {{ARCHIVE}}.tar.gz -C C:\\temp"
+        },
+        {
+          "title": "폴더를 tar.gz 로 묶기",
+          "command": "tar -czf logs.tar.gz C:\\logs"
+        },
+        {
+          "title": "폴더를 zip 으로 묶기",
+          "command": "tar -a -cf logs.zip C:\\logs"
+        }
+      ],
+      "cautions": [
+        "PowerShell 에서도 tar 로 실행되지만, 다른 tar(Git for Windows 등)가 PATH 앞에 있으면 그쪽이 실행될 수 있습니다. 확실히 하려면 C:\\Windows\\System32\\tar.exe 를 쓰세요.",
+        "풀 때 같은 이름 파일을 덮어씁니다."
+      ],
+      "install": {
+        "windows": {
+          "package": "tar.exe (기본 포함)",
+          "preinstalled": true,
+          "note": "Windows 10 1803+, Server 2019+"
+        }
+      },
+      "help": "tar --help",
+      "keywords": [
+        "압축",
+        "압축 해제",
+        "tar.gz 풀기",
+        "윈도우 tar",
+        "bsdtar",
+        "tar",
+        "zip 만들기"
+      ],
+      "related": [
+        "compress-archive",
+        "expand-archive"
+      ]
+    },
+    {
+      "id": "zip",
+      "name": "zip",
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.zip",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일·디렉토리를 zip 으로 압축",
+      "description": "Windows 와 호환되는 .zip 아카이브를 만듭니다. 고객·Windows 사용자에게 로그나 설정 파일을 전달할 때 유용하며, 암호 설정·분할 압축·제외 패턴을 지원합니다.",
+      "syntax": [
+        "zip -r {{ARCHIVE}}.zip {{DIR}}",
+        "zip {{ARCHIVE}}.zip {{FILE}} {{FILE2}}"
+      ],
+      "options": [
+        {
+          "flag": "-r",
+          "desc": "디렉토리 재귀 압축"
+        },
+        {
+          "flag": "-q",
+          "desc": "출력 없이 조용히 실행"
+        },
+        {
+          "flag": "-e",
+          "desc": "암호 설정 (입력 프롬프트)"
+        },
+        {
+          "flag": "-x {{PATTERN}}",
+          "desc": "제외할 파일 패턴"
+        },
+        {
+          "flag": "-j",
+          "desc": "경로 없이 파일 이름만 저장"
+        },
+        {
+          "flag": "-u",
+          "desc": "변경되거나 새로 생긴 파일만 기존 zip 에 갱신"
+        },
+        {
+          "flag": "-s {{SIZE}}",
+          "desc": "분할 압축 (예: -s 100m)"
+        },
+        {
+          "flag": "-0 ~ -9",
+          "desc": "압축 수준 (0 무압축 ~ 9 최고)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디렉토리를 zip 으로 압축",
+          "command": "zip -r {{ARCHIVE}}.zip {{DIR}}"
+        },
+        {
+          "title": "로그 제외하고 압축",
+          "command": "zip -r {{ARCHIVE}}.zip {{DIR}} -x '*.log'"
+        },
+        {
+          "title": "암호를 걸어 압축",
+          "command": "zip -er secret.zip {{DIR}}"
+        },
+        {
+          "title": "100MB 단위 분할 압축",
+          "command": "zip -r -s 100m {{ARCHIVE}}.zip {{DIR}}"
+        }
+      ],
+      "cautions": [
+        "zip 기본 암호화(ZipCrypto)는 보안 강도가 약합니다. 민감 데이터는 별도 암호화를 고려하세요.",
+        "Linux 권한·소유자 정보는 완전히 보존되지 않으므로 서버 백업에는 tar 가 적합합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "zip",
+          "preinstalled": false,
+          "note": "dnf install zip"
+        },
+        "debian": {
+          "package": "zip",
+          "preinstalled": false,
+          "note": "apt install zip (이미지에 따라 포함된 경우도 있음)"
+        }
+      },
+      "help": "man zip",
+      "keywords": [
+        "압축",
+        "zip 압축",
+        "zip 만들기",
+        "암호 압축",
+        "분할 압축",
+        "zip"
+      ],
+      "related": [
+        "unzip",
+        "tar"
+      ]
+    },
+    {
+      "id": "unzip",
+      "name": "unzip",
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.zip",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "zip 압축 해제·내용 확인",
+      "description": "zip 파일의 내용을 확인하거나 원하는 위치에 풉니다. 덮어쓰기 동작을 옵션으로 제어할 수 있고, 특정 파일만 골라 풀 수도 있습니다.",
+      "syntax": [
+        "unzip {{ARCHIVE}}.zip [-d {{DEST_DIR}}]",
+        "unzip -l {{ARCHIVE}}.zip"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "내용 목록만 확인"
+        },
+        {
+          "flag": "-d {{DIR}}",
+          "desc": "풀 위치 지정"
+        },
+        {
+          "flag": "-o",
+          "desc": "묻지 않고 덮어쓰기"
+        },
+        {
+          "flag": "-n",
+          "desc": "기존 파일은 덮어쓰지 않음"
+        },
+        {
+          "flag": "-q",
+          "desc": "조용히 실행"
+        },
+        {
+          "flag": "-t",
+          "desc": "압축 파일 무결성 검사"
+        },
+        {
+          "flag": "-P {{PASSWORD}}",
+          "desc": "암호 지정 (명령 이력에 남으므로 주의)"
+        },
+        {
+          "flag": "-x {{PATTERN}}",
+          "desc": "제외할 파일 패턴"
+        }
+      ],
+      "examples": [
+        {
+          "title": "지정 디렉토리에 풀기",
+          "command": "unzip {{ARCHIVE}}.zip -d {{DEST_DIR}}"
+        },
+        {
+          "title": "풀기 전 내용 확인",
+          "command": "unzip -l {{ARCHIVE}}.zip"
+        },
+        {
+          "title": "특정 파일만 풀기",
+          "command": "unzip {{ARCHIVE}}.zip 'conf/*' -d {{DEST_DIR}}"
+        },
+        {
+          "title": "Windows 에서 만든 zip 의 한글 파일명 깨짐 해결",
+          "command": "unzip -O cp949 {{ARCHIVE}}.zip -d {{DEST_DIR}}",
+          "platforms": [
+            "debian"
+          ]
+        }
+      ],
+      "cautions": [
+        "같은 이름 파일이 있으면 덮어쓸지 묻습니다. 스크립트에서는 -o 또는 -n 으로 동작을 명확히 하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "unzip",
+          "preinstalled": false,
+          "note": "dnf install unzip"
+        },
+        "debian": {
+          "package": "unzip",
+          "preinstalled": false,
+          "note": "apt install unzip (이미지에 따라 포함된 경우도 있음)"
+        }
+      },
+      "platformNotes": {
+        "debian": "Debian/Ubuntu 의 unzip 은 파일명 인코딩 지정 옵션 -O 를 지원합니다.",
+        "rhel": "RHEL 의 unzip 은 -O 인코딩 옵션이 없을 수 있습니다. 한글 파일명이 깨지면 7-Zip(p7zip) 등 다른 도구를 고려하세요."
+      },
+      "help": "man unzip",
+      "keywords": [
+        "압축 해제",
+        "zip 풀기",
+        "unzip",
+        "한글 깨짐",
+        "압축 목록"
+      ],
+      "related": [
+        "zip",
+        "tar"
+      ]
+    },
+    {
+      "id": "compress-archive",
+      "name": "Compress-Archive",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "archive",
+      "task": "archive.zip",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PowerShell 로 파일·폴더를 zip 압축",
+      "description": "PowerShell 5.0 이상에 기본 포함된 zip 압축 cmdlet 입니다. 폴더 전체나 와일드카드로 고른 파일을 zip 으로 묶고, -Update 로 기존 zip 에 파일을 추가할 수 있습니다.",
+      "syntax": [
+        "Compress-Archive -Path {{PATH}} -DestinationPath {{ARCHIVE}}.zip [-CompressionLevel Optimal] [-Force]"
+      ],
+      "options": [
+        {
+          "flag": "-Path {{PATH}}",
+          "desc": "압축할 파일·폴더 (와일드카드, 쉼표로 여러 개)"
+        },
+        {
+          "flag": "-LiteralPath {{PATH}}",
+          "desc": "와일드카드 해석 없이 경로 그대로 사용 ([ ] 포함 경로)"
+        },
+        {
+          "flag": "-DestinationPath {{ARCHIVE}}.zip",
+          "desc": "만들 zip 파일 경로"
+        },
+        {
+          "flag": "-CompressionLevel {{LEVEL}}",
+          "desc": "Optimal(기본), Fastest, NoCompression"
+        },
+        {
+          "flag": "-Update",
+          "desc": "기존 zip 에 파일 추가·갱신"
+        },
+        {
+          "flag": "-Force",
+          "desc": "같은 이름 zip 이 있으면 덮어쓰기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폴더를 zip 으로 압축",
+          "command": "Compress-Archive -Path C:\\logs -DestinationPath C:\\temp\\logs.zip"
+        },
+        {
+          "title": "폴더 안 내용만 압축 (상위 폴더 제외)",
+          "command": "Compress-Archive -Path C:\\logs\\* -DestinationPath C:\\temp\\logs.zip -Force"
+        },
+        {
+          "title": "최근 7일 로그만 골라 압축",
+          "command": "Get-ChildItem C:\\logs\\*.log | Where-Object LastWriteTime -gt (Get-Date).AddDays(-7) | Compress-Archive -DestinationPath C:\\temp\\recent.zip"
+        }
+      ],
+      "cautions": [
+        "Windows PowerShell 5.1 의 기본 모듈은 2GB 이상 파일 압축에 실패할 수 있습니다. 큰 파일은 tar -a 나 7-Zip 을 사용하세요.",
+        "사용 중(잠긴) 파일이 있으면 오류가 납니다."
+      ],
+      "help": "Get-Help Compress-Archive -Full",
+      "keywords": [
+        "압축",
+        "zip 만들기",
+        "zip 압축",
+        "PowerShell 압축",
+        "Compress-Archive"
+      ],
+      "related": [
+        "expand-archive",
+        "win-tar"
+      ]
+    },
+    {
+      "id": "expand-archive",
+      "name": "Expand-Archive",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "archive",
+      "task": "archive.zip",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "PowerShell 로 zip 압축 해제",
+      "description": "zip 파일을 지정한 폴더에 풉니다. 대상 폴더가 없으면 만들어 주며, -Force 로 기존 파일을 덮어쓸 수 있습니다. zip 형식만 지원합니다.",
+      "syntax": [
+        "Expand-Archive -Path {{ARCHIVE}}.zip -DestinationPath {{DEST_DIR}} [-Force]"
+      ],
+      "options": [
+        {
+          "flag": "-Path {{ARCHIVE}}.zip",
+          "desc": "풀 zip 파일"
+        },
+        {
+          "flag": "-LiteralPath {{ARCHIVE}}.zip",
+          "desc": "와일드카드 해석 없이 경로 그대로 사용"
+        },
+        {
+          "flag": "-DestinationPath {{DIR}}",
+          "desc": "풀 위치 (생략 시 현재 폴더 아래 zip 이름 폴더)"
+        },
+        {
+          "flag": "-Force",
+          "desc": "같은 이름 파일 덮어쓰기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "zip 풀기",
+          "command": "Expand-Archive -Path C:\\temp\\{{ARCHIVE}}.zip -DestinationPath C:\\temp\\out"
+        },
+        {
+          "title": "덮어쓰기 허용하고 풀기",
+          "command": "Expand-Archive -Path .\\{{ARCHIVE}}.zip -DestinationPath C:\\app -Force"
+        }
+      ],
+      "cautions": [
+        "-Force 없이 같은 이름 파일이 있으면 오류가 나고, -Force 를 쓰면 확인 없이 덮어씁니다.",
+        "Windows PowerShell 5.1 에서는 확장자가 .zip 이 아니면 오류가 납니다. tar.gz 는 tar -xf 를 사용하세요."
+      ],
+      "help": "Get-Help Expand-Archive -Full",
+      "keywords": [
+        "압축 해제",
+        "zip 풀기",
+        "PowerShell 압축 해제",
+        "Expand-Archive",
+        "unzip"
+      ],
+      "related": [
+        "compress-archive",
+        "win-tar"
+      ]
+    },
+    {
+      "id": "xz",
+      "name": "xz",
+      "aliases": [
+        "unxz",
+        "xzcat"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.high",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "높은 압축률의 xz 압축·해제 (멀티스레드 지원)",
+      "description": "gzip 보다 압축률이 높은 xz(LZMA2) 형식으로 파일을 압축·해제합니다. 압축은 느리지만 해제는 빠른 편이라 배포 파일·장기 보관에 적합하며, -T0 으로 여러 CPU 코어를 사용할 수 있습니다. tar 와 함께 쓸 때는 tar -J 를 사용합니다.",
+      "syntax": [
+        "xz [-k] [-T0] [-9] {{FILE}}",
+        "xz -d {{FILE}}.xz",
+        "tar -cJf {{ARCHIVE}}.tar.xz {{DIR}}"
+      ],
+      "options": [
+        {
+          "flag": "-d",
+          "desc": "압축 해제 (unxz 와 동일)"
+        },
+        {
+          "flag": "-k",
+          "desc": "원본 파일 유지"
+        },
+        {
+          "flag": "-c",
+          "desc": "결과를 표준출력으로"
+        },
+        {
+          "flag": "-T {{N}}",
+          "desc": "사용할 스레드 수 (0 = CPU 코어 수만큼)"
+        },
+        {
+          "flag": "-0 ~ -9",
+          "desc": "압축 수준 (기본 6). 높을수록 메모리 사용 증가"
+        },
+        {
+          "flag": "-e",
+          "desc": "더 느리지만 압축률을 조금 더 높이는 extreme 모드"
+        },
+        {
+          "flag": "-l",
+          "desc": "압축 파일 정보(크기·압축률) 확인"
+        },
+        {
+          "flag": "-t",
+          "desc": "무결성 검사"
+        },
+        {
+          "flag": "-v",
+          "desc": "진행 상황 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "모든 코어로 압축 (원본 유지)",
+          "command": "xz -k -T0 -v {{FILE}}"
+        },
+        {
+          "title": "압축 해제",
+          "command": "xz -d {{FILE}}.xz"
+        },
+        {
+          "title": "디렉토리를 tar.xz 로 묶기",
+          "command": "tar -cJvf {{ARCHIVE}}.tar.xz {{DIR}}"
+        },
+        {
+          "title": "tar 와 멀티스레드 xz 함께 사용",
+          "command": "tar -cf - {{DIR}} | xz -T0 > {{ARCHIVE}}.tar.xz"
+        }
+      ],
+      "cautions": [
+        "-k 없이 실행하면 원본이 삭제됩니다.",
+        "높은 압축 수준(-9, -e)과 멀티스레드를 함께 쓰면 메모리를 많이 사용합니다. 운영 서버에서는 부하를 고려하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "xz",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "xz-utils",
+          "preinstalled": true
+        }
+      },
+      "help": "man xz",
+      "keywords": [
+        "고압축",
+        "압축",
+        "xz",
+        "tar.xz",
+        "LZMA",
+        "멀티스레드 압축",
+        "unxz"
+      ],
+      "related": [
+        "tar",
+        "gzip",
+        "bzip2"
+      ]
+    },
+    {
+      "id": "bzip2",
+      "name": "bzip2",
+      "aliases": [
+        "bunzip2",
+        "bzcat"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "archive",
+      "task": "archive.high",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "bzip2 압축·해제 (.bz2, tar.bz2)",
+      "description": "gzip 보다 압축률이 높고 xz 보다는 낮은 bzip2 형식으로 압축·해제합니다. 오래된 배포 파일·백업에서 .bz2, .tar.bz2 를 자주 만나며, tar 와 함께 쓸 때는 tar -j 를 사용합니다.",
+      "syntax": [
+        "bzip2 [-k] {{FILE}}",
+        "bzip2 -d {{FILE}}.bz2",
+        "tar -xjf {{ARCHIVE}}.tar.bz2"
+      ],
+      "options": [
+        {
+          "flag": "-d",
+          "desc": "압축 해제 (bunzip2 와 동일)"
+        },
+        {
+          "flag": "-k",
+          "desc": "원본 파일 유지"
+        },
+        {
+          "flag": "-c",
+          "desc": "결과를 표준출력으로"
+        },
+        {
+          "flag": "-1 ~ -9",
+          "desc": "블록 크기(100k~900k). 기본 -9"
+        },
+        {
+          "flag": "-t",
+          "desc": "무결성 검사"
+        },
+        {
+          "flag": "-f",
+          "desc": "기존 파일 강제 덮어쓰기"
+        },
+        {
+          "flag": "-v",
+          "desc": "압축률 등 상세 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "원본 유지하며 압축",
+          "command": "bzip2 -k {{FILE}}"
+        },
+        {
+          "title": "압축 해제",
+          "command": "bunzip2 {{FILE}}.bz2"
+        },
+        {
+          "title": "tar.bz2 풀기",
+          "command": "tar -xjvf {{ARCHIVE}}.tar.bz2 -C {{DEST_DIR}}"
+        },
+        {
+          "title": "풀지 않고 내용 보기",
+          "command": "bzcat {{FILE}}.bz2 | less"
+        }
+      ],
+      "cautions": [
+        "-k 없이 실행하면 원본이 삭제됩니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "bzip2",
+          "preinstalled": false,
+          "note": "minimal 설치에는 없을 수 있음: dnf install bzip2"
+        },
+        "debian": {
+          "package": "bzip2",
+          "preinstalled": true,
+          "note": "Ubuntu Server 는 기본 포함. Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "help": "man bzip2",
+      "keywords": [
+        "고압축",
+        "압축",
+        "bz2",
+        "tar.bz2",
+        "bzip2",
+        "bunzip2"
+      ],
+      "related": [
+        "tar",
+        "xz",
+        "gzip"
+      ]
+    }
+  ]
+}

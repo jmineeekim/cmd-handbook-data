@@ -1,0 +1,1435 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "content",
+  "commands": [
+    {
+      "id": "cat",
+      "name": "cat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 내용 전체 출력·여러 파일 이어 붙이기",
+      "description": "파일 내용을 화면에 그대로 출력합니다. 짧은 설정 파일 확인, 여러 파일 이어 붙이기, 히어독(heredoc)으로 파일 작성에 사용합니다. 긴 파일은 less 로 보는 것이 좋습니다.",
+      "syntax": [
+        "cat [{{OPTIONS}}] {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-n",
+          "desc": "모든 줄에 줄 번호 표시"
+        },
+        {
+          "flag": "-b",
+          "desc": "빈 줄을 제외하고 줄 번호 표시"
+        },
+        {
+          "flag": "-A",
+          "desc": "탭(^I), 줄 끝($), 제어 문자를 보이게 표시 (CRLF 는 ^M$)"
+        },
+        {
+          "flag": "-s",
+          "desc": "연속된 빈 줄을 하나로 줄임"
+        },
+        {
+          "flag": "-v",
+          "desc": "출력할 수 없는 제어 문자를 ^ 형식으로 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 파일 내용 확인",
+          "command": "cat /etc/os-release"
+        },
+        {
+          "title": "주석과 빈 줄 빼고 실제 설정만 보기",
+          "command": "grep -Ev '^\\s*(#|$)' /etc/ssh/sshd_config"
+        },
+        {
+          "title": "숨은 공백·탭·CRLF 확인",
+          "command": "cat -A {{FILE}}"
+        },
+        {
+          "title": "히어독으로 설정 파일 작성",
+          "command": "cat > /etc/sysctl.d/99-custom.conf <<'EOF'\nvm.swappiness = 10\nEOF"
+        },
+        {
+          "title": "분할 파일 합치기",
+          "command": "cat {{FILE}}.part* > {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "바이너리 파일을 cat 하면 터미널이 깨질 수 있습니다. 이때는 reset 명령으로 복구합니다.",
+        "cat > {{FILE}} 은 기존 내용을 덮어씁니다. 추가는 >> 를 사용하세요."
+      ],
+      "help": "man cat",
+      "keywords": [
+        "내용 보기",
+        "파일 출력",
+        "파일 합치기",
+        "heredoc",
+        "concatenate",
+        "view"
+      ],
+      "related": [
+        "less",
+        "more",
+        "head",
+        "tail",
+        "grep"
+      ]
+    },
+    {
+      "id": "less",
+      "name": "less",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "긴 파일·로그를 페이지 단위로 보고 검색",
+      "description": "큰 파일을 전부 읽지 않고 페이지 단위로 앞뒤로 이동하며 볼 수 있는 페이저입니다. 화면 안에서 / 로 검색하고 Shift+F 로 tail -f 처럼 실시간 추적도 할 수 있어 로그 분석에 가장 많이 씁니다.",
+      "syntax": [
+        "less [{{OPTIONS}}] {{FILE}}",
+        "{{COMMAND}} | less"
+      ],
+      "options": [
+        {
+          "flag": "-N",
+          "desc": "줄 번호 표시"
+        },
+        {
+          "flag": "-S",
+          "desc": "긴 줄을 접지 않고 잘라서 표시 (좌우 화살표로 이동)"
+        },
+        {
+          "flag": "-i",
+          "desc": "검색 시 대소문자 무시 (패턴에 대문자가 있으면 구분)"
+        },
+        {
+          "flag": "-R",
+          "desc": "색상 등 ANSI 제어 문자를 그대로 해석해 표시"
+        },
+        {
+          "flag": "+F",
+          "desc": "파일 끝에서 실시간 추적 모드로 시작 (Ctrl+C 로 일반 모드)"
+        },
+        {
+          "flag": "+G",
+          "desc": "파일 끝에서 시작"
+        },
+        {
+          "flag": "/{{PATTERN}} · n · N",
+          "desc": "(화면 안) 앞으로 검색 · 다음 · 이전 결과 (?는 뒤로 검색)"
+        },
+        {
+          "flag": "g · G · q",
+          "desc": "(화면 안) 처음으로 · 끝으로 · 종료"
+        },
+        {
+          "flag": "F",
+          "desc": "(화면 안) 실시간 추적 모드 전환"
+        },
+        {
+          "flag": "&{{PATTERN}}",
+          "desc": "(화면 안) 패턴과 일치하는 줄만 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그 파일을 끝에서부터 보기",
+          "command": "less +G /var/log/messages",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "로그 파일을 끝에서부터 보기",
+          "command": "less +G /var/log/syslog",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "긴 줄을 자르고 줄 번호와 함께 보기",
+          "command": "less -SN {{FILE}}"
+        },
+        {
+          "title": "실시간 추적으로 열고, 필요할 때 Ctrl+C 로 멈춰 검색",
+          "command": "less +F /var/log/{{APP}}/{{LOG_FILE}}"
+        },
+        {
+          "title": "명령 출력 결과를 넘겨 보기",
+          "command": "journalctl -u {{SERVICE}} --no-pager | less"
+        }
+      ],
+      "cautions": [
+        "압축된 로그(.gz)는 zless 또는 zcat {{FILE}}.gz | less 로 봅니다."
+      ],
+      "help": "man less (실행 중 h)",
+      "keywords": [
+        "페이지 보기",
+        "로그 보기",
+        "검색",
+        "pager",
+        "view",
+        "스크롤"
+      ],
+      "related": [
+        "more",
+        "cat",
+        "tail",
+        "grep",
+        "journalctl"
+      ]
+    },
+    {
+      "id": "more",
+      "name": "more",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일을 한 화면씩 넘겨 보기 (단순 페이저)",
+      "description": "파일 내용을 한 화면씩 끊어서 보여주는 기본 페이저입니다. less 보다 기능이 적어 주로 앞으로만 넘겨 볼 때 쓰며, less 가 없는 최소 환경에서 대안으로 사용합니다.",
+      "syntax": [
+        "more [{{OPTIONS}}] {{FILE}}",
+        "{{COMMAND}} | more"
+      ],
+      "options": [
+        {
+          "flag": "+{{N}}",
+          "desc": "N 번째 줄부터 표시"
+        },
+        {
+          "flag": "+/{{PATTERN}}",
+          "desc": "패턴이 처음 나오는 곳부터 표시"
+        },
+        {
+          "flag": "-s",
+          "desc": "연속된 빈 줄을 하나로 줄임"
+        },
+        {
+          "flag": "-d",
+          "desc": "하단에 조작 안내 메시지 표시"
+        },
+        {
+          "flag": "Space · Enter · b · q",
+          "desc": "(화면 안) 다음 페이지 · 한 줄 · 이전 페이지 · 종료"
+        },
+        {
+          "flag": "/{{PATTERN}}",
+          "desc": "(화면 안) 패턴 검색"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 한 화면씩 보기",
+          "command": "more {{FILE}}"
+        },
+        {
+          "title": "100번째 줄부터 보기",
+          "command": "more +100 {{FILE}}"
+        },
+        {
+          "title": "긴 명령 출력을 끊어서 보기",
+          "command": "rpm -qa | more",
+          "platforms": [
+            "rhel"
+          ]
+        }
+      ],
+      "cautions": [
+        "파이프로 받은 입력은 뒤로(b) 이동할 수 없습니다. 자유롭게 이동하려면 less 를 사용하세요."
+      ],
+      "help": "man more",
+      "keywords": [
+        "페이지 보기",
+        "한 화면씩",
+        "pager",
+        "more"
+      ],
+      "related": [
+        "less",
+        "cat"
+      ]
+    },
+    {
+      "id": "type",
+      "name": "type",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 텍스트 파일 내용 출력",
+      "description": "CMD 내장 명령으로 텍스트 파일 내용을 화면에 출력합니다. Linux 의 cat 에 해당하며, 여러 파일을 지정하면 파일 이름과 함께 차례로 출력합니다.",
+      "syntax": [
+        "type {{FILE}} [{{FILE}}...]"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "hosts 파일 내용 확인",
+          "command": "type C:\\Windows\\System32\\drivers\\etc\\hosts"
+        },
+        {
+          "title": "긴 파일은 한 화면씩",
+          "command": "type {{FILE}} | more"
+        },
+        {
+          "title": "로그에서 특정 문자열만 보기",
+          "command": "type {{FILE}} | findstr /i \"error\""
+        },
+        {
+          "title": "빈 파일 만들기",
+          "command": "type nul > {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "UTF-8 파일의 한글이 깨지면 chcp 65001 로 코드 페이지를 바꾼 뒤 다시 실행하세요.",
+        "PowerShell 에서 type 은 Get-Content 의 별칭입니다."
+      ],
+      "help": "type /?",
+      "keywords": [
+        "내용 보기",
+        "파일 출력",
+        "cat",
+        "view",
+        "type"
+      ],
+      "related": [
+        "win-more",
+        "findstr",
+        "get-content"
+      ]
+    },
+    {
+      "id": "win-more",
+      "name": "more",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 출력을 한 화면씩 끊어 보기",
+      "description": "파일 내용이나 명령 출력을 한 화면씩 끊어서 보여줍니다. Space 로 다음 페이지, Enter 로 한 줄씩 넘기고, Q 로 종료합니다(/e 확장 기능 사용 시).",
+      "syntax": [
+        "more [/e] [/c] [/s] [+{{N}}] {{FILE}}",
+        "{{COMMAND}} | more"
+      ],
+      "options": [
+        {
+          "flag": "/e",
+          "desc": "확장 기능 사용 (Q 종료, P n 다음 n줄, S n 건너뛰기 등)"
+        },
+        {
+          "flag": "/c",
+          "desc": "페이지 표시 전 화면 지우기"
+        },
+        {
+          "flag": "/s",
+          "desc": "연속된 빈 줄을 하나로 줄임"
+        },
+        {
+          "flag": "+{{N}}",
+          "desc": "N 번째 줄부터 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "긴 명령 출력 끊어 보기",
+          "command": "netstat -ano | more"
+        },
+        {
+          "title": "파일을 한 화면씩 보기",
+          "command": "more {{FILE}}"
+        },
+        {
+          "title": "100번째 줄부터 보기",
+          "command": "more +100 {{FILE}}"
+        }
+      ],
+      "cautions": [],
+      "help": "more /?",
+      "keywords": [
+        "페이지 보기",
+        "한 화면씩",
+        "pager",
+        "more"
+      ],
+      "related": [
+        "type",
+        "get-content"
+      ]
+    },
+    {
+      "id": "get-content",
+      "name": "Get-Content",
+      "aliases": [
+        "gc",
+        "cat",
+        "type"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "content",
+      "task": "content.view",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 내용 출력, 마지막 N줄·실시간 로그 추적",
+      "description": "파일 내용을 줄 단위로 읽어 출력합니다. -Tail 로 마지막 N줄, -Wait 로 tail -f 처럼 실시간 추적, -TotalCount 로 앞부분만 볼 수 있어 Windows 로그 확인의 기본 도구입니다.",
+      "syntax": [
+        "Get-Content [-Path] {{FILE}} [-Tail {{N}}] [-Wait] [-TotalCount {{N}}] [-Encoding {{ENCODING}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Tail {{N}}",
+          "desc": "마지막 N줄만 출력 (tail -n)"
+        },
+        {
+          "flag": "-Wait",
+          "desc": "파일 끝에서 대기하며 추가되는 줄을 실시간 출력 (tail -f, Ctrl+C 로 종료)"
+        },
+        {
+          "flag": "-TotalCount {{N}}",
+          "desc": "처음 N줄만 출력 (별칭 -Head, -First)"
+        },
+        {
+          "flag": "-Encoding {{ENCODING}}",
+          "desc": "문자 인코딩 지정 (UTF8, Unicode, Default 등)"
+        },
+        {
+          "flag": "-Raw",
+          "desc": "줄 배열이 아닌 하나의 문자열로 읽기"
+        },
+        {
+          "flag": "-ReadCount {{N}}",
+          "desc": "한 번에 넘길 줄 수 (0 이면 전체, 큰 파일 처리 속도 향상)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그 마지막 50줄 보기",
+          "command": "Get-Content {{FILE}} -Tail 50"
+        },
+        {
+          "title": "로그 실시간 추적 (tail -f)",
+          "command": "Get-Content {{FILE}} -Tail 20 -Wait"
+        },
+        {
+          "title": "실시간 추적하면서 오류 줄만 보기",
+          "command": "Get-Content {{FILE}} -Tail 0 -Wait | Select-String -Pattern 'error|fail'"
+        },
+        {
+          "title": "파일 앞 10줄 보기",
+          "command": "Get-Content {{FILE}} -TotalCount 10"
+        },
+        {
+          "title": "UTF-8 파일 한글 깨짐 없이 읽기",
+          "command": "Get-Content {{FILE}} -Encoding UTF8"
+        }
+      ],
+      "cautions": [
+        "Windows PowerShell 5.1 은 BOM 없는 UTF-8 파일을 시스템 기본 코드 페이지(CP949)로 읽어 한글이 깨집니다. -Encoding UTF8 을 지정하세요. PowerShell 7 은 기본이 UTF-8 입니다.",
+        "수 GB 로그를 -Tail 없이 읽으면 메모리를 많이 쓰고 느립니다."
+      ],
+      "help": "Get-Help Get-Content -Full",
+      "keywords": [
+        "내용 보기",
+        "로그 보기",
+        "실시간 로그",
+        "tail -f",
+        "마지막 줄",
+        "cat",
+        "gc"
+      ],
+      "related": [
+        "select-string",
+        "type",
+        "measure-object",
+        "tee-object",
+        "get-winevent"
+      ]
+    },
+    {
+      "id": "head",
+      "name": "head",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.head-tail",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일·출력의 앞부분 N줄 출력",
+      "description": "파일이나 명령 출력의 처음 몇 줄(기본 10줄)만 출력합니다. 큰 파일의 형식 확인, 정렬 결과의 상위 N개 추출에 자주 씁니다.",
+      "syntax": [
+        "head [-n {{N}}] {{FILE}}...",
+        "{{COMMAND}} | head -n {{N}}"
+      ],
+      "options": [
+        {
+          "flag": "-n {{N}}",
+          "desc": "처음 N줄 출력 (기본 10)"
+        },
+        {
+          "flag": "-n -{{N}}",
+          "desc": "마지막 N줄을 제외한 나머지 전부 출력"
+        },
+        {
+          "flag": "-c {{N}}",
+          "desc": "처음 N바이트 출력"
+        },
+        {
+          "flag": "-q",
+          "desc": "여러 파일일 때 파일 이름 머리글 생략"
+        },
+        {
+          "flag": "-v",
+          "desc": "항상 파일 이름 머리글 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "CSV 파일 머리글과 앞부분 확인",
+          "command": "head -n 5 {{FILE}}"
+        },
+        {
+          "title": "용량 큰 디렉토리 상위 10개",
+          "command": "du -sh /var/* 2>/dev/null | sort -rh | head -n 10"
+        },
+        {
+          "title": "CPU 사용률 상위 프로세스 5개",
+          "command": "ps aux --sort=-%cpu | head -n 6"
+        }
+      ],
+      "cautions": [],
+      "help": "man head",
+      "keywords": [
+        "앞부분",
+        "처음 몇 줄",
+        "상위 N개",
+        "head",
+        "top lines"
+      ],
+      "related": [
+        "tail",
+        "less",
+        "sort"
+      ]
+    },
+    {
+      "id": "tail",
+      "name": "tail",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.head-tail",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 끝부분 출력·실시간 로그 추적(-f)",
+      "description": "파일의 마지막 몇 줄(기본 10줄)을 출력합니다. -f 로 파일에 추가되는 내용을 실시간으로 보여주어 장애 재현·서비스 기동 확인 시 로그 모니터링에 가장 많이 쓰는 명령입니다.",
+      "syntax": [
+        "tail [-n {{N}}] [-f|-F] {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-n {{N}}",
+          "desc": "마지막 N줄 출력 (기본 10)"
+        },
+        {
+          "flag": "-n +{{N}}",
+          "desc": "N 번째 줄부터 끝까지 출력"
+        },
+        {
+          "flag": "-f",
+          "desc": "추가되는 내용을 실시간 출력 (Ctrl+C 로 종료)"
+        },
+        {
+          "flag": "-F",
+          "desc": "-f + 파일이 순환(logrotate)·재생성되어도 다시 열어 계속 추적"
+        },
+        {
+          "flag": "-c {{N}}",
+          "desc": "마지막 N바이트 출력"
+        },
+        {
+          "flag": "--pid={{PID}}",
+          "desc": "-f 사용 시 해당 프로세스가 끝나면 함께 종료"
+        },
+        {
+          "flag": "-q",
+          "desc": "여러 파일일 때 파일 이름 머리글 생략"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그 마지막 100줄 보기",
+          "command": "tail -n 100 /var/log/{{APP}}/{{LOG_FILE}}"
+        },
+        {
+          "title": "서비스 재시작하며 로그 실시간 확인",
+          "command": "tail -F /var/log/{{APP}}/{{LOG_FILE}}"
+        },
+        {
+          "title": "실시간 로그에서 오류만 보기",
+          "command": "tail -F {{FILE}} | grep --line-buffered -i error"
+        },
+        {
+          "title": "여러 로그를 동시에 추적",
+          "command": "tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
+        },
+        {
+          "title": "시스템 로그 실시간 확인",
+          "command": "tail -f /var/log/messages",
+          "platforms": [
+            "rhel"
+          ]
+        }
+      ],
+      "cautions": [
+        "logrotate 로 파일이 바뀌는 로그는 -f 대신 -F 를 써야 순환 후에도 계속 추적됩니다.",
+        "tail -f 결과를 grep 으로 넘겨 다시 파이프할 때는 grep --line-buffered 를 붙여야 출력이 지연되지 않습니다."
+      ],
+      "platformNotes": {
+        "rhel": "시스템 로그는 /var/log/messages, 인증 로그는 /var/log/secure 입니다.",
+        "debian": "시스템 로그는 /var/log/syslog, 인증 로그는 /var/log/auth.log 입니다. Debian 12 는 rsyslog 가 기본 설치되지 않아 journalctl -f 를 사용합니다."
+      },
+      "help": "man tail",
+      "keywords": [
+        "실시간 로그",
+        "로그 보기",
+        "끝부분",
+        "tail -f",
+        "tail -F",
+        "follow",
+        "모니터링"
+      ],
+      "related": [
+        "head",
+        "less",
+        "journalctl",
+        "grep"
+      ]
+    },
+    {
+      "id": "vim",
+      "name": "vim",
+      "aliases": [
+        "vi"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.editor",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "터미널 텍스트 편집기 (vi/vim)",
+      "description": "거의 모든 Unix·Linux 서버에 기본으로 있는 터미널 편집기입니다. 명령 모드(Esc)와 입력 모드(i)를 오가며 편집하고, :wq 로 저장 후 종료합니다. 최소 설치 서버에서도 vi 는 항상 쓸 수 있어 설정 파일 수정의 기본 도구입니다.",
+      "syntax": [
+        "vim [{{OPTIONS}}] {{FILE}}",
+        "vi {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "+{{N}}",
+          "desc": "N 번째 줄에서 열기"
+        },
+        {
+          "flag": "+/{{PATTERN}}",
+          "desc": "패턴이 처음 나오는 줄에서 열기"
+        },
+        {
+          "flag": "-R",
+          "desc": "읽기 전용으로 열기 (view 와 동일)"
+        },
+        {
+          "flag": "-d {{FILE1}} {{FILE2}}",
+          "desc": "두 파일 차이를 나란히 비교 (vimdiff)"
+        },
+        {
+          "flag": "i · a · o",
+          "desc": "(명령 모드) 커서 앞 · 뒤 · 다음 줄에서 입력 시작, Esc 로 명령 모드 복귀"
+        },
+        {
+          "flag": ":w · :q · :wq · :q!",
+          "desc": "(명령 모드) 저장 · 종료 · 저장 후 종료 · 저장 없이 강제 종료"
+        },
+        {
+          "flag": "/{{PATTERN}} · n · N",
+          "desc": "(명령 모드) 검색 · 다음 · 이전"
+        },
+        {
+          "flag": "dd · yy · p · u",
+          "desc": "(명령 모드) 줄 삭제(잘라내기) · 줄 복사 · 붙여넣기 · 되돌리기"
+        },
+        {
+          "flag": ":%s/{{OLD}}/{{NEW}}/g",
+          "desc": "(명령 모드) 파일 전체 문자열 치환"
+        },
+        {
+          "flag": ":set nu · :set paste",
+          "desc": "(명령 모드) 줄 번호 표시 · 붙여넣기 시 자동 들여쓰기 끄기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 파일 백업 후 편집",
+          "command": "cp -p /etc/{{FILE}} /etc/{{FILE}}.bak\nvim /etc/{{FILE}}"
+        },
+        {
+          "title": "오류 메시지에 나온 줄로 바로 열기",
+          "command": "vim +{{LINE}} {{FILE}}"
+        },
+        {
+          "title": "root 권한 파일을 안전하게 편집 (sudoedit)",
+          "command": "sudo -e /etc/{{FILE}}"
+        },
+        {
+          "title": "원본과 백업 차이 비교",
+          "command": "vim -d /etc/{{FILE}}.bak /etc/{{FILE}}"
+        }
+      ],
+      "cautions": [
+        "편집 중 세션이 끊기면 .{{FILE}}.swp 스왑 파일이 남아 다음에 열 때 경고가 납니다. 복구 후 스왑 파일을 지우세요.",
+        "/etc/sudoers 는 vim 으로 직접 열지 말고 visudo 를 사용하세요. 문법 오류 시 sudo 를 못 쓰게 됩니다.",
+        "Windows 에서 복사한 내용을 붙여넣을 때 들여쓰기가 계단식으로 밀리면 :set paste 후 붙여넣으세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "vim-enhanced",
+          "preinstalled": false,
+          "note": "minimal 설치에는 vim-minimal(vi 명령)만 포함. vim 명령이 필요하면 dnf install vim-enhanced"
+        },
+        "debian": {
+          "package": "vim",
+          "preinstalled": false,
+          "note": "Ubuntu Server 는 vim 이 기본 포함, Debian 최소 설치는 vim-tiny(vi)만 있거나 없을 수 있음"
+        }
+      },
+      "platformNotes": {
+        "rhel": "vim-enhanced 설치 시 root 가 아닌 사용자는 vi 명령도 vim 으로 연결됩니다.",
+        "debian": "기본 편집기(sudoedit, crontab -e 등)가 nano 인 경우가 많습니다. select-editor 또는 update-alternatives --config editor 로 변경합니다."
+      },
+      "help": "vimtutor / vim 안에서 :help",
+      "keywords": [
+        "편집기",
+        "파일 수정",
+        "설정 편집",
+        "vi",
+        "vim",
+        "editor",
+        "저장 종료"
+      ],
+      "related": [
+        "nano",
+        "cp",
+        "diff",
+        "visudo"
+      ]
+    },
+    {
+      "id": "nano",
+      "name": "nano",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.editor",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "초보자용 터미널 텍스트 편집기",
+      "description": "화면 하단에 단축키 안내가 표시되는 쉬운 터미널 편집기입니다. 모드 전환 없이 바로 입력하며, Ctrl+O 로 저장, Ctrl+X 로 종료합니다. Ubuntu·Debian 의 기본 편집기입니다.",
+      "syntax": [
+        "nano [{{OPTIONS}}] [+{{LINE}}] {{FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "+{{LINE}}",
+          "desc": "지정한 줄에서 열기"
+        },
+        {
+          "flag": "-l",
+          "desc": "줄 번호 표시"
+        },
+        {
+          "flag": "-B",
+          "desc": "저장 시 이전 파일을 {{FILE}}~ 로 백업"
+        },
+        {
+          "flag": "-v",
+          "desc": "읽기 전용(보기 모드)으로 열기"
+        },
+        {
+          "flag": "Ctrl+O · Ctrl+X",
+          "desc": "(편집 중) 저장 · 종료"
+        },
+        {
+          "flag": "Ctrl+W · Ctrl+\\",
+          "desc": "(편집 중) 검색 · 치환"
+        },
+        {
+          "flag": "Ctrl+K · Ctrl+U",
+          "desc": "(편집 중) 줄 잘라내기 · 붙여넣기"
+        },
+        {
+          "flag": "Ctrl+_",
+          "desc": "(편집 중) 지정한 줄 번호로 이동"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 파일 편집",
+          "command": "sudo nano /etc/{{FILE}}"
+        },
+        {
+          "title": "netplan 설정 편집 (줄 번호 표시)",
+          "command": "sudo nano -l /etc/netplan/{{FILE}}.yaml",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "백업을 남기며 편집",
+          "command": "nano -B {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "YAML 처럼 들여쓰기가 중요한 파일에서 Tab 키는 탭 문자를 넣습니다. 공백을 써야 하는 파일은 주의하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "nano",
+          "preinstalled": false,
+          "note": "dnf install nano"
+        },
+        "debian": {
+          "package": "nano",
+          "preinstalled": true
+        }
+      },
+      "help": "man nano (편집 중 Ctrl+G)",
+      "keywords": [
+        "편집기",
+        "파일 수정",
+        "쉬운 편집기",
+        "nano",
+        "editor"
+      ],
+      "related": [
+        "vim"
+      ]
+    },
+    {
+      "id": "notepad",
+      "name": "notepad",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "content",
+      "task": "content.editor",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "메모장으로 텍스트 파일 열기·편집",
+      "description": "Windows 기본 텍스트 편집기인 메모장을 실행해 파일을 엽니다. CMD·PowerShell 어디서나 실행할 수 있고 Server Core 에서도 사용 가능합니다. hosts 같은 시스템 파일은 관리자 권한으로 실행한 셸에서 열어야 저장됩니다.",
+      "syntax": [
+        "notepad [{{FILE}}]"
+      ],
+      "options": [
+        {
+          "flag": "/p {{FILE}}",
+          "desc": "파일을 기본 프린터로 인쇄"
+        }
+      ],
+      "examples": [
+        {
+          "title": "hosts 파일 편집 (관리자 CMD 에서)",
+          "command": "notepad C:\\Windows\\System32\\drivers\\etc\\hosts"
+        },
+        {
+          "title": "로그 파일 열어 보기",
+          "command": "notepad {{FILE}}"
+        },
+        {
+          "title": "PowerShell 프로필 편집",
+          "command": "notepad $PROFILE"
+        }
+      ],
+      "cautions": [
+        "관리자 권한이 없는 셸에서 연 시스템 파일은 저장 시 '다른 이름으로 저장' 창이 뜨며 저장되지 않습니다.",
+        "Windows 10 1903 이전 메모장은 저장 시 UTF-8 BOM 을 붙여 일부 프로그램 설정 파일이 오동작할 수 있습니다."
+      ],
+      "help": "notepad /?",
+      "keywords": [
+        "메모장",
+        "편집기",
+        "파일 수정",
+        "hosts 편집",
+        "notepad",
+        "editor"
+      ],
+      "related": [
+        "type",
+        "get-content"
+      ]
+    },
+    {
+      "id": "wc",
+      "name": "wc",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.count",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "줄·단어·바이트 수 세기",
+      "description": "파일이나 입력의 줄 수, 단어 수, 바이트 수를 셉니다. grep 과 파이프로 연결해 오류 건수, 접속 수, 프로세스 수 등을 빠르게 집계할 때 많이 씁니다.",
+      "syntax": [
+        "wc [-l|-w|-c|-m] {{FILE}}...",
+        "{{COMMAND}} | wc -l"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "줄 수"
+        },
+        {
+          "flag": "-w",
+          "desc": "단어 수"
+        },
+        {
+          "flag": "-c",
+          "desc": "바이트 수"
+        },
+        {
+          "flag": "-m",
+          "desc": "문자 수 (멀티바이트 문자 고려)"
+        },
+        {
+          "flag": "-L",
+          "desc": "가장 긴 줄의 길이"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 줄 수 세기",
+          "command": "wc -l {{FILE}}",
+          "output": "15234 access.log"
+        },
+        {
+          "title": "로그의 오류 건수",
+          "command": "grep -c -i error {{FILE}}"
+        },
+        {
+          "title": "현재 ESTABLISHED 연결 수",
+          "command": "ss -Htan state established | wc -l"
+        },
+        {
+          "title": "디렉토리의 파일 개수",
+          "command": "find {{DIR}} -type f | wc -l"
+        }
+      ],
+      "cautions": [
+        "wc -l 은 줄바꿈 문자 수를 세므로 마지막 줄에 줄바꿈이 없으면 1 적게 나옵니다."
+      ],
+      "help": "man wc",
+      "keywords": [
+        "줄 수",
+        "개수 세기",
+        "카운트",
+        "line count",
+        "word count"
+      ],
+      "related": [
+        "grep",
+        "sort",
+        "uniq"
+      ]
+    },
+    {
+      "id": "measure-object",
+      "name": "Measure-Object",
+      "aliases": [
+        "measure"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "content",
+      "task": "content.count",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "개수·줄 수 세기, 합계·평균·최대·최소 계산",
+      "description": "파이프로 받은 객체의 개수를 세거나, 텍스트의 줄·단어·문자 수, 숫자 속성의 합계·평균·최대·최소를 계산합니다. 폴더 용량 합계를 구할 때 자주 씁니다.",
+      "syntax": [
+        "{{COMMAND}} | Measure-Object [-Line] [-Word] [-Character]",
+        "{{COMMAND}} | Measure-Object -Property {{PROPERTY}} [-Sum] [-Average] [-Maximum] [-Minimum]"
+      ],
+      "options": [
+        {
+          "flag": "-Line",
+          "desc": "줄 수"
+        },
+        {
+          "flag": "-Word",
+          "desc": "단어 수"
+        },
+        {
+          "flag": "-Character",
+          "desc": "문자 수"
+        },
+        {
+          "flag": "-Property {{PROPERTY}}",
+          "desc": "계산할 속성 (예: Length)"
+        },
+        {
+          "flag": "-Sum",
+          "desc": "합계"
+        },
+        {
+          "flag": "-Average",
+          "desc": "평균"
+        },
+        {
+          "flag": "-Maximum / -Minimum",
+          "desc": "최대값 / 최소값"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 줄 수 세기",
+          "command": "Get-Content {{FILE}} | Measure-Object -Line"
+        },
+        {
+          "title": "로그의 오류 건수",
+          "command": "(Select-String -Path {{FILE}} -Pattern 'error').Count"
+        },
+        {
+          "title": "폴더 전체 용량(GB) 계산",
+          "command": "(Get-ChildItem {{DIR}} -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB"
+        },
+        {
+          "title": "실행 중인 프로세스 개수",
+          "command": "Get-Process | Measure-Object"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Measure-Object -Full",
+      "keywords": [
+        "줄 수",
+        "개수 세기",
+        "합계",
+        "폴더 용량",
+        "count",
+        "sum",
+        "wc"
+      ],
+      "related": [
+        "get-content",
+        "get-childitem",
+        "select-string"
+      ]
+    },
+    {
+      "id": "diff",
+      "name": "diff",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.compare",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "두 파일·디렉토리의 내용 차이 비교",
+      "description": "두 텍스트 파일을 줄 단위로 비교해 다른 부분을 보여줍니다. 설정 변경 전후 비교, 서버 간 설정 차이 확인, 디렉토리 전체 비교에 사용합니다. 같으면 종료 코드 0, 다르면 1 을 반환합니다.",
+      "syntax": [
+        "diff [{{OPTIONS}}] {{FILE1}} {{FILE2}}",
+        "diff -r [{{OPTIONS}}] {{DIR1}} {{DIR2}}"
+      ],
+      "options": [
+        {
+          "flag": "-u",
+          "desc": "통합(unified) 형식 출력, 앞뒤 문맥 3줄 포함 (패치 형식)"
+        },
+        {
+          "flag": "-y",
+          "desc": "좌우 나란히 비교 (--suppress-common-lines 로 다른 줄만)"
+        },
+        {
+          "flag": "-r",
+          "desc": "디렉토리를 재귀 비교"
+        },
+        {
+          "flag": "-q",
+          "desc": "내용 대신 다른지 여부만 출력"
+        },
+        {
+          "flag": "-w",
+          "desc": "모든 공백 차이 무시"
+        },
+        {
+          "flag": "-B",
+          "desc": "빈 줄 차이 무시"
+        },
+        {
+          "flag": "-i",
+          "desc": "대소문자 차이 무시"
+        },
+        {
+          "flag": "--color",
+          "desc": "차이를 색상으로 표시"
+        },
+        {
+          "flag": "-x {{PATTERN}}",
+          "desc": "디렉토리 비교 시 제외할 파일 패턴"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 변경 전후 비교",
+          "command": "diff -u /etc/{{FILE}}.bak /etc/{{FILE}}"
+        },
+        {
+          "title": "원격 서버와 설정 파일 비교",
+          "command": "diff <(ssh {{HOST}} cat /etc/{{FILE}}) /etc/{{FILE}}"
+        },
+        {
+          "title": "두 디렉토리에서 다른 파일만 나열",
+          "command": "diff -rq {{DIR1}} {{DIR2}}"
+        },
+        {
+          "title": "좌우 나란히 다른 줄만 보기",
+          "command": "diff -y --suppress-common-lines {{FILE1}} {{FILE2}}"
+        },
+        {
+          "title": "주석을 뺀 실제 설정만 비교",
+          "command": "diff <(grep -Ev '^\\s*(#|$)' {{FILE1}}) <(grep -Ev '^\\s*(#|$)' {{FILE2}})"
+        }
+      ],
+      "cautions": [
+        "Windows 에서 가져온 파일은 줄 끝 CR 때문에 모든 줄이 다르게 나올 수 있습니다. --strip-trailing-cr 을 사용하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "diffutils",
+          "preinstalled": true,
+          "note": "컨테이너 이미지 등 최소 환경에는 없을 수 있음: dnf install diffutils"
+        }
+      },
+      "help": "man diff",
+      "keywords": [
+        "비교",
+        "차이",
+        "설정 비교",
+        "변경 확인",
+        "diff",
+        "compare",
+        "patch"
+      ],
+      "related": [
+        "cmp",
+        "vim",
+        "sha256sum",
+        "md5sum"
+      ]
+    },
+    {
+      "id": "cmp",
+      "name": "cmp",
+      "kind": "command",
+      "shell": "sh",
+      "category": "content",
+      "task": "content.compare",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "두 파일을 바이트 단위로 비교 (바이너리 포함)",
+      "description": "두 파일을 바이트 단위로 비교해 처음 다른 위치를 알려줍니다. 바이너리 파일이 같은지 확인하거나 스크립트에서 동일 여부만 판단할 때 사용합니다.",
+      "syntax": [
+        "cmp [{{OPTIONS}}] {{FILE1}} {{FILE2}}"
+      ],
+      "options": [
+        {
+          "flag": "-s",
+          "desc": "출력 없이 종료 코드만 반환 (같으면 0, 다르면 1)"
+        },
+        {
+          "flag": "-l",
+          "desc": "다른 모든 바이트의 위치와 값(8진수) 출력"
+        },
+        {
+          "flag": "-b",
+          "desc": "다른 바이트를 문자로도 표시"
+        },
+        {
+          "flag": "-n {{N}}",
+          "desc": "처음 N바이트까지만 비교"
+        }
+      ],
+      "examples": [
+        {
+          "title": "두 바이너리가 같은지 확인",
+          "command": "cmp {{FILE1}} {{FILE2}}",
+          "output": "app.jar app.jar.new differ: byte 1025, line 7"
+        },
+        {
+          "title": "스크립트에서 동일하면 건너뛰기",
+          "command": "cmp -s {{SRC}} {{DEST}} || cp -p {{SRC}} {{DEST}}"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "diffutils",
+          "preinstalled": true,
+          "note": "컨테이너 이미지 등 최소 환경에는 없을 수 있음: dnf install diffutils"
+        }
+      },
+      "help": "man cmp",
+      "keywords": [
+        "비교",
+        "바이너리 비교",
+        "동일 여부",
+        "compare",
+        "binary"
+      ],
+      "related": [
+        "diff",
+        "sha256sum"
+      ]
+    },
+    {
+      "id": "fc",
+      "name": "fc",
+      "aliases": [
+        "fc.exe"
+      ],
+      "kind": "command",
+      "shell": "cmd",
+      "category": "content",
+      "task": "content.compare",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 두 파일 내용 비교",
+      "description": "두 파일(또는 파일 집합)을 텍스트 또는 바이너리 모드로 비교해 다른 부분을 출력합니다. 설정 파일 변경 전후 비교나 파일 동일 여부 확인에 사용합니다.",
+      "syntax": [
+        "fc [/c] [/n] [/w] [/l|/b] {{FILE1}} {{FILE2}}"
+      ],
+      "options": [
+        {
+          "flag": "/n",
+          "desc": "텍스트 비교 시 줄 번호 표시"
+        },
+        {
+          "flag": "/c",
+          "desc": "대소문자 무시"
+        },
+        {
+          "flag": "/w",
+          "desc": "공백·탭 차이 무시"
+        },
+        {
+          "flag": "/l",
+          "desc": "텍스트(ASCII) 모드로 비교"
+        },
+        {
+          "flag": "/b",
+          "desc": "바이너리 모드로 비교 (다른 바이트 위치 출력)"
+        },
+        {
+          "flag": "/u",
+          "desc": "유니코드 텍스트로 비교"
+        },
+        {
+          "flag": "/lb{{N}}",
+          "desc": "연속으로 다른 줄 허용 수 (기본 100)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "설정 변경 전후 비교 (줄 번호 표시)",
+          "command": "fc /n {{FILE}}.bak {{FILE}}"
+        },
+        {
+          "title": "두 실행 파일이 같은지 확인",
+          "command": "fc /b {{FILE1}} {{FILE2}}"
+        }
+      ],
+      "cautions": [
+        "PowerShell 에서 fc 는 Format-Custom 의 별칭이므로 fc.exe 로 실행하거나 Compare-Object 를 사용하세요."
+      ],
+      "help": "fc /?",
+      "keywords": [
+        "비교",
+        "파일 비교",
+        "차이",
+        "compare",
+        "diff"
+      ],
+      "related": [
+        "compare-object",
+        "get-filehash"
+      ]
+    },
+    {
+      "id": "compare-object",
+      "name": "Compare-Object",
+      "aliases": [
+        "compare"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "content",
+      "task": "content.compare",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "두 객체 집합(파일 내용·목록) 차이 비교",
+      "description": "두 개의 객체 집합을 비교해 한쪽에만 있는 항목을 표시합니다. 파일 내용은 Get-Content 로 읽어 비교하고, 서비스·프로그램·폴더 목록 비교에도 사용합니다. SideIndicator 의 <= 는 기준(Reference)에만, => 는 비교 대상(Difference)에만 있다는 뜻입니다.",
+      "syntax": [
+        "Compare-Object -ReferenceObject {{REF}} -DifferenceObject {{DIFF}} [-Property {{PROPERTY}}] [-IncludeEqual]"
+      ],
+      "options": [
+        {
+          "flag": "-ReferenceObject {{REF}}",
+          "desc": "기준 객체 집합"
+        },
+        {
+          "flag": "-DifferenceObject {{DIFF}}",
+          "desc": "비교 대상 객체 집합"
+        },
+        {
+          "flag": "-Property {{PROPERTY}}",
+          "desc": "비교할 속성 지정 (예: Name, Length)"
+        },
+        {
+          "flag": "-IncludeEqual",
+          "desc": "같은 항목도 == 로 표시"
+        },
+        {
+          "flag": "-ExcludeDifferent",
+          "desc": "같은 항목만 표시 (-IncludeEqual 과 함께)"
+        },
+        {
+          "flag": "-CaseSensitive",
+          "desc": "대소문자 구분"
+        },
+        {
+          "flag": "-PassThru",
+          "desc": "원본 객체에 SideIndicator 를 붙여 반환"
+        }
+      ],
+      "examples": [
+        {
+          "title": "두 텍스트 파일 내용 비교",
+          "command": "Compare-Object (Get-Content {{FILE1}}) (Get-Content {{FILE2}})"
+        },
+        {
+          "title": "두 폴더의 파일 목록 비교",
+          "command": "Compare-Object (Get-ChildItem {{DIR1}} -Recurse) (Get-ChildItem {{DIR2}} -Recurse) -Property Name, Length"
+        },
+        {
+          "title": "두 서버의 설치된 핫픽스 비교",
+          "command": "Compare-Object (Get-HotFix -ComputerName {{SERVER1}}) (Get-HotFix -ComputerName {{SERVER2}}) -Property HotFixID"
+        }
+      ],
+      "cautions": [
+        "줄 순서가 아닌 항목 집합으로 비교하므로, 어느 줄 번호가 바뀌었는지는 알려주지 않습니다. 줄 단위 비교는 fc.exe 를 사용하세요."
+      ],
+      "help": "Get-Help Compare-Object -Full",
+      "keywords": [
+        "비교",
+        "차이",
+        "파일 비교",
+        "목록 비교",
+        "compare",
+        "diff"
+      ],
+      "related": [
+        "get-content",
+        "fc",
+        "get-filehash"
+      ]
+    }
+  ]
+}

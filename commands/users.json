@@ -1,0 +1,2861 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "users",
+  "commands": [
+    {
+      "id": "whoami",
+      "name": "whoami",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.whoami",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "현재 유효 사용자 이름 출력",
+      "description": "현재 셸의 유효 사용자(effective user) 이름을 출력합니다. sudo·su 로 전환한 뒤 실제로 어떤 계정으로 작업 중인지 확인할 때 씁니다. 그룹·UID 까지 보려면 id 를 사용합니다.",
+      "syntax": [
+        "whoami"
+      ],
+      "options": [
+        {
+          "flag": "--help",
+          "desc": "도움말 출력"
+        },
+        {
+          "flag": "--version",
+          "desc": "버전 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 사용자 확인",
+          "command": "whoami",
+          "output": "root"
+        },
+        {
+          "title": "sudo 로 실행될 때 사용자 확인",
+          "command": "sudo whoami",
+          "output": "root"
+        }
+      ],
+      "cautions": [],
+      "help": "man whoami",
+      "keywords": [
+        "현재 사용자",
+        "내 계정",
+        "사용자 확인",
+        "whoami",
+        "user"
+      ],
+      "related": [
+        "id",
+        "groups",
+        "who",
+        "w",
+        "sudo",
+        "su"
+      ]
+    },
+    {
+      "id": "id",
+      "name": "id",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.whoami",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "사용자의 UID·GID·소속 그룹 확인",
+      "description": "현재 사용자 또는 지정한 사용자의 UID, 기본 GID, 보조 그룹 목록을 출력합니다. SELinux 가 활성화된 RHEL 에서는 보안 컨텍스트도 함께 표시됩니다. 계정 생성 후 그룹 반영 여부를 확인할 때 가장 많이 씁니다.",
+      "syntax": [
+        "id [OPTION] [{{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-u",
+          "desc": "UID 만 출력"
+        },
+        {
+          "flag": "-g",
+          "desc": "기본 GID 만 출력"
+        },
+        {
+          "flag": "-G",
+          "desc": "모든 그룹 ID 출력"
+        },
+        {
+          "flag": "-n",
+          "desc": "-u/-g/-G 와 함께 숫자 대신 이름 출력"
+        },
+        {
+          "flag": "-Z",
+          "desc": "SELinux 보안 컨텍스트만 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 사용자 정보",
+          "command": "id",
+          "output": "uid=1000(admin) gid=1000(admin) groups=1000(admin),10(wheel)"
+        },
+        {
+          "title": "특정 사용자의 그룹 확인",
+          "command": "id {{USER}}"
+        },
+        {
+          "title": "그룹 이름만 출력",
+          "command": "id -Gn {{USER}}"
+        },
+        {
+          "title": "root 로 실행 중인지 스크립트에서 확인",
+          "command": "[ \"$(id -u)\" -eq 0 ] && echo root"
+        }
+      ],
+      "cautions": [
+        "usermod -aG 로 그룹을 추가해도 이미 로그인한 세션에는 반영되지 않습니다. 재로그인하거나 newgrp 를 사용하세요. (id {{USER}} 로 조회하면 새 그룹이 보임)"
+      ],
+      "help": "man id",
+      "keywords": [
+        "UID",
+        "GID",
+        "그룹 확인",
+        "소속 그룹",
+        "id",
+        "uid"
+      ],
+      "related": [
+        "whoami",
+        "groups",
+        "usermod"
+      ]
+    },
+    {
+      "id": "groups",
+      "name": "groups",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.whoami",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "사용자가 속한 그룹 이름 목록 출력",
+      "description": "현재 사용자 또는 지정한 사용자가 속한 그룹 이름을 공백으로 구분해 출력합니다. id -Gn 과 같은 결과이며, sudo 권한 그룹(wheel/sudo) 소속 여부를 빠르게 확인할 때 씁니다.",
+      "syntax": [
+        "groups [{{USER}}...]"
+      ],
+      "options": [
+        {
+          "flag": "{{USER}}",
+          "desc": "조회할 사용자 (여러 명 지정 가능, 생략 시 현재 세션)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 세션의 그룹",
+          "command": "groups"
+        },
+        {
+          "title": "특정 사용자의 그룹",
+          "command": "groups {{USER}}",
+          "output": "admin : admin wheel"
+        }
+      ],
+      "cautions": [
+        "인자 없이 실행하면 현재 세션 기준이라, 새로 추가된 그룹은 재로그인 전까지 보이지 않습니다."
+      ],
+      "help": "man groups",
+      "keywords": [
+        "그룹 목록",
+        "소속 그룹",
+        "groups",
+        "group"
+      ],
+      "related": [
+        "id",
+        "whoami",
+        "usermod"
+      ]
+    },
+    {
+      "id": "win-whoami",
+      "name": "whoami",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.whoami",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "현재 사용자·SID·그룹·권한(특권) 확인",
+      "description": "현재 로그온한 사용자 이름(도메인\\사용자)을 출력하며, 옵션으로 SID, 소속 그룹, 보유 특권(privilege)을 확인할 수 있습니다. 관리자 권한(UAC 상승) 상태인지 확인할 때 /groups 의 Mandatory Label 을 보면 됩니다.",
+      "syntax": [
+        "whoami [/upn | /fqdn | /logonid]",
+        "whoami [/user] [/groups] [/priv] [/fo {{FORMAT}}]",
+        "whoami /all"
+      ],
+      "options": [
+        {
+          "flag": "/user",
+          "desc": "사용자 이름과 SID 출력"
+        },
+        {
+          "flag": "/groups",
+          "desc": "소속 그룹과 그룹 SID, 무결성 수준(Mandatory Label) 출력"
+        },
+        {
+          "flag": "/priv",
+          "desc": "현재 토큰의 특권(SeDebugPrivilege 등)과 사용 여부 출력"
+        },
+        {
+          "flag": "/all",
+          "desc": "사용자·그룹·특권 정보를 모두 출력"
+        },
+        {
+          "flag": "/upn",
+          "desc": "UPN 형식(user@domain) 출력 (도메인 계정만)"
+        },
+        {
+          "flag": "/fo {{FORMAT}}",
+          "desc": "출력 형식 table / list / csv"
+        },
+        {
+          "flag": "/nh",
+          "desc": "table·csv 출력에서 헤더 생략"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 사용자 확인",
+          "command": "whoami",
+          "output": "corp\\admin"
+        },
+        {
+          "title": "관리자 권한으로 실행 중인지 확인",
+          "command": "whoami /groups | findstr /i \"High Mandatory\"",
+          "note": "High Mandatory Level 이 보이면 UAC 상승된 관리자 세션"
+        },
+        {
+          "title": "보유 특권 확인",
+          "command": "whoami /priv"
+        },
+        {
+          "title": "SID 확인",
+          "command": "whoami /user"
+        }
+      ],
+      "cautions": [
+        "관리자 그룹 계정이라도 UAC 로 상승하지 않은 세션은 Medium Mandatory Level 이며 대부분의 특권이 빠져 있습니다."
+      ],
+      "help": "whoami /?",
+      "keywords": [
+        "현재 사용자",
+        "SID",
+        "특권",
+        "관리자 권한 확인",
+        "whoami",
+        "privilege",
+        "UAC"
+      ],
+      "related": [
+        "runas",
+        "net-user",
+        "get-localuser",
+        "gpresult"
+      ]
+    },
+    {
+      "id": "sudo",
+      "name": "sudo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "다른 사용자(기본 root) 권한으로 명령 실행",
+      "description": "sudoers 에 허용된 사용자가 자신의 비밀번호로 인증한 뒤 root 또는 다른 사용자 권한으로 명령을 실행합니다. 실행 기록은 로그(RHEL: /var/log/secure, Ubuntu: /var/log/auth.log)와 journal 에 남습니다. root 비밀번호를 공유하지 않고 관리 권한을 위임하는 표준 방법입니다.",
+      "syntax": [
+        "sudo [-u {{USER}}] {{COMMAND}}",
+        "sudo -i | -s",
+        "sudo -l [-U {{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "대상 사용자의 로그인 셸 실행 (환경 초기화, 홈으로 이동)"
+        },
+        {
+          "flag": "-s",
+          "desc": "현재 환경을 유지한 채 셸 실행"
+        },
+        {
+          "flag": "-u {{USER}}",
+          "desc": "root 가 아닌 지정 사용자로 실행"
+        },
+        {
+          "flag": "-l",
+          "desc": "내가 sudo 로 실행할 수 있는 명령 목록 확인"
+        },
+        {
+          "flag": "-l -U {{USER}}",
+          "desc": "다른 사용자의 sudo 권한 확인 (root 필요)"
+        },
+        {
+          "flag": "-E",
+          "desc": "현재 환경 변수를 유지 (정책에서 허용해야 함)"
+        },
+        {
+          "flag": "-k",
+          "desc": "캐시된 인증 정보 무효화 (다음 실행 시 비밀번호 재요구)"
+        },
+        {
+          "flag": "-v",
+          "desc": "비밀번호 캐시 시간 연장"
+        }
+      ],
+      "examples": [
+        {
+          "title": "root 로그인 셸로 전환",
+          "command": "sudo -i"
+        },
+        {
+          "title": "서비스 계정으로 명령 실행",
+          "command": "sudo -u {{USER}} {{COMMAND}}"
+        },
+        {
+          "title": "내 sudo 권한 확인",
+          "command": "sudo -l"
+        },
+        {
+          "title": "root 권한으로 파일에 쓰기 (리다이렉션 주의)",
+          "command": "echo '{{TEXT}}' | sudo tee -a {{FILE}}",
+          "note": "sudo echo ... > file 은 리다이렉션이 일반 사용자 권한으로 처리되어 실패함"
+        }
+      ],
+      "cautions": [
+        "sudo {{COMMAND}} > {{FILE}} 의 리다이렉션은 sudo 밖(현재 사용자)에서 처리됩니다. sudo tee 또는 sudo sh -c '...' 를 사용하세요.",
+        "sudo -s 는 현재 사용자의 환경(PATH, HOME 일부)을 유지하므로 root 의 원래 환경이 필요하면 sudo -i 를 쓰세요."
+      ],
+      "platformNotes": {
+        "rhel": "관리자 그룹은 wheel 입니다 (%wheel ALL=(ALL) ALL). usermod -aG wheel {{USER}} 로 권한 부여.",
+        "debian": "관리자 그룹은 sudo 입니다 (%sudo ALL=(ALL:ALL) ALL). Ubuntu 는 root 비밀번호가 잠겨 있어 기본적으로 sudo 를 사용합니다. Debian 최소 설치에서는 sudo 패키지가 없을 수 있습니다."
+      },
+      "install": {
+        "rhel": {
+          "package": "sudo",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "sudo",
+          "preinstalled": true,
+          "note": "Debian 설치 시 root 비밀번호를 지정하면 sudo 가 설치되지 않을 수 있음"
+        }
+      },
+      "help": "man sudo",
+      "keywords": [
+        "권한 상승",
+        "관리자 권한",
+        "root 실행",
+        "sudo",
+        "superuser",
+        "wheel"
+      ],
+      "related": [
+        "su",
+        "visudo",
+        "etc-sudoers",
+        "whoami",
+        "usermod"
+      ]
+    },
+    {
+      "id": "su",
+      "name": "su",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "다른 사용자(기본 root)로 셸 전환",
+      "description": "대상 사용자의 비밀번호로 인증해 해당 사용자로 셸을 전환합니다. 인자를 생략하면 root 로 전환합니다. root 에서 실행하면 비밀번호 없이 다른 계정으로 전환할 수 있어 서비스 계정 확인에 자주 씁니다.",
+      "syntax": [
+        "su [-] [{{USER}}]",
+        "su - {{USER}} -c '{{COMMAND}}'"
+      ],
+      "options": [
+        {
+          "flag": "-, -l, --login",
+          "desc": "로그인 셸로 전환 (대상 사용자의 환경·홈 디렉토리 적용)"
+        },
+        {
+          "flag": "-c '{{COMMAND}}'",
+          "desc": "셸을 띄우지 않고 명령 하나만 실행"
+        },
+        {
+          "flag": "-s {{SHELL}}",
+          "desc": "사용할 셸 지정 (nologin 계정 확인 시 -s /bin/bash)"
+        },
+        {
+          "flag": "-m, -p",
+          "desc": "현재 환경 변수 유지"
+        }
+      ],
+      "examples": [
+        {
+          "title": "root 로그인 셸로 전환",
+          "command": "su -"
+        },
+        {
+          "title": "서비스 계정으로 전환 (root 에서)",
+          "command": "su - {{USER}}"
+        },
+        {
+          "title": "nologin 계정으로 명령 실행",
+          "command": "su -s /bin/bash -c '{{COMMAND}}' {{USER}}"
+        }
+      ],
+      "cautions": [
+        "'-' 없이 su 하면 이전 사용자의 환경(PATH 등)이 남아 명령을 못 찾거나 의도와 다른 바이너리가 실행될 수 있습니다.",
+        "root 비밀번호를 공유해야 하므로 감사 추적이 어렵습니다. 가능하면 sudo 를 사용하세요."
+      ],
+      "platformNotes": {
+        "rhel": "pam_wheel 설정(/etc/pam.d/su)으로 wheel 그룹만 su 를 허용하도록 제한할 수 있습니다.",
+        "debian": "Ubuntu 는 root 비밀번호가 설정되어 있지 않아 su - 가 실패합니다. sudo -i 를 사용하세요."
+      },
+      "help": "man su",
+      "keywords": [
+        "사용자 전환",
+        "root 전환",
+        "권한 상승",
+        "su",
+        "switch user"
+      ],
+      "related": [
+        "sudo",
+        "whoami",
+        "id"
+      ]
+    },
+    {
+      "id": "runas",
+      "name": "runas",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "다른 사용자 자격 증명으로 프로그램 실행",
+      "description": "다른 로컬·도메인 계정의 자격 증명으로 프로그램을 실행합니다. /netonly 를 쓰면 로컬은 현재 사용자로, 네트워크 접근만 지정 계정으로 인증해 다른 도메인 리소스 접속 테스트에 유용합니다.",
+      "syntax": [
+        "runas /user:{{DOMAIN}}\\{{USER}} \"{{COMMAND}}\"",
+        "runas /netonly /user:{{DOMAIN}}\\{{USER}} \"{{COMMAND}}\""
+      ],
+      "options": [
+        {
+          "flag": "/user:{{DOMAIN}}\\{{USER}}",
+          "desc": "실행할 계정 (user@domain 형식도 가능)"
+        },
+        {
+          "flag": "/netonly",
+          "desc": "자격 증명을 원격(네트워크) 접근에만 사용"
+        },
+        {
+          "flag": "/noprofile",
+          "desc": "사용자 프로필을 로드하지 않음 (빠르지만 일부 앱 오동작)"
+        },
+        {
+          "flag": "/profile",
+          "desc": "사용자 프로필 로드 (기본값)"
+        },
+        {
+          "flag": "/env",
+          "desc": "현재 환경 변수 사용"
+        },
+        {
+          "flag": "/savecred",
+          "desc": "자격 증명을 저장해 재사용 (보안상 비권장)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "다른 계정으로 cmd 실행",
+          "command": "runas /user:{{DOMAIN}}\\{{USER}} cmd"
+        },
+        {
+          "title": "다른 도메인 계정으로 MMC 도구 실행 (네트워크 인증만)",
+          "command": "runas /netonly /user:{{DOMAIN}}\\{{USER}} \"mmc dsa.msc\""
+        },
+        {
+          "title": "로컬 관리자 계정으로 실행",
+          "command": "runas /user:{{COMPUTER}}\\Administrator cmd"
+        }
+      ],
+      "cautions": [
+        "runas 는 UAC 상승(관리자 토큰)을 하지 않습니다. 관리자 권한이 필요하면 PowerShell 에서 Start-Process {{PROGRAM}} -Verb RunAs 또는 '관리자 권한으로 실행'을 사용하세요.",
+        "/savecred 로 저장된 자격 증명은 해당 사용자가 아무 프로그램에나 재사용할 수 있습니다."
+      ],
+      "help": "runas /?",
+      "keywords": [
+        "다른 사용자로 실행",
+        "권한 상승",
+        "자격 증명",
+        "runas",
+        "run as",
+        "netonly"
+      ],
+      "related": [
+        "win-whoami",
+        "net-user"
+      ]
+    },
+    {
+      "id": "chmod",
+      "name": "chmod",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.permission",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "파일·디렉토리 권한(rwx) 변경",
+      "description": "파일과 디렉토리의 읽기(r)·쓰기(w)·실행(x) 권한을 숫자(755) 또는 기호(u+x) 방식으로 변경합니다. setuid·setgid·sticky 비트도 설정할 수 있습니다. 파일 소유자 또는 root 만 변경할 수 있습니다.",
+      "syntax": [
+        "chmod [OPTION] {{MODE}} {{FILE}}...",
+        "chmod [OPTION] u|g|o|a +|-|= r|w|x {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-R",
+          "desc": "하위 디렉토리·파일까지 재귀 적용"
+        },
+        {
+          "flag": "-v",
+          "desc": "처리한 파일마다 결과 출력"
+        },
+        {
+          "flag": "-c",
+          "desc": "실제로 변경된 파일만 출력"
+        },
+        {
+          "flag": "--reference={{REF_FILE}}",
+          "desc": "기준 파일과 같은 권한으로 설정"
+        },
+        {
+          "flag": "u+x / g-w / o=",
+          "desc": "기호 방식: 소유자 실행 추가 / 그룹 쓰기 제거 / 기타 권한 모두 제거"
+        },
+        {
+          "flag": "X (대문자)",
+          "desc": "디렉토리와 이미 실행 권한이 있는 파일에만 x 부여"
+        },
+        {
+          "flag": "4xxx / 2xxx / 1xxx",
+          "desc": "setuid / setgid / sticky 비트"
+        }
+      ],
+      "examples": [
+        {
+          "title": "스크립트에 실행 권한 추가",
+          "command": "chmod +x {{FILE}}"
+        },
+        {
+          "title": "디렉토리 755, 파일 644 로 일괄 정리",
+          "command": "find {{DIR}} -type d -exec chmod 755 {} +\nfind {{DIR}} -type f -exec chmod 644 {} +"
+        },
+        {
+          "title": "소유자만 접근 가능하게 (그룹·기타 제거)",
+          "command": "chmod -R u+rwX,go-rwx {{DIR}}"
+        },
+        {
+          "title": "SSH 개인키 권한 설정",
+          "command": "chmod 700 ~/.ssh\nchmod 600 ~/.ssh/id_rsa ~/.ssh/authorized_keys"
+        },
+        {
+          "title": "공유 디렉토리에 sticky 비트 (본인 파일만 삭제)",
+          "command": "chmod 1777 {{DIR}}"
+        }
+      ],
+      "cautions": [
+        "chmod -R 777 은 보안 사고의 원인이 됩니다. 필요한 최소 권한만 부여하세요.",
+        "chmod -R 755 처럼 숫자로 재귀 적용하면 일반 파일까지 실행 권한이 붙습니다. find 로 파일/디렉토리를 나누거나 X 를 사용하세요.",
+        "ACL 이 설정된 파일은 chmod 의 그룹 권한이 ACL mask 를 바꿉니다."
+      ],
+      "help": "man chmod",
+      "keywords": [
+        "권한 변경",
+        "퍼미션",
+        "실행 권한",
+        "chmod",
+        "permission",
+        "755",
+        "644",
+        "setuid"
+      ],
+      "related": [
+        "chown",
+        "chgrp",
+        "umask",
+        "setfacl",
+        "ls",
+        "stat"
+      ]
+    },
+    {
+      "id": "chown",
+      "name": "chown",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.permission",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "파일 소유자·그룹 변경",
+      "description": "파일과 디렉토리의 소유자(및 그룹)를 변경합니다. 소유자 변경은 root 만 가능합니다. 애플리케이션 설치 디렉토리나 데이터 디렉토리를 서비스 계정 소유로 맞출 때 자주 씁니다.",
+      "syntax": [
+        "chown [OPTION] {{USER}}[:{{GROUP}}] {{FILE}}...",
+        "chown [OPTION] :{{GROUP}} {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-R",
+          "desc": "하위까지 재귀 적용"
+        },
+        {
+          "flag": "-h",
+          "desc": "심볼릭 링크가 가리키는 대상이 아닌 링크 자체를 변경"
+        },
+        {
+          "flag": "-v / -c",
+          "desc": "처리 결과 출력 / 변경된 것만 출력"
+        },
+        {
+          "flag": "--reference={{REF_FILE}}",
+          "desc": "기준 파일과 같은 소유자·그룹으로 설정"
+        },
+        {
+          "flag": "--from={{OLD_USER}}:{{OLD_GROUP}}",
+          "desc": "현재 소유자가 일치하는 파일만 변경"
+        },
+        {
+          "flag": "{{USER}}:",
+          "desc": "콜론 뒤를 비우면 그룹을 해당 사용자의 기본 그룹으로 설정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디렉토리 소유자·그룹 재귀 변경",
+          "command": "chown -R {{USER}}:{{GROUP}} {{DIR}}"
+        },
+        {
+          "title": "그룹만 변경",
+          "command": "chown :{{GROUP}} {{FILE}}"
+        },
+        {
+          "title": "특정 UID 소유 파일만 다른 사용자로 변경",
+          "command": "chown -R --from={{OLD_USER}} {{USER}} {{DIR}}"
+        }
+      ],
+      "cautions": [
+        "chown -R 경로를 잘못 지정하면(예: / 나 /usr) 시스템이 망가질 수 있습니다. 실행 전 경로를 다시 확인하세요.",
+        "setuid/setgid 비트가 있는 파일은 소유자를 바꾸면 해당 비트가 해제될 수 있습니다."
+      ],
+      "help": "man chown",
+      "keywords": [
+        "소유자 변경",
+        "소유권",
+        "chown",
+        "owner",
+        "그룹 변경"
+      ],
+      "related": [
+        "chgrp",
+        "chmod",
+        "ls",
+        "stat",
+        "id"
+      ]
+    },
+    {
+      "id": "chgrp",
+      "name": "chgrp",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.permission",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "파일 소유 그룹 변경",
+      "description": "파일과 디렉토리의 소유 그룹을 변경합니다. 파일 소유자는 자신이 속한 그룹으로만 바꿀 수 있고, root 는 모든 그룹으로 바꿀 수 있습니다. chown :그룹 과 같은 동작입니다.",
+      "syntax": [
+        "chgrp [OPTION] {{GROUP}} {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-R",
+          "desc": "하위까지 재귀 적용"
+        },
+        {
+          "flag": "-h",
+          "desc": "심볼릭 링크 자체를 변경"
+        },
+        {
+          "flag": "-v / -c",
+          "desc": "처리 결과 출력 / 변경된 것만 출력"
+        },
+        {
+          "flag": "--reference={{REF_FILE}}",
+          "desc": "기준 파일과 같은 그룹으로 설정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "공유 디렉토리 그룹 변경 + setgid 로 새 파일 그룹 상속",
+          "command": "chgrp -R {{GROUP}} {{DIR}}\nchmod g+s {{DIR}}"
+        },
+        {
+          "title": "로그 파일 그룹 변경",
+          "command": "chgrp {{GROUP}} {{FILE}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man chgrp",
+      "keywords": [
+        "그룹 변경",
+        "소유 그룹",
+        "chgrp",
+        "group"
+      ],
+      "related": [
+        "chown",
+        "chmod",
+        "groups"
+      ]
+    },
+    {
+      "id": "icacls",
+      "name": "icacls",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.permission",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NTFS 파일·폴더 권한(ACL) 조회·부여·백업",
+      "description": "NTFS 파일·폴더의 접근 제어 목록(DACL)을 조회하고 권한을 부여·거부·제거합니다. 상속 설정, 소유자 변경, ACL 백업·복원도 가능합니다. 일반 사용자도 조회는 가능하지만 시스템 폴더 권한 변경에는 관리자 권한이 필요합니다.",
+      "syntax": [
+        "icacls {{PATH}} [/grant[:r] {{USER}}:{{PERM}}] [/deny {{USER}}:{{PERM}}] [/remove {{USER}}] [/T] [/C]",
+        "icacls {{PATH}} /save {{ACL_FILE}} /T",
+        "icacls {{DIR}} /restore {{ACL_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "/grant {{USER}}:{{PERM}}",
+          "desc": "권한 추가 (/grant:r 은 기존 명시 권한을 대체)"
+        },
+        {
+          "flag": "/deny {{USER}}:{{PERM}}",
+          "desc": "명시적 거부 (허용보다 우선)"
+        },
+        {
+          "flag": "/remove {{USER}}",
+          "desc": "해당 사용자의 허용·거부 항목 모두 제거"
+        },
+        {
+          "flag": "/inheritance:e|d|r",
+          "desc": "상속 사용 / 상속 끊고 복사 / 상속 끊고 상속 항목 제거"
+        },
+        {
+          "flag": "/reset",
+          "desc": "명시 권한을 제거하고 상위 폴더에서 상속된 기본 ACL 로 초기화"
+        },
+        {
+          "flag": "/setowner {{USER}}",
+          "desc": "소유자 변경"
+        },
+        {
+          "flag": "/T",
+          "desc": "하위 폴더·파일까지 적용"
+        },
+        {
+          "flag": "/C",
+          "desc": "오류가 나도 계속 진행"
+        },
+        {
+          "flag": "/save / /restore",
+          "desc": "ACL 을 파일로 백업 / 복원"
+        },
+        {
+          "flag": "F, M, RX, R, W, (OI)(CI)",
+          "desc": "전체 / 수정 / 읽기·실행 / 읽기 / 쓰기, 하위 파일(OI)·폴더(CI)에 상속"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폴더 권한 조회",
+          "command": "icacls {{DIR}}"
+        },
+        {
+          "title": "하위 파일·폴더에 상속되는 수정 권한 부여",
+          "command": "icacls {{DIR}} /grant {{DOMAIN}}\\{{USER}}:(OI)(CI)M /T"
+        },
+        {
+          "title": "변경 전 ACL 백업 및 복원",
+          "command": "icacls {{DIR}} /save C:\\temp\\acl_backup.txt /T /C\nicacls {{PARENT_DIR}} /restore C:\\temp\\acl_backup.txt",
+          "note": "restore 는 백업 대상 폴더의 상위 경로를 지정"
+        },
+        {
+          "title": "권한을 상속 기본값으로 초기화",
+          "command": "icacls {{DIR}} /reset /T /C"
+        }
+      ],
+      "cautions": [
+        "/grant:r 과 /inheritance:r 을 잘못 쓰면 Administrators·SYSTEM 권한까지 사라져 접근 불가가 될 수 있습니다. 변경 전 /save 로 백업하세요.",
+        "/deny 는 허용보다 우선하므로 Everyone 이나 Users 에 거부를 걸면 관리자도 막힐 수 있습니다."
+      ],
+      "help": "icacls /?",
+      "keywords": [
+        "NTFS 권한",
+        "폴더 권한",
+        "ACL",
+        "icacls",
+        "permission",
+        "상속",
+        "권한 부여"
+      ],
+      "related": [
+        "takeown",
+        "win-whoami"
+      ]
+    },
+    {
+      "id": "takeown",
+      "name": "takeown",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.permission",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "접근 거부된 파일·폴더의 소유권 가져오기",
+      "description": "관리자가 접근 거부된 파일·폴더의 소유권을 현재 사용자 또는 Administrators 그룹으로 가져옵니다. 소유권을 가진 뒤 icacls 로 권한을 다시 부여하는 순서로 사용합니다.",
+      "syntax": [
+        "takeown /F {{PATH}} [/A] [/R [/D Y|N]]"
+      ],
+      "options": [
+        {
+          "flag": "/F {{PATH}}",
+          "desc": "대상 파일·폴더 (와일드카드 가능)"
+        },
+        {
+          "flag": "/A",
+          "desc": "현재 사용자 대신 Administrators 그룹에 소유권 부여"
+        },
+        {
+          "flag": "/R",
+          "desc": "하위 폴더·파일까지 재귀 적용"
+        },
+        {
+          "flag": "/D Y|N",
+          "desc": "/R 사용 시 목록 권한이 없는 폴더를 만났을 때 기본 응답"
+        },
+        {
+          "flag": "/S {{COMPUTER}}",
+          "desc": "원격 컴퓨터 대상"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폴더 소유권을 Administrators 로 가져오고 권한 부여",
+          "command": "takeown /F {{DIR}} /A /R /D Y\nicacls {{DIR}} /grant Administrators:F /T /C"
+        }
+      ],
+      "cautions": [
+        "C:\\Windows, WindowsApps 등 시스템 폴더의 소유권을 바꾸면 업데이트·앱 동작이 깨질 수 있습니다."
+      ],
+      "help": "takeown /?",
+      "keywords": [
+        "소유권",
+        "접근 거부",
+        "takeown",
+        "ownership",
+        "access denied"
+      ],
+      "related": [
+        "icacls"
+      ]
+    },
+    {
+      "id": "useradd",
+      "name": "useradd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 사용자 계정 생성 (비대화식)",
+      "description": "새 로컬 사용자 계정을 생성합니다. 홈 디렉토리, 기본 셸, 보조 그룹, UID 등을 옵션으로 지정하며 기본값은 /etc/default/useradd 와 /etc/login.defs 를 따릅니다. 생성 후 passwd 로 비밀번호를 설정해야 로그인할 수 있습니다.",
+      "syntax": [
+        "useradd [OPTION] {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-m",
+          "desc": "홈 디렉토리 생성 (/etc/skel 복사)"
+        },
+        {
+          "flag": "-M",
+          "desc": "홈 디렉토리 생성 안 함"
+        },
+        {
+          "flag": "-d {{HOME_DIR}}",
+          "desc": "홈 디렉토리 경로 지정"
+        },
+        {
+          "flag": "-s {{SHELL}}",
+          "desc": "로그인 셸 (예: /bin/bash, /sbin/nologin)"
+        },
+        {
+          "flag": "-g {{GROUP}}",
+          "desc": "기본 그룹 지정"
+        },
+        {
+          "flag": "-G {{GROUP1}},{{GROUP2}}",
+          "desc": "보조 그룹 지정"
+        },
+        {
+          "flag": "-u {{UID}}",
+          "desc": "UID 지정 (여러 서버 간 UID 통일 시)"
+        },
+        {
+          "flag": "-c '{{COMMENT}}'",
+          "desc": "설명(GECOS) 필드"
+        },
+        {
+          "flag": "-r",
+          "desc": "시스템 계정 생성 (낮은 UID 대역, 홈 미생성)"
+        },
+        {
+          "flag": "-e {{DATE}}",
+          "desc": "계정 만료일"
+        }
+      ],
+      "examples": [
+        {
+          "title": "일반 사용자 생성 후 비밀번호 설정",
+          "command": "useradd -m -s /bin/bash {{USER}}\npasswd {{USER}}"
+        },
+        {
+          "title": "관리자 그룹 포함 계정 생성",
+          "command": "useradd -m -s /bin/bash -G wheel {{USER}}",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "관리자 그룹 포함 계정 생성",
+          "command": "useradd -m -s /bin/bash -G sudo {{USER}}",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "로그인 불가 서비스 계정 생성",
+          "command": "useradd -r -s /sbin/nologin -d {{HOME_DIR}} {{USER}}",
+          "note": "Debian 계열은 /usr/sbin/nologin"
+        }
+      ],
+      "cautions": [
+        "-G 에 존재하지 않는 그룹을 쓰면 계정 생성 자체가 실패합니다.",
+        "비밀번호를 설정하기 전에는 비밀번호 로그인이 불가합니다 (계정이 잠긴 상태)."
+      ],
+      "platformNotes": {
+        "rhel": "login.defs 의 CREATE_HOME yes 로 -m 없이도 홈 디렉토리가 만들어집니다. adduser 는 useradd 로의 심볼릭 링크입니다.",
+        "debian": "-m 을 주지 않으면 홈 디렉토리가 생성되지 않고 기본 셸이 /bin/sh 일 수 있습니다. 대화식으로 만들려면 adduser 를 사용하세요."
+      },
+      "help": "man useradd",
+      "keywords": [
+        "사용자 생성",
+        "계정 추가",
+        "계정 생성",
+        "useradd",
+        "add user"
+      ],
+      "related": [
+        "usermod",
+        "userdel",
+        "passwd",
+        "adduser",
+        "groupadd",
+        "chage",
+        "id"
+      ]
+    },
+    {
+      "id": "usermod",
+      "name": "usermod",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "사용자 계정 속성 변경 (그룹·셸·잠금 등)",
+      "description": "기존 사용자 계정의 보조 그룹, 셸, 홈 디렉토리, 이름, 잠금 상태, 만료일 등을 변경합니다. 가장 흔한 용도는 sudo 권한 그룹(wheel/sudo)에 사용자를 추가하는 것입니다.",
+      "syntax": [
+        "usermod [OPTION] {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-aG {{GROUP}}",
+          "desc": "기존 보조 그룹을 유지하며 그룹 추가"
+        },
+        {
+          "flag": "-G {{GROUP1}},{{GROUP2}}",
+          "desc": "보조 그룹을 지정한 목록으로 교체 (-a 없으면 기존 그룹 제거)"
+        },
+        {
+          "flag": "-L / -U",
+          "desc": "비밀번호 잠금 / 해제"
+        },
+        {
+          "flag": "-s {{SHELL}}",
+          "desc": "로그인 셸 변경"
+        },
+        {
+          "flag": "-d {{HOME_DIR}} -m",
+          "desc": "홈 디렉토리 변경 및 기존 내용 이동"
+        },
+        {
+          "flag": "-l {{NEW_NAME}}",
+          "desc": "로그인 이름 변경"
+        },
+        {
+          "flag": "-e {{DATE}}",
+          "desc": "계정 만료일 설정 (-e '' 또는 -e -1 로 해제)"
+        },
+        {
+          "flag": "-c '{{COMMENT}}'",
+          "desc": "설명(GECOS) 변경"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용자를 sudo 권한 그룹에 추가",
+          "command": "usermod -aG wheel {{USER}}",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "사용자를 sudo 권한 그룹에 추가",
+          "command": "usermod -aG sudo {{USER}}",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "퇴사자 계정 잠금 + 셸 차단",
+          "command": "usermod -L -e 1 {{USER}}\nusermod -s /sbin/nologin {{USER}}",
+          "note": "-e 1 은 1970-01-02 만료로 SSH 키 로그인까지 차단"
+        },
+        {
+          "title": "변경 결과 확인",
+          "command": "id {{USER}}"
+        }
+      ],
+      "cautions": [
+        "-a 없이 -G 만 쓰면 기존 보조 그룹이 모두 제거됩니다 (wheel 에서 빠져 sudo 불가).",
+        "-L 은 비밀번호만 잠그므로 SSH 키 인증은 계속 가능합니다. 완전 차단은 -e 만료 또는 셸 변경을 함께 사용하세요.",
+        "그룹 변경은 해당 사용자가 재로그인해야 반영됩니다."
+      ],
+      "help": "man usermod",
+      "keywords": [
+        "계정 수정",
+        "그룹 추가",
+        "계정 잠금",
+        "usermod",
+        "modify user",
+        "wheel",
+        "sudo 그룹"
+      ],
+      "related": [
+        "useradd",
+        "userdel",
+        "passwd",
+        "id",
+        "groups",
+        "chage"
+      ]
+    },
+    {
+      "id": "userdel",
+      "name": "userdel",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "사용자 계정 삭제 (-r 로 홈까지 삭제)",
+      "description": "사용자 계정을 /etc/passwd, /etc/shadow, /etc/group 에서 삭제합니다. -r 옵션을 쓰면 홈 디렉토리와 메일 스풀까지 삭제합니다. 다른 경로에 있는 해당 사용자 소유 파일은 남아 UID 숫자로 표시됩니다.",
+      "syntax": [
+        "userdel [-r] [-f] {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-r",
+          "desc": "홈 디렉토리와 메일 스풀도 삭제"
+        },
+        {
+          "flag": "-f",
+          "desc": "로그인 중이어도 강제 삭제"
+        }
+      ],
+      "examples": [
+        {
+          "title": "계정만 삭제 (홈 보존)",
+          "command": "userdel {{USER}}"
+        },
+        {
+          "title": "홈 백업 후 계정과 홈 삭제",
+          "command": "tar czf /root/{{USER}}_home.tgz /home/{{USER}}\nuserdel -r {{USER}}"
+        },
+        {
+          "title": "삭제 후 남은 소유자 없는 파일 찾기",
+          "command": "find / -xdev -nouser -ls 2>/dev/null"
+        }
+      ],
+      "cautions": [
+        "-r 은 홈 디렉토리를 즉시 삭제하며 복구할 수 없습니다. 먼저 백업하거나 usermod -L 로 잠그는 것을 고려하세요.",
+        "실행 중인 프로세스가 있으면 삭제가 실패합니다. -f 는 프로세스를 정리하지 않으므로 pkill -u {{USER}} 로 먼저 종료하세요.",
+        "삭제한 UID 가 새 계정에 재사용되면 남은 파일의 소유권을 새 계정이 갖게 됩니다."
+      ],
+      "help": "man userdel",
+      "keywords": [
+        "계정 삭제",
+        "사용자 삭제",
+        "userdel",
+        "delete user",
+        "remove user"
+      ],
+      "related": [
+        "useradd",
+        "usermod",
+        "deluser",
+        "pkill"
+      ]
+    },
+    {
+      "id": "passwd",
+      "name": "passwd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "비밀번호 변경·잠금·상태 확인",
+      "description": "사용자 비밀번호를 변경합니다. 일반 사용자는 자신의 비밀번호만, root 는 모든 사용자의 비밀번호를 바꿀 수 있습니다. 계정 잠금·해제, 비밀번호 상태 확인, 다음 로그인 시 변경 강제도 가능합니다.",
+      "syntax": [
+        "passwd [{{USER}}]",
+        "passwd -l|-u|-S|-e {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-S",
+          "desc": "비밀번호 상태 확인 (P=설정됨, L=잠김, NP=없음)"
+        },
+        {
+          "flag": "-l",
+          "desc": "비밀번호 잠금"
+        },
+        {
+          "flag": "-u",
+          "desc": "비밀번호 잠금 해제"
+        },
+        {
+          "flag": "-e",
+          "desc": "비밀번호 즉시 만료 (다음 로그인 시 변경 강제)"
+        },
+        {
+          "flag": "-d",
+          "desc": "비밀번호 삭제 (빈 비밀번호)"
+        },
+        {
+          "flag": "-x {{DAYS}} / -n {{DAYS}} / -w {{DAYS}}",
+          "desc": "최대 사용일 / 최소 사용일 / 만료 경고일"
+        },
+        {
+          "flag": "--stdin",
+          "desc": "표준 입력으로 비밀번호 지정 (RHEL 계열만)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용자 비밀번호 재설정",
+          "command": "passwd {{USER}}"
+        },
+        {
+          "title": "비밀번호 상태 확인",
+          "command": "passwd -S {{USER}}"
+        },
+        {
+          "title": "초기 비밀번호 설정 후 첫 로그인 시 변경 강제",
+          "command": "passwd {{USER}}\npasswd -e {{USER}}"
+        },
+        {
+          "title": "스크립트로 비밀번호 설정 (배포판 공통)",
+          "command": "echo '{{USER}}:{{PASSWORD}}' | chpasswd"
+        },
+        {
+          "title": "스크립트로 비밀번호 설정",
+          "command": "echo '{{PASSWORD}}' | passwd --stdin {{USER}}",
+          "platforms": [
+            "rhel"
+          ]
+        }
+      ],
+      "cautions": [
+        "명령줄에 비밀번호를 쓰면 셸 history 와 프로세스 목록에 남을 수 있습니다.",
+        "pam_faillock 으로 잠긴 계정은 passwd -u 가 아니라 faillock --user {{USER}} --reset 으로 해제해야 합니다."
+      ],
+      "platformNotes": {
+        "rhel": "--stdin 옵션을 지원합니다. 비밀번호 복잡도는 /etc/security/pwquality.conf 에서 설정합니다.",
+        "debian": "--stdin 옵션이 없으므로 chpasswd 를 사용하세요. -S 출력 형식이 RHEL 과 다릅니다."
+      },
+      "help": "man passwd",
+      "keywords": [
+        "비밀번호 변경",
+        "패스워드",
+        "계정 잠금",
+        "passwd",
+        "password",
+        "lock"
+      ],
+      "related": [
+        "chage",
+        "usermod",
+        "useradd"
+      ]
+    },
+    {
+      "id": "groupadd",
+      "name": "groupadd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 그룹 생성",
+      "description": "새 로컬 그룹을 /etc/group 에 생성합니다. 그룹 삭제는 groupdel, 이름·GID 변경은 groupmod, 구성원 관리는 gpasswd 나 usermod -aG 를 사용합니다.",
+      "syntax": [
+        "groupadd [-g {{GID}}] [-r] {{GROUP}}"
+      ],
+      "options": [
+        {
+          "flag": "-g {{GID}}",
+          "desc": "GID 지정 (여러 서버 간 통일 시)"
+        },
+        {
+          "flag": "-r",
+          "desc": "시스템 그룹 생성 (낮은 GID 대역)"
+        },
+        {
+          "flag": "-f",
+          "desc": "이미 있으면 오류 없이 성공 처리"
+        }
+      ],
+      "examples": [
+        {
+          "title": "그룹 생성 후 사용자 추가",
+          "command": "groupadd {{GROUP}}\nusermod -aG {{GROUP}} {{USER}}"
+        },
+        {
+          "title": "그룹에서 사용자 제거",
+          "command": "gpasswd -d {{USER}} {{GROUP}}"
+        },
+        {
+          "title": "그룹 구성원 확인",
+          "command": "getent group {{GROUP}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man groupadd",
+      "keywords": [
+        "그룹 생성",
+        "그룹 추가",
+        "groupadd",
+        "groupdel",
+        "gpasswd",
+        "group"
+      ],
+      "related": [
+        "usermod",
+        "useradd",
+        "groups"
+      ]
+    },
+    {
+      "id": "adduser",
+      "name": "adduser",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "대화식 사용자 생성·그룹 추가 (Debian 계열)",
+      "description": "Debian/Ubuntu 의 사용자 생성 도구로, 홈 디렉토리 생성·셸 지정·비밀번호 입력까지 대화식으로 진행합니다. 'adduser 사용자 그룹' 형식으로 기존 사용자를 그룹에 추가할 수도 있습니다.",
+      "syntax": [
+        "adduser [OPTION] {{USER}}",
+        "adduser {{USER}} {{GROUP}}"
+      ],
+      "options": [
+        {
+          "flag": "--disabled-password",
+          "desc": "비밀번호 없이 생성 (SSH 키 로그인 전용)"
+        },
+        {
+          "flag": "--gecos '{{COMMENT}}'",
+          "desc": "이름 등 GECOS 정보 지정 (질문 생략)"
+        },
+        {
+          "flag": "--shell {{SHELL}}",
+          "desc": "로그인 셸 지정"
+        },
+        {
+          "flag": "--home {{HOME_DIR}}",
+          "desc": "홈 디렉토리 지정"
+        },
+        {
+          "flag": "--uid {{UID}}",
+          "desc": "UID 지정"
+        },
+        {
+          "flag": "--ingroup {{GROUP}}",
+          "desc": "기본 그룹 지정"
+        },
+        {
+          "flag": "--system",
+          "desc": "시스템 계정 생성"
+        }
+      ],
+      "examples": [
+        {
+          "title": "대화식 사용자 생성",
+          "command": "adduser {{USER}}"
+        },
+        {
+          "title": "기존 사용자를 sudo 그룹에 추가",
+          "command": "adduser {{USER}} sudo"
+        },
+        {
+          "title": "SSH 키 전용 계정 비대화식 생성",
+          "command": "adduser --disabled-password --gecos '' {{USER}}"
+        }
+      ],
+      "cautions": [
+        "대화식 입력을 기다리므로 스크립트에서는 --disabled-password, --gecos 를 지정하거나 useradd 를 사용하세요."
+      ],
+      "platformNotes": {
+        "debian": "Ubuntu 24.04·Debian 13 등 최신 adduser 는 --gecos 대신 --comment 사용을 권장합니다. RHEL 계열의 adduser 는 useradd 의 링크라 동작이 다릅니다."
+      },
+      "help": "man adduser",
+      "keywords": [
+        "사용자 생성",
+        "계정 추가",
+        "adduser",
+        "add user",
+        "대화식"
+      ],
+      "related": [
+        "useradd",
+        "deluser",
+        "usermod",
+        "passwd"
+      ]
+    },
+    {
+      "id": "deluser",
+      "name": "deluser",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "사용자 삭제·그룹에서 제거 (Debian 계열)",
+      "description": "Debian/Ubuntu 의 사용자 삭제 도구입니다. 옵션으로 홈 디렉토리와 사용자 소유 파일을 백업 후 삭제할 수 있고, 'deluser 사용자 그룹' 형식으로 그룹 구성원에서만 제거할 수도 있습니다.",
+      "syntax": [
+        "deluser [OPTION] {{USER}}",
+        "deluser {{USER}} {{GROUP}}"
+      ],
+      "options": [
+        {
+          "flag": "--remove-home",
+          "desc": "홈 디렉토리와 메일 스풀 삭제"
+        },
+        {
+          "flag": "--remove-all-files",
+          "desc": "시스템 전체에서 사용자 소유 파일 삭제"
+        },
+        {
+          "flag": "--backup",
+          "desc": "삭제 전 파일을 압축 백업"
+        },
+        {
+          "flag": "--backup-to {{DIR}}",
+          "desc": "백업 저장 위치 지정"
+        },
+        {
+          "flag": "--system",
+          "desc": "시스템 계정일 때만 삭제"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용자를 그룹에서만 제거",
+          "command": "deluser {{USER}} {{GROUP}}"
+        },
+        {
+          "title": "홈 백업 후 사용자 삭제",
+          "command": "deluser --backup --backup-to /root --remove-home {{USER}}"
+        }
+      ],
+      "cautions": [
+        "--remove-all-files 는 시스템 전체를 검색해 해당 사용자 소유 파일을 모두 삭제합니다. 공유 데이터가 사라질 수 있습니다."
+      ],
+      "help": "man deluser",
+      "keywords": [
+        "계정 삭제",
+        "그룹에서 제거",
+        "deluser",
+        "delete user"
+      ],
+      "related": [
+        "userdel",
+        "adduser",
+        "usermod"
+      ]
+    },
+    {
+      "id": "net-user",
+      "name": "net user",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬·도메인 사용자 조회·생성·비밀번호 변경",
+      "description": "로컬(또는 /domain 으로 도메인) 사용자 계정을 조회·생성·삭제하고 비밀번호와 활성 상태를 변경합니다. 단일 사용자 조회 시 마지막 로그온, 비밀번호 만료일, 소속 그룹 등을 확인할 수 있습니다. 조회는 일반 사용자도 가능합니다.",
+      "syntax": [
+        "net user [{{USER}} [{{PASSWORD}} | *] [/add | /delete]] [/domain]",
+        "net user {{USER}} /active:yes|no"
+      ],
+      "options": [
+        {
+          "flag": "{{USER}} *",
+          "desc": "비밀번호를 화면에 표시하지 않고 입력받아 변경"
+        },
+        {
+          "flag": "/add",
+          "desc": "계정 생성"
+        },
+        {
+          "flag": "/delete",
+          "desc": "계정 삭제"
+        },
+        {
+          "flag": "/active:yes|no",
+          "desc": "계정 활성화 / 비활성화"
+        },
+        {
+          "flag": "/domain",
+          "desc": "로컬 대신 도메인 컨트롤러에서 처리"
+        },
+        {
+          "flag": "/expires:{{DATE}}|never",
+          "desc": "계정 만료일"
+        },
+        {
+          "flag": "/passwordchg:yes|no",
+          "desc": "사용자의 비밀번호 변경 허용 여부"
+        },
+        {
+          "flag": "/fullname:\"{{NAME}}\" /comment:\"{{TEXT}}\"",
+          "desc": "전체 이름 / 설명"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 사용자 목록",
+          "command": "net user"
+        },
+        {
+          "title": "사용자 상세 (마지막 로그온·만료·그룹)",
+          "command": "net user {{USER}}"
+        },
+        {
+          "title": "도메인 사용자의 잠금·비밀번호 만료 확인",
+          "command": "net user {{USER}} /domain"
+        },
+        {
+          "title": "로컬 사용자 생성 후 관리자 그룹 추가",
+          "command": "net user {{USER}} * /add\nnet localgroup Administrators {{USER}} /add"
+        },
+        {
+          "title": "계정 비활성화",
+          "command": "net user {{USER}} /active:no"
+        }
+      ],
+      "cautions": [
+        "명령줄에 비밀번호를 직접 쓰면 기록에 남을 수 있으니 * 로 입력받으세요.",
+        "net user 는 20자를 초과하는 사용자 이름을 처리하지 못합니다."
+      ],
+      "help": "net help user",
+      "keywords": [
+        "사용자 계정",
+        "계정 생성",
+        "비밀번호 변경",
+        "net user",
+        "local user",
+        "도메인 사용자"
+      ],
+      "related": [
+        "net-localgroup",
+        "net-accounts",
+        "get-localuser",
+        "new-localuser"
+      ]
+    },
+    {
+      "id": "net-localgroup",
+      "name": "net localgroup",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬 그룹 조회·구성원 추가·제거",
+      "description": "로컬 그룹 목록과 구성원을 조회하고 사용자·도메인 그룹을 로컬 그룹에 추가하거나 제거합니다. 서버의 로컬 Administrators 나 Remote Desktop Users 구성원 확인·변경에 주로 씁니다.",
+      "syntax": [
+        "net localgroup [{{GROUP}} [{{MEMBER}}...] [/add | /delete]]"
+      ],
+      "options": [
+        {
+          "flag": "{{GROUP}}",
+          "desc": "그룹 이름 (생략하면 전체 로컬 그룹 목록)"
+        },
+        {
+          "flag": "/add",
+          "desc": "구성원 추가 (구성원 없이 쓰면 그룹 생성)"
+        },
+        {
+          "flag": "/delete",
+          "desc": "구성원 제거 (구성원 없이 쓰면 그룹 삭제)"
+        },
+        {
+          "flag": "/comment:\"{{TEXT}}\"",
+          "desc": "그룹 설명"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 관리자 그룹 구성원 확인",
+          "command": "net localgroup Administrators"
+        },
+        {
+          "title": "도메인 사용자에게 원격 데스크톱 허용",
+          "command": "net localgroup \"Remote Desktop Users\" {{DOMAIN}}\\{{USER}} /add"
+        },
+        {
+          "title": "관리자 그룹에서 제거",
+          "command": "net localgroup Administrators {{USER}} /delete"
+        }
+      ],
+      "cautions": [
+        "도메인 GPO(제한된 그룹)로 관리되는 그룹은 다음 정책 갱신 시 변경 사항이 되돌아갈 수 있습니다."
+      ],
+      "help": "net help localgroup",
+      "keywords": [
+        "로컬 그룹",
+        "관리자 그룹",
+        "그룹 구성원",
+        "net localgroup",
+        "Administrators",
+        "Remote Desktop Users"
+      ],
+      "related": [
+        "net-user",
+        "get-localuser",
+        "gpresult"
+      ]
+    },
+    {
+      "id": "get-localuser",
+      "name": "Get-LocalUser",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "로컬 사용자 계정 조회 (PowerShell)",
+      "description": "로컬 사용자 계정의 이름, 활성 여부, 마지막 로그온, 비밀번호 설정일 등을 개체로 조회합니다. 관련 cmdlet 으로 Enable-LocalUser, Disable-LocalUser, Set-LocalUser, Remove-LocalUser, Get-LocalGroupMember 가 있습니다.",
+      "syntax": [
+        "Get-LocalUser [-Name {{USER}}]",
+        "Get-LocalGroupMember -Group {{GROUP}}"
+      ],
+      "options": [
+        {
+          "flag": "-Name {{USER}}",
+          "desc": "사용자 이름 (와일드카드 가능)"
+        },
+        {
+          "flag": "-SID {{SID}}",
+          "desc": "SID 로 조회"
+        },
+        {
+          "flag": "| Select-Object *",
+          "desc": "모든 속성 표시 (PasswordLastSet, LastLogon 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 사용자 목록과 활성 여부",
+          "command": "Get-LocalUser"
+        },
+        {
+          "title": "사용자 상세 속성",
+          "command": "Get-LocalUser -Name {{USER}} | Select-Object *"
+        },
+        {
+          "title": "활성 계정의 마지막 로그온 확인",
+          "command": "Get-LocalUser | Where-Object Enabled | Select-Object Name, LastLogon, PasswordLastSet"
+        },
+        {
+          "title": "로컬 관리자 그룹 구성원 확인",
+          "command": "Get-LocalGroupMember -Group Administrators"
+        },
+        {
+          "title": "계정 비활성화",
+          "command": "Disable-LocalUser -Name {{USER}}"
+        }
+      ],
+      "cautions": [
+        "도메인 계정은 조회되지 않습니다. 도메인 사용자는 ActiveDirectory 모듈의 Get-ADUser 를 사용합니다."
+      ],
+      "help": "Get-Help Get-LocalUser -Full",
+      "keywords": [
+        "로컬 사용자",
+        "계정 조회",
+        "Get-LocalUser",
+        "local user",
+        "Get-LocalGroupMember"
+      ],
+      "related": [
+        "new-localuser",
+        "net-user",
+        "net-localgroup"
+      ]
+    },
+    {
+      "id": "new-localuser",
+      "name": "New-LocalUser",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "users",
+      "task": "users.account",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬 사용자 계정 생성 (PowerShell)",
+      "description": "로컬 사용자 계정을 생성합니다. 비밀번호는 SecureString 으로 전달해야 하며, 생성 후 Add-LocalGroupMember 로 그룹에 추가합니다. 관리자 권한 PowerShell 에서 실행해야 합니다.",
+      "syntax": [
+        "New-LocalUser -Name {{USER}} -Password {{SECURE_STRING}} [-FullName {{NAME}}] [-Description {{TEXT}}]",
+        "New-LocalUser -Name {{USER}} -NoPassword"
+      ],
+      "options": [
+        {
+          "flag": "-Name {{USER}}",
+          "desc": "계정 이름 (최대 20자)"
+        },
+        {
+          "flag": "-Password {{SECURE_STRING}}",
+          "desc": "SecureString 비밀번호 (Read-Host -AsSecureString)"
+        },
+        {
+          "flag": "-NoPassword",
+          "desc": "비밀번호 없이 생성"
+        },
+        {
+          "flag": "-FullName / -Description",
+          "desc": "전체 이름 / 설명"
+        },
+        {
+          "flag": "-PasswordNeverExpires",
+          "desc": "비밀번호 만료 없음"
+        },
+        {
+          "flag": "-AccountExpires {{DATE}}",
+          "desc": "계정 만료일 (-AccountNeverExpires 로 만료 없음)"
+        },
+        {
+          "flag": "-UserMayNotChangePassword",
+          "desc": "사용자의 비밀번호 변경 금지"
+        }
+      ],
+      "examples": [
+        {
+          "title": "비밀번호 입력받아 계정 생성 후 관리자 그룹 추가",
+          "command": "$pw = Read-Host -AsSecureString\nNew-LocalUser -Name {{USER}} -Password $pw -FullName \"{{NAME}}\"\nAdd-LocalGroupMember -Group Administrators -Member {{USER}}"
+        },
+        {
+          "title": "서비스용 계정 (비밀번호 만료 없음)",
+          "command": "New-LocalUser -Name {{USER}} -Password $pw -PasswordNeverExpires -AccountNeverExpires"
+        },
+        {
+          "title": "계정 삭제",
+          "command": "Remove-LocalUser -Name {{USER}}"
+        }
+      ],
+      "cautions": [
+        "-Password 에 일반 문자열을 넣으면 오류가 납니다. ConvertTo-SecureString 또는 Read-Host -AsSecureString 을 사용하세요.",
+        "로컬 비밀번호 정책(복잡도·길이)을 만족하지 않으면 생성이 실패합니다."
+      ],
+      "help": "Get-Help New-LocalUser -Full",
+      "keywords": [
+        "사용자 생성",
+        "계정 추가",
+        "New-LocalUser",
+        "Add-LocalGroupMember",
+        "local user"
+      ],
+      "related": [
+        "get-localuser",
+        "net-user",
+        "net-localgroup",
+        "net-accounts"
+      ]
+    },
+    {
+      "id": "umask",
+      "name": "umask",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.umask",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "새 파일·디렉토리의 기본 권한 마스크 확인·설정",
+      "description": "새로 만드는 파일(기본 666)과 디렉토리(기본 777)에서 제거할 권한 비트를 지정하는 셸 내장 명령입니다. umask 022 이면 파일 644, 디렉토리 755 로 생성됩니다. 셸에서 설정한 값은 현재 세션과 그 자식 프로세스에만 적용됩니다.",
+      "syntax": [
+        "umask [-S] [{{MASK}}]"
+      ],
+      "options": [
+        {
+          "flag": "(인자 없음)",
+          "desc": "현재 마스크를 8진수로 출력"
+        },
+        {
+          "flag": "-S",
+          "desc": "기호 형식으로 출력 (u=rwx,g=rx,o=rx)"
+        },
+        {
+          "flag": "{{MASK}}",
+          "desc": "새 마스크 설정 (예: 022, 027, 077)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 umask 확인",
+          "command": "umask\numask -S",
+          "output": "0022\nu=rwx,g=rx,o=rx"
+        },
+        {
+          "title": "기타 사용자 접근 차단 (파일 640, 디렉토리 750)",
+          "command": "umask 027"
+        },
+        {
+          "title": "실행 중인 프로세스의 umask 확인",
+          "command": "grep Umask /proc/{{PID}}/status"
+        },
+        {
+          "title": "systemd 서비스의 umask 지정",
+          "command": "systemctl edit {{SERVICE}}\n# [Service] 아래에 UMask=0027 추가",
+          "note": "서비스는 로그인 셸의 umask 를 따르지 않음"
+        }
+      ],
+      "cautions": [
+        "~/.bashrc 나 /etc/profile 에 설정한 umask 는 로그인 셸에만 적용됩니다. systemd 서비스는 유닛 파일의 UMask= 로 지정해야 합니다.",
+        "보안 점검(KISA 등)에서는 umask 022 이상(027 권장)을 요구하는 경우가 많습니다."
+      ],
+      "platformNotes": {
+        "rhel": "기본값은 /etc/login.defs 의 UMASK 와 /etc/profile·/etc/bashrc 에서 정해집니다.",
+        "debian": "기본값은 /etc/login.defs 의 UMASK 를 pam_umask 가 적용합니다. USERGROUPS_ENAB yes 이면 사용자 전용 그룹 계정은 002 가 됩니다."
+      },
+      "help": "help umask",
+      "keywords": [
+        "기본 권한",
+        "umask",
+        "파일 생성 권한",
+        "마스크",
+        "default permission"
+      ],
+      "related": [
+        "chmod",
+        "systemctl"
+      ]
+    },
+    {
+      "id": "visudo",
+      "name": "visudo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.sudoers",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "sudoers 파일을 문법 검사하며 안전하게 편집",
+      "description": "/etc/sudoers 또는 /etc/sudoers.d/ 아래 파일을 잠금 상태에서 편집하고, 저장 시 문법을 검사해 오류가 있으면 반영하지 않습니다. sudoers 문법 오류는 sudo 전체를 사용 불가로 만들기 때문에 반드시 visudo 로 편집해야 합니다.",
+      "syntax": [
+        "visudo [-f {{FILE}}]",
+        "visudo -c [-f {{FILE}}]"
+      ],
+      "options": [
+        {
+          "flag": "-f {{FILE}}",
+          "desc": "/etc/sudoers 대신 지정 파일 편집 (sudoers.d 조각 파일)"
+        },
+        {
+          "flag": "-c",
+          "desc": "편집하지 않고 문법만 검사"
+        },
+        {
+          "flag": "-s",
+          "desc": "엄격 모드 문법 검사"
+        },
+        {
+          "flag": "EDITOR={{EDITOR}} visudo",
+          "desc": "사용할 편집기 지정 (vim, nano 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "sudoers 편집",
+          "command": "visudo"
+        },
+        {
+          "title": "사용자별 sudo 규칙 파일 생성",
+          "command": "visudo -f /etc/sudoers.d/{{USER}}"
+        },
+        {
+          "title": "전체 sudoers 문법 검사",
+          "command": "visudo -c"
+        },
+        {
+          "title": "자동화로 만든 파일 검사 후 배치",
+          "command": "visudo -cf /tmp/{{NAME}} && install -m 0440 /tmp/{{NAME}} /etc/sudoers.d/{{NAME}}"
+        }
+      ],
+      "cautions": [
+        "편집 중 다른 root 세션을 하나 열어 두세요. 규칙 실수로 sudo 가 막히면 복구할 수단이 필요합니다.",
+        "visudo 가 '오류가 있음'을 알리면 e 로 다시 편집하세요. Q(강제 저장)를 선택하면 sudo 가 깨질 수 있습니다."
+      ],
+      "platformNotes": {
+        "debian": "기본 편집기가 nano 입니다. vim 을 쓰려면 EDITOR=vim visudo 또는 update-alternatives --config editor."
+      },
+      "help": "man visudo",
+      "keywords": [
+        "sudoers 편집",
+        "sudo 설정",
+        "visudo",
+        "sudo 권한 부여",
+        "NOPASSWD"
+      ],
+      "related": [
+        "etc-sudoers",
+        "sudo",
+        "usermod"
+      ]
+    },
+    {
+      "id": "etc-sudoers",
+      "name": "/etc/sudoers",
+      "aliases": [
+        "/etc/sudoers.d/"
+      ],
+      "kind": "file",
+      "category": "users",
+      "task": "users.sudoers",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "sudo 권한 규칙 설정 파일 (sudoers.d 포함)",
+      "description": "누가 어떤 호스트에서 어떤 사용자로 어떤 명령을 실행할 수 있는지 정의하는 sudo 정책 파일입니다. 패키지 업데이트 시 덮어쓰기를 피하려면 /etc/sudoers 대신 /etc/sudoers.d/ 아래에 별도 파일을 만들어 관리합니다. 반드시 visudo 로 편집합니다.",
+      "syntax": [
+        "{{USER}} {{HOST}}=({{RUNAS}}) [NOPASSWD:] {{COMMANDS}}",
+        "%{{GROUP}} ALL=(ALL) ALL"
+      ],
+      "options": [
+        {
+          "flag": "{{USER}} ALL=(ALL) ALL",
+          "desc": "사용자에게 모든 명령 허용 (비밀번호 필요)"
+        },
+        {
+          "flag": "%{{GROUP}} ALL=(ALL) ALL",
+          "desc": "% 로 시작하면 그룹 대상"
+        },
+        {
+          "flag": "NOPASSWD:",
+          "desc": "비밀번호 없이 실행 허용"
+        },
+        {
+          "flag": "Cmnd_Alias {{ALIAS}} = {{CMD1}}, {{CMD2}}",
+          "desc": "명령 묶음 정의"
+        },
+        {
+          "flag": "Defaults timestamp_timeout={{MIN}}",
+          "desc": "비밀번호 캐시 시간(분)"
+        },
+        {
+          "flag": "Defaults logfile=/var/log/sudo.log",
+          "desc": "별도 sudo 로그 파일"
+        },
+        {
+          "flag": "#includedir /etc/sudoers.d",
+          "desc": "조각 파일 디렉토리 포함 (신버전은 @includedir 표기)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 사용자에게 서비스 재시작만 무비밀번호 허용",
+          "command": "{{USER}} ALL=(root) NOPASSWD: /usr/bin/systemctl restart {{SERVICE}}, /usr/bin/systemctl status {{SERVICE}}"
+        },
+        {
+          "title": "운영 그룹에 전체 권한",
+          "command": "%{{GROUP}} ALL=(ALL) ALL"
+        },
+        {
+          "title": "sudoers.d 파일 목록과 권한 확인",
+          "command": "ls -l /etc/sudoers.d/"
+        }
+      ],
+      "cautions": [
+        "/etc/sudoers.d/ 안의 파일 이름에 '.' 이 있거나 '~' 로 끝나면 무시됩니다 (예: user.conf 는 적용 안 됨).",
+        "명령은 절대 경로로 써야 하며, vi·less·bash 등 셸 탈출이 가능한 명령을 허용하면 사실상 root 권한을 주는 것입니다.",
+        "파일 권한은 0440, 소유자 root 여야 합니다."
+      ],
+      "platformNotes": {
+        "rhel": "기본으로 %wheel ALL=(ALL) ALL 이 활성화되어 있습니다.",
+        "debian": "기본으로 %sudo ALL=(ALL:ALL) ALL 이 설정되어 있습니다."
+      },
+      "keywords": [
+        "sudoers",
+        "sudo 설정",
+        "NOPASSWD",
+        "sudo 권한",
+        "sudoers.d",
+        "wheel"
+      ],
+      "related": [
+        "visudo",
+        "sudo"
+      ]
+    },
+    {
+      "id": "chage",
+      "name": "chage",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "계정별 비밀번호 만료·계정 만료일 설정",
+      "description": "사용자별 비밀번호 최대·최소 사용 기간, 만료 경고, 비활성 기간, 계정 만료일을 조회·설정합니다(/etc/shadow). 새 계정의 기본값은 /etc/login.defs 의 PASS_MAX_DAYS 등을 따르며 기존 계정에는 소급 적용되지 않습니다.",
+      "syntax": [
+        "chage -l {{USER}}",
+        "chage [OPTION] {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "현재 만료 정보 조회 (일반 사용자는 본인만)"
+        },
+        {
+          "flag": "-M {{DAYS}}",
+          "desc": "비밀번호 최대 사용 일수 (-1 이면 만료 없음)"
+        },
+        {
+          "flag": "-m {{DAYS}}",
+          "desc": "비밀번호 최소 사용 일수"
+        },
+        {
+          "flag": "-W {{DAYS}}",
+          "desc": "만료 전 경고 일수"
+        },
+        {
+          "flag": "-I {{DAYS}}",
+          "desc": "비밀번호 만료 후 계정 비활성까지 일수"
+        },
+        {
+          "flag": "-E {{DATE}}",
+          "desc": "계정 만료일 (-1 이면 해제)"
+        },
+        {
+          "flag": "-d 0",
+          "desc": "마지막 변경일을 0 으로 → 다음 로그인 시 변경 강제"
+        }
+      ],
+      "examples": [
+        {
+          "title": "계정 만료 정보 확인",
+          "command": "chage -l {{USER}}"
+        },
+        {
+          "title": "90일 만료, 7일 전 경고, 최소 1일",
+          "command": "chage -M 90 -m 1 -W 7 {{USER}}"
+        },
+        {
+          "title": "서비스 계정 비밀번호 만료 해제",
+          "command": "chage -M -1 -E -1 {{USER}}",
+          "note": "비밀번호 만료로 배치·서비스 계정이 갑자기 실패하는 장애 예방"
+        },
+        {
+          "title": "다음 로그인 시 비밀번호 변경 강제",
+          "command": "chage -d 0 {{USER}}"
+        }
+      ],
+      "cautions": [
+        "서비스 계정이 비밀번호 만료되면 cron·sudo·SSH 비밀번호 로그인이 실패합니다. 보안 정책 적용 시 서비스 계정을 별도로 확인하세요.",
+        "/etc/login.defs 를 수정해도 기존 계정에는 적용되지 않으므로 chage 로 개별 적용해야 합니다."
+      ],
+      "help": "man chage",
+      "keywords": [
+        "비밀번호 만료",
+        "패스워드 정책",
+        "계정 만료",
+        "chage",
+        "password expiry",
+        "login.defs"
+      ],
+      "related": [
+        "passwd",
+        "usermod",
+        "authselect",
+        "pam-auth-update"
+      ]
+    },
+    {
+      "id": "net-accounts",
+      "name": "net accounts",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬 비밀번호·계정 잠금 정책 조회·설정",
+      "description": "로컬 계정의 비밀번호 최대·최소 사용 기간, 최소 길이, 기록 개수, 계정 잠금 임계값 등을 조회하고 변경합니다. 인자 없이 실행하면 현재 정책을 보여주며 조회는 일반 사용자도 가능합니다.",
+      "syntax": [
+        "net accounts [/domain]",
+        "net accounts [/maxpwage:{{DAYS}}|unlimited] [/minpwlen:{{LEN}}] [/lockoutthreshold:{{COUNT}}] ..."
+      ],
+      "options": [
+        {
+          "flag": "/maxpwage:{{DAYS}}|unlimited",
+          "desc": "비밀번호 최대 사용 기간"
+        },
+        {
+          "flag": "/minpwage:{{DAYS}}",
+          "desc": "비밀번호 최소 사용 기간"
+        },
+        {
+          "flag": "/minpwlen:{{LEN}}",
+          "desc": "비밀번호 최소 길이"
+        },
+        {
+          "flag": "/uniquepw:{{COUNT}}",
+          "desc": "재사용 금지 이전 비밀번호 개수"
+        },
+        {
+          "flag": "/lockoutthreshold:{{COUNT}}",
+          "desc": "계정 잠금 임계값 (0 이면 잠금 없음)"
+        },
+        {
+          "flag": "/lockoutduration:{{MIN}}",
+          "desc": "잠금 지속 시간(분)"
+        },
+        {
+          "flag": "/lockoutwindow:{{MIN}}",
+          "desc": "실패 횟수 초기화 시간(분)"
+        },
+        {
+          "flag": "/domain",
+          "desc": "도메인 정책 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 정책 확인",
+          "command": "net accounts"
+        },
+        {
+          "title": "비밀번호 90일, 최소 8자, 5회 실패 시 30분 잠금",
+          "command": "net accounts /maxpwage:90 /minpwlen:8\nnet accounts /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30"
+        },
+        {
+          "title": "도메인 비밀번호 정책 확인",
+          "command": "net accounts /domain"
+        }
+      ],
+      "cautions": [
+        "도메인 가입 서버는 도메인 GPO 의 계정 정책이 우선하므로 로컬 변경이 되돌아갈 수 있습니다.",
+        "비밀번호 복잡도 사용 여부는 net accounts 로 설정할 수 없습니다. secpol.msc 또는 GPO 를 사용하세요."
+      ],
+      "help": "net help accounts",
+      "keywords": [
+        "비밀번호 정책",
+        "계정 잠금",
+        "패스워드 만료",
+        "net accounts",
+        "lockout",
+        "password policy"
+      ],
+      "related": [
+        "secpol-msc",
+        "net-user",
+        "gpresult"
+      ]
+    },
+    {
+      "id": "secpol-msc",
+      "name": "secpol.msc",
+      "kind": "gui",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬 보안 정책 (비밀번호·감사·사용자 권한 할당)",
+      "description": "로컬 보안 정책 관리 도구입니다. 계정 정책(비밀번호 복잡도·길이·만료, 계정 잠금), 감사 정책, 사용자 권한 할당(로컬 로그온 허용, 서비스로 로그온 등), 보안 옵션을 GUI 로 설정합니다.",
+      "syntax": [
+        "secpol.msc"
+      ],
+      "options": [
+        {
+          "flag": "계정 정책 > 암호 정책",
+          "desc": "복잡도, 최소 길이, 최대·최소 사용 기간, 기록 개수"
+        },
+        {
+          "flag": "계정 정책 > 계정 잠금 정책",
+          "desc": "잠금 임계값·기간"
+        },
+        {
+          "flag": "로컬 정책 > 사용자 권한 할당",
+          "desc": "원격 데스크톱 로그온 허용, 서비스로 로그온 등"
+        },
+        {
+          "flag": "로컬 정책 > 보안 옵션",
+          "desc": "UAC, 익명 접근, 로그온 메시지 등"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 보안 정책 열기",
+          "command": "secpol.msc"
+        },
+        {
+          "title": "현재 보안 정책을 파일로 내보내기 (CLI)",
+          "command": "secedit /export /cfg C:\\temp\\secpol.inf",
+          "note": "점검·비교용 백업에 유용"
+        }
+      ],
+      "cautions": [
+        "Windows Home 에디션에는 없습니다.",
+        "도메인 GPO 가 같은 항목을 설정하면 로컬 정책은 무시되고 회색으로 표시됩니다."
+      ],
+      "keywords": [
+        "로컬 보안 정책",
+        "비밀번호 복잡도",
+        "사용자 권한 할당",
+        "secpol",
+        "security policy",
+        "secedit"
+      ],
+      "related": [
+        "net-accounts",
+        "gpresult",
+        "gpupdate"
+      ]
+    },
+    {
+      "id": "getfacl",
+      "name": "getfacl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.acl",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일·디렉토리의 ACL(확장 권한) 조회",
+      "description": "파일과 디렉토리에 설정된 POSIX ACL(사용자·그룹별 추가 권한, mask, 기본 ACL)을 조회합니다. ls -l 결과 권한 뒤에 '+' 가 붙어 있으면 ACL 이 설정된 것입니다. 출력은 setfacl --restore 로 복원할 수 있는 형식입니다.",
+      "syntax": [
+        "getfacl [OPTION] {{FILE}}..."
+      ],
+      "options": [
+        {
+          "flag": "-R",
+          "desc": "하위까지 재귀 조회"
+        },
+        {
+          "flag": "-d",
+          "desc": "기본(default) ACL 만 표시"
+        },
+        {
+          "flag": "-a",
+          "desc": "접근 ACL 만 표시"
+        },
+        {
+          "flag": "-n",
+          "desc": "사용자·그룹을 숫자 ID 로 표시"
+        },
+        {
+          "flag": "--omit-header",
+          "desc": "파일명·소유자 주석 헤더 생략"
+        },
+        {
+          "flag": "-p",
+          "desc": "경로 앞의 '/' 를 제거하지 않음"
+        }
+      ],
+      "examples": [
+        {
+          "title": "ACL 확인",
+          "command": "getfacl {{FILE}}",
+          "output": "# file: data\n# owner: root\n# group: root\nuser::rwx\nuser:app:r-x\ngroup::r-x\nmask::r-x\nother::---"
+        },
+        {
+          "title": "디렉토리 ACL 백업",
+          "command": "getfacl -R {{DIR}} > /root/acl_backup.txt"
+        },
+        {
+          "title": "ACL 이 걸린 파일 찾기",
+          "command": "getfacl -R -s -p {{DIR}} | grep '^# file'",
+          "note": "-s 는 기본 권한 외 ACL 이 있는 파일만 출력"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "acl",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "acl",
+          "preinstalled": false,
+          "note": "Ubuntu Server 는 대부분 기본 포함, Debian 최소 설치는 apt install acl"
+        }
+      },
+      "help": "man getfacl",
+      "keywords": [
+        "ACL 조회",
+        "확장 권한",
+        "getfacl",
+        "acl",
+        "mask"
+      ],
+      "related": [
+        "setfacl",
+        "chmod",
+        "ls"
+      ]
+    },
+    {
+      "id": "setfacl",
+      "name": "setfacl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.acl",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "특정 사용자·그룹에 파일 ACL 권한 부여·제거",
+      "description": "소유자·그룹·기타 외에 특정 사용자나 그룹에 개별 권한을 부여하는 POSIX ACL 을 설정합니다. 기본(default) ACL 을 지정하면 디렉토리 안에 새로 만드는 파일에 권한이 상속됩니다. 파일 소유자 또는 root 가 설정할 수 있습니다.",
+      "syntax": [
+        "setfacl [-R] -m u:{{USER}}:{{PERM}} {{FILE}}",
+        "setfacl -x u:{{USER}} {{FILE}}",
+        "setfacl --restore={{ACL_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-m u:{{USER}}:rwx",
+          "desc": "사용자 ACL 추가·수정 (g:{{GROUP}}:rx 는 그룹)"
+        },
+        {
+          "flag": "-x u:{{USER}}",
+          "desc": "특정 ACL 항목 제거"
+        },
+        {
+          "flag": "-b",
+          "desc": "모든 ACL 제거"
+        },
+        {
+          "flag": "-k",
+          "desc": "기본(default) ACL 만 제거"
+        },
+        {
+          "flag": "-d",
+          "desc": "기본 ACL 로 설정 (d:u:{{USER}}:rwx 와 같음)"
+        },
+        {
+          "flag": "-R",
+          "desc": "하위까지 재귀 적용"
+        },
+        {
+          "flag": "-n",
+          "desc": "mask 재계산 안 함"
+        },
+        {
+          "flag": "--restore={{ACL_FILE}}",
+          "desc": "getfacl -R 백업 파일로 복원"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 사용자에게 읽기·실행 권한 부여",
+          "command": "setfacl -m u:{{USER}}:rx {{FILE}}"
+        },
+        {
+          "title": "디렉토리 기존 파일 + 새 파일 모두 그룹 쓰기 허용",
+          "command": "setfacl -R -m g:{{GROUP}}:rwX {{DIR}}\nsetfacl -R -d -m g:{{GROUP}}:rwX {{DIR}}"
+        },
+        {
+          "title": "ACL 제거",
+          "command": "setfacl -x u:{{USER}} {{FILE}}\nsetfacl -b {{FILE}}"
+        },
+        {
+          "title": "백업한 ACL 복원",
+          "command": "setfacl --restore=/root/acl_backup.txt"
+        }
+      ],
+      "cautions": [
+        "ACL 실제 권한은 mask 로 제한됩니다. 이후 chmod g-w 를 하면 mask 가 바뀌어 ACL 쓰기 권한도 무효가 됩니다.",
+        "cp(-a/-p 없이), 일부 백업 도구, tar(--acls 없이)는 ACL 을 보존하지 않습니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "acl",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "acl",
+          "preinstalled": false,
+          "note": "Ubuntu Server 는 대부분 기본 포함, Debian 최소 설치는 apt install acl"
+        }
+      },
+      "help": "man setfacl",
+      "keywords": [
+        "ACL 설정",
+        "개별 권한",
+        "기본 ACL",
+        "setfacl",
+        "acl",
+        "권한 상속"
+      ],
+      "related": [
+        "getfacl",
+        "chmod",
+        "umask"
+      ]
+    },
+    {
+      "id": "authselect",
+      "name": "authselect",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.pam",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PAM·nsswitch 인증 프로필 관리 (RHEL 8+)",
+      "description": "RHEL 8 이상에서 /etc/pam.d 의 system-auth·password-auth 와 /etc/nsswitch.conf 를 프로필 단위로 관리합니다. 계정 잠금(faillock), 홈 디렉토리 자동 생성(mkhomedir) 같은 기능을 feature 로 켜고 끕니다. RHEL 7 의 authconfig 를 대체합니다.",
+      "syntax": [
+        "authselect current",
+        "authselect select {{PROFILE}} [{{FEATURE}}...] [--force]",
+        "authselect enable-feature|disable-feature {{FEATURE}}"
+      ],
+      "options": [
+        {
+          "flag": "current",
+          "desc": "현재 적용된 프로필과 기능 확인"
+        },
+        {
+          "flag": "list",
+          "desc": "사용 가능한 프로필 목록"
+        },
+        {
+          "flag": "list-features {{PROFILE}}",
+          "desc": "프로필이 지원하는 기능 목록"
+        },
+        {
+          "flag": "select {{PROFILE}} {{FEATURE}}...",
+          "desc": "프로필 선택 (기능 함께 지정)"
+        },
+        {
+          "flag": "--force",
+          "desc": "authselect 가 관리하지 않던 기존 설정을 백업 후 덮어씀"
+        },
+        {
+          "flag": "enable-feature / disable-feature",
+          "desc": "현재 프로필에 기능 켜기 / 끄기"
+        },
+        {
+          "flag": "check",
+          "desc": "설정 파일이 수동으로 변경되지 않았는지 확인"
+        },
+        {
+          "flag": "apply-changes",
+          "desc": "프로필 설정을 파일에 다시 적용"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 인증 프로필 확인",
+          "command": "authselect current"
+        },
+        {
+          "title": "로그인 실패 시 계정 잠금(faillock) 활성화",
+          "command": "authselect enable-feature with-faillock",
+          "note": "잠금 기준은 /etc/security/faillock.conf (deny, unlock_time)"
+        },
+        {
+          "title": "로그인 시 홈 디렉토리 자동 생성",
+          "command": "dnf install -y oddjob-mkhomedir\nauthselect enable-feature with-mkhomedir\nsystemctl enable --now oddjobd"
+        },
+        {
+          "title": "SSSD 프로필 적용 (AD/LDAP 연동)",
+          "command": "authselect select sssd with-mkhomedir --force"
+        }
+      ],
+      "cautions": [
+        "authselect 가 관리하는 /etc/pam.d/system-auth 등을 직접 수정하면 다음 적용 시 덮어써집니다. 사용자 정의가 필요하면 authselect create-profile 로 사용자 프로필을 만드세요.",
+        "PAM 설정 변경 전 root 세션을 하나 열어 두세요. 잘못되면 모든 로그인이 막힐 수 있습니다."
+      ],
+      "platformNotes": {
+        "rhel": "RHEL 8·9 기본 도구입니다. 사용 가능한 프로필 이름은 버전에 따라 다르므로 authselect list 로 확인하세요."
+      },
+      "install": {
+        "rhel": {
+          "package": "authselect",
+          "preinstalled": true
+        }
+      },
+      "help": "man authselect",
+      "keywords": [
+        "PAM 설정",
+        "인증 프로필",
+        "계정 잠금",
+        "faillock",
+        "authselect",
+        "mkhomedir",
+        "sssd"
+      ],
+      "related": [
+        "chage",
+        "passwd"
+      ]
+    },
+    {
+      "id": "pam-auth-update",
+      "name": "pam-auth-update",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.pam",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PAM common-* 설정 모듈 켜기·끄기 (Debian 계열)",
+      "description": "Debian/Ubuntu 에서 /etc/pam.d/common-auth, common-account, common-password, common-session 을 /usr/share/pam-configs/ 의 프로필 조합으로 생성합니다. 인자 없이 실행하면 대화식 메뉴가 열리고, --enable/--disable 로 비대화식 처리도 가능합니다.",
+      "syntax": [
+        "pam-auth-update",
+        "pam-auth-update --enable {{PROFILE}}",
+        "pam-auth-update --disable {{PROFILE}}"
+      ],
+      "options": [
+        {
+          "flag": "(인자 없음)",
+          "desc": "대화식 메뉴에서 프로필 선택"
+        },
+        {
+          "flag": "--enable {{PROFILE}}",
+          "desc": "프로필 활성화 (예: mkhomedir)"
+        },
+        {
+          "flag": "--disable {{PROFILE}}",
+          "desc": "프로필 비활성화"
+        },
+        {
+          "flag": "--force",
+          "desc": "수동 변경된 common-* 파일도 덮어씀"
+        },
+        {
+          "flag": "--package",
+          "desc": "패키지 설치 스크립트용 비대화식 모드"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그인 시 홈 디렉토리 자동 생성 (AD/LDAP 연동)",
+          "command": "pam-auth-update --enable mkhomedir"
+        },
+        {
+          "title": "사용 가능한 프로필 확인",
+          "command": "ls /usr/share/pam-configs/"
+        },
+        {
+          "title": "대화식으로 PAM 모듈 선택",
+          "command": "pam-auth-update"
+        }
+      ],
+      "cautions": [
+        "common-* 파일을 직접 수정한 경우 pam-auth-update 가 변경을 거부하거나 --force 시 덮어씁니다.",
+        "PAM 변경 전 root 세션을 하나 열어 두고, 새 세션으로 로그인을 테스트하세요."
+      ],
+      "install": {
+        "debian": {
+          "package": "libpam-runtime",
+          "preinstalled": true
+        }
+      },
+      "help": "man pam-auth-update",
+      "keywords": [
+        "PAM 설정",
+        "인증 설정",
+        "mkhomedir",
+        "pam-auth-update",
+        "common-auth",
+        "pam"
+      ],
+      "related": [
+        "chage",
+        "passwd"
+      ]
+    },
+    {
+      "id": "gpupdate",
+      "name": "gpupdate",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.gpo",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "그룹 정책(GPO) 즉시 갱신",
+      "description": "도메인 및 로컬 그룹 정책을 기본 갱신 주기(약 90분)를 기다리지 않고 즉시 다시 적용합니다. GPO 를 변경한 뒤 서버나 PC 에 바로 반영하고 확인할 때 사용합니다. 일부 설정(소프트웨어 설치, 폴더 리디렉션)은 재부팅이나 로그오프가 필요합니다.",
+      "syntax": [
+        "gpupdate [/target:computer|user] [/force] [/wait:{{SEC}}] [/logoff] [/boot]"
+      ],
+      "options": [
+        {
+          "flag": "/force",
+          "desc": "변경 여부와 관계없이 모든 정책 재적용"
+        },
+        {
+          "flag": "/target:computer|user",
+          "desc": "컴퓨터 또는 사용자 정책만 갱신"
+        },
+        {
+          "flag": "/wait:{{SEC}}",
+          "desc": "처리 완료 대기 시간 (기본 600초, 0=대기 안 함, -1=무한)"
+        },
+        {
+          "flag": "/logoff",
+          "desc": "필요한 경우 갱신 후 로그오프"
+        },
+        {
+          "flag": "/boot",
+          "desc": "필요한 경우 갱신 후 재부팅"
+        },
+        {
+          "flag": "/sync",
+          "desc": "다음 부팅·로그온 시 동기식으로 정책 적용"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 정책 강제 갱신",
+          "command": "gpupdate /force"
+        },
+        {
+          "title": "컴퓨터 정책만 갱신",
+          "command": "gpupdate /target:computer /force"
+        },
+        {
+          "title": "원격 PC 정책 갱신 (PowerShell, GroupPolicy 모듈)",
+          "command": "Invoke-GPUpdate -Computer {{COMPUTER}} -Force"
+        }
+      ],
+      "cautions": [
+        "/boot 또는 /logoff 를 함께 쓰면 확인 없이 재부팅·로그오프될 수 있습니다."
+      ],
+      "help": "gpupdate /?",
+      "keywords": [
+        "그룹 정책",
+        "정책 갱신",
+        "GPO",
+        "gpupdate",
+        "group policy",
+        "도메인 정책"
+      ],
+      "related": [
+        "gpresult",
+        "secpol-msc"
+      ]
+    },
+    {
+      "id": "gpresult",
+      "name": "gpresult",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "users",
+      "task": "users.gpo",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "적용된 그룹 정책(RSoP) 결과 확인",
+      "description": "현재 컴퓨터와 사용자에게 실제로 적용된 GPO 목록, 필터링으로 제외된 GPO, 소속 보안 그룹 등 정책 결과 집합(RSoP)을 보여줍니다. 정책이 왜 적용되지 않는지 진단할 때 사용하며, 컴퓨터 정책을 보려면 관리자 권한이 필요합니다.",
+      "syntax": [
+        "gpresult /r [/scope computer|user]",
+        "gpresult /h {{FILE}}.html [/f]"
+      ],
+      "options": [
+        {
+          "flag": "/r",
+          "desc": "요약 결과 출력"
+        },
+        {
+          "flag": "/v",
+          "desc": "상세 결과 출력"
+        },
+        {
+          "flag": "/z",
+          "desc": "모든 정보를 최대한 상세히 출력"
+        },
+        {
+          "flag": "/scope computer|user",
+          "desc": "컴퓨터 또는 사용자 정책만"
+        },
+        {
+          "flag": "/h {{FILE}}.html",
+          "desc": "HTML 보고서로 저장"
+        },
+        {
+          "flag": "/f",
+          "desc": "기존 파일 덮어쓰기"
+        },
+        {
+          "flag": "/user {{DOMAIN}}\\{{USER}}",
+          "desc": "다른 사용자의 결과 조회"
+        },
+        {
+          "flag": "/s {{COMPUTER}}",
+          "desc": "원격 컴퓨터 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "적용된 GPO 요약",
+          "command": "gpresult /r"
+        },
+        {
+          "title": "컴퓨터 정책만 확인 (관리자 cmd)",
+          "command": "gpresult /r /scope computer"
+        },
+        {
+          "title": "HTML 보고서 생성",
+          "command": "gpresult /h C:\\temp\\gpreport.html /f"
+        }
+      ],
+      "cautions": [
+        "관리자 권한 없이 실행하면 컴퓨터 설정 부분이 표시되지 않습니다."
+      ],
+      "help": "gpresult /?",
+      "keywords": [
+        "그룹 정책 결과",
+        "적용된 정책",
+        "RSoP",
+        "gpresult",
+        "GPO",
+        "group policy"
+      ],
+      "related": [
+        "gpupdate",
+        "secpol-msc",
+        "win-whoami"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2878 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "disk",
+  "commands": [
+    {
+      "id": "mount",
+      "name": "mount",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "파일시스템·NFS·CIFS 를 디렉토리에 마운트",
+      "description": "블록 장치나 NFS·CIFS 공유를 지정한 디렉토리(마운트 포인트)에 연결합니다. 인자 없이 실행하면 현재 마운트 목록을 보여 주며, mount -a 로 /etc/fstab 의 항목을 한 번에 마운트해 설정을 검증할 수 있습니다.",
+      "syntax": [
+        "mount [-t {{FSTYPE}}] [-o {{OPTIONS}}] {{DEVICE}} {{MOUNT_POINT}}",
+        "mount -a",
+        "mount -t nfs {{HOST}}:{{EXPORT_PATH}} {{MOUNT_POINT}}"
+      ],
+      "options": [
+        {
+          "flag": "-t {{FSTYPE}}",
+          "desc": "파일시스템 유형 지정 (xfs, ext4, nfs, cifs 등). 생략하면 자동 감지"
+        },
+        {
+          "flag": "-o {{OPTIONS}}",
+          "desc": "마운트 옵션 (ro, rw, noexec, nosuid, vers=4.1 등 쉼표로 구분)"
+        },
+        {
+          "flag": "-a",
+          "desc": "/etc/fstab 에 있는 항목 중 아직 마운트되지 않은 것(noauto 제외)을 모두 마운트"
+        },
+        {
+          "flag": "-o remount,rw",
+          "desc": "이미 마운트된 파일시스템의 옵션을 바꿔 다시 마운트 (읽기 전용 → 읽기/쓰기)"
+        },
+        {
+          "flag": "--bind",
+          "desc": "디렉토리를 다른 경로에 그대로 연결 (bind mount)"
+        },
+        {
+          "flag": "-v",
+          "desc": "진행 내용을 자세히 출력"
+        },
+        {
+          "flag": "UUID={{UUID}}",
+          "desc": "장치 이름 대신 UUID 로 지정 (장치명 변경에 안전)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 마운트 상태 확인 (보기 좋게)",
+          "command": "findmnt\nmount | grep {{MOUNT_POINT}}"
+        },
+        {
+          "title": "새 디스크 파티션 마운트",
+          "command": "mkdir -p {{MOUNT_POINT}}\nmount {{DEVICE}} {{MOUNT_POINT}}\ndf -hT {{MOUNT_POINT}}"
+        },
+        {
+          "title": "fstab 수정 후 문법·동작 검증",
+          "command": "systemctl daemon-reload\nmount -a\nfindmnt --verify",
+          "note": "재부팅 전에 반드시 mount -a 로 오류가 없는지 확인"
+        },
+        {
+          "title": "NFS 공유 마운트",
+          "command": "mount -t nfs -o vers=4.1 {{HOST}}:{{EXPORT_PATH}} {{MOUNT_POINT}}",
+          "note": "nfs-utils(RHEL) / nfs-common(Ubuntu) 패키지 필요"
+        },
+        {
+          "title": "Windows(SMB) 공유 마운트",
+          "command": "mount -t cifs //{{HOST}}/{{SHARE}} {{MOUNT_POINT}} -o username={{USER}},domain={{DOMAIN}},vers=3.0",
+          "note": "cifs-utils 패키지 필요. 비밀번호는 credentials={{FILE}} 로 파일에 분리 권장"
+        }
+      ],
+      "cautions": [
+        "이미 데이터가 있는 디렉토리에 마운트하면 기존 파일이 가려집니다(삭제는 아님).",
+        "mount 명령으로 한 마운트는 재부팅하면 사라집니다. 영구 적용은 /etc/fstab 에 등록하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "util-linux",
+          "preinstalled": true,
+          "note": "NFS 는 nfs-utils, CIFS 는 cifs-utils 를 dnf install 로 별도 설치 (minimal 에는 없음)"
+        },
+        "debian": {
+          "package": "util-linux",
+          "preinstalled": true,
+          "note": "NFS 는 nfs-common, CIFS 는 cifs-utils 를 apt install 로 별도 설치"
+        }
+      },
+      "platformNotes": {
+        "rhel": "RHEL 기본 파일시스템은 xfs 입니다.",
+        "debian": "Ubuntu·Debian 기본 파일시스템은 ext4 입니다."
+      },
+      "help": "man mount",
+      "keywords": [
+        "마운트",
+        "연결",
+        "NFS 마운트",
+        "CIFS",
+        "SMB",
+        "mount",
+        "remount",
+        "읽기 전용"
+      ],
+      "related": [
+        "umount",
+        "etc-fstab",
+        "blkid",
+        "lsblk",
+        "df",
+        "showmount"
+      ]
+    },
+    {
+      "id": "umount",
+      "name": "umount",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "마운트된 파일시스템 해제",
+      "description": "마운트 포인트나 장치를 지정해 마운트를 해제합니다. 사용 중인 프로세스가 있으면 'target is busy' 오류가 나므로 lsof·fuser 로 사용 프로세스를 먼저 확인합니다.",
+      "syntax": [
+        "umount {{MOUNT_POINT}}",
+        "umount {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "lazy 해제: 지금 경로에서 분리하고 사용이 끝나면 정리"
+        },
+        {
+          "flag": "-f",
+          "desc": "강제 해제 (주로 응답 없는 NFS 에 사용)"
+        },
+        {
+          "flag": "-R",
+          "desc": "하위 마운트까지 재귀적으로 해제"
+        },
+        {
+          "flag": "-a",
+          "desc": "/etc/mtab 에 있는 모든 파일시스템 해제 (사용 주의)"
+        },
+        {
+          "flag": "-v",
+          "desc": "진행 내용을 자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "마운트 해제",
+          "command": "umount {{MOUNT_POINT}}"
+        },
+        {
+          "title": "target is busy 일 때 사용 프로세스 찾기",
+          "command": "lsof +f -- {{MOUNT_POINT}}\nfuser -vm {{MOUNT_POINT}}",
+          "note": "해당 디렉토리 안에 cd 해 있는 셸도 원인이 됩니다"
+        },
+        {
+          "title": "응답 없는 NFS 강제 해제",
+          "command": "umount -f -l {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "-l 은 실제 I/O 가 끝나기 전에 경로만 분리하므로, 이후 장치를 분리·포맷하면 데이터가 손상될 수 있습니다."
+      ],
+      "help": "man umount",
+      "keywords": [
+        "마운트 해제",
+        "언마운트",
+        "umount",
+        "unmount",
+        "target is busy",
+        "강제 해제"
+      ],
+      "related": [
+        "mount",
+        "etc-fstab",
+        "lsof"
+      ]
+    },
+    {
+      "id": "etc-fstab",
+      "name": "/etc/fstab",
+      "kind": "file",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "부팅 시 자동 마운트할 파일시스템 목록",
+      "description": "부팅할 때 자동으로 마운트할 파일시스템을 한 줄에 하나씩 적는 설정 파일입니다. 각 줄은 장치(UUID 권장), 마운트 포인트, 유형, 옵션, dump, fsck 순서의 6개 필드로 구성됩니다. 잘못 쓰면 부팅이 응급 모드에서 멈출 수 있습니다.",
+      "syntax": [
+        "UUID={{UUID}}  {{MOUNT_POINT}}  {{FSTYPE}}  {{OPTIONS}}  0  0"
+      ],
+      "options": [
+        {
+          "flag": "defaults",
+          "desc": "rw, suid, dev, exec, auto, nouser, async 기본 옵션 묶음"
+        },
+        {
+          "flag": "nofail",
+          "desc": "장치가 없어도 부팅을 멈추지 않음 (추가 디스크·외장 디스크에 권장)"
+        },
+        {
+          "flag": "_netdev",
+          "desc": "네트워크가 올라온 뒤 마운트 (NFS·CIFS·iSCSI)"
+        },
+        {
+          "flag": "noauto",
+          "desc": "부팅·mount -a 때 자동 마운트하지 않음"
+        },
+        {
+          "flag": "ro / rw",
+          "desc": "읽기 전용 / 읽기·쓰기"
+        },
+        {
+          "flag": "noexec,nosuid,nodev",
+          "desc": "실행 파일·setuid·장치 파일 금지 (/tmp 보안 강화 등)"
+        },
+        {
+          "flag": "x-systemd.automount",
+          "desc": "처음 접근할 때 마운트 (systemd automount)"
+        },
+        {
+          "flag": "6번째 필드 (pass)",
+          "desc": "부팅 시 fsck 순서. 루트 1, 나머지 2, 검사 안 함 0 (xfs 는 0)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크를 UUID 로 등록",
+          "command": "blkid -s UUID -o value {{DEVICE}}\necho 'UUID={{UUID}} {{MOUNT_POINT}} xfs defaults,nofail 0 0' >> /etc/fstab\nsystemctl daemon-reload\nmount -a"
+        },
+        {
+          "title": "NFS 영구 마운트 줄",
+          "command": "{{HOST}}:{{EXPORT_PATH}}  {{MOUNT_POINT}}  nfs  defaults,_netdev,nofail  0 0"
+        },
+        {
+          "title": "CIFS 영구 마운트 줄 (계정 정보 파일 분리)",
+          "command": "//{{HOST}}/{{SHARE}}  {{MOUNT_POINT}}  cifs  credentials=/root/.smbcred,_netdev,nofail,vers=3.0  0 0",
+          "note": "/root/.smbcred 에 username=, password=, domain= 을 쓰고 chmod 600"
+        },
+        {
+          "title": "수정 전 백업 및 검증",
+          "command": "cp -a /etc/fstab /etc/fstab.bak.$(date +%F)\nfindmnt --verify\nmount -a"
+        }
+      ],
+      "cautions": [
+        "수정 후 재부팅 전에 반드시 mount -a (또는 findmnt --verify) 로 검증하세요. 오타 하나로 서버가 응급 모드로 부팅될 수 있습니다.",
+        "/dev/sdb1 같은 장치명은 디스크 추가·순서 변경 시 바뀔 수 있으므로 UUID 나 LVM 경로(/dev/mapper/...)를 쓰세요.",
+        "추가 데이터 디스크·네트워크 파일시스템에는 nofail 을 붙여 장애 시에도 부팅되게 하세요."
+      ],
+      "platformNotes": {
+        "rhel": "systemd 가 fstab 으로 마운트 유닛을 생성하므로 수정 후 systemctl daemon-reload 를 실행하세요. xfs 는 pass 필드를 0 으로 둡니다."
+      },
+      "help": "man 5 fstab",
+      "keywords": [
+        "자동 마운트",
+        "부팅 마운트",
+        "영구 마운트",
+        "fstab",
+        "UUID",
+        "nofail",
+        "_netdev"
+      ],
+      "related": [
+        "mount",
+        "umount",
+        "blkid",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "mountvol",
+      "name": "mountvol",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "볼륨을 드라이브 문자·폴더에 연결/해제",
+      "description": "볼륨 GUID 경로를 드라이브 문자나 빈 NTFS 폴더에 연결(마운트)하거나 해제합니다. 인자 없이 실행하면 볼륨 GUID 와 현재 연결 위치 목록을 보여 줍니다.",
+      "syntax": [
+        "mountvol",
+        "mountvol {{DRIVE}}: {{VOLUME_GUID_PATH}}",
+        "mountvol {{DRIVE}}: /D"
+      ],
+      "options": [
+        {
+          "flag": "/L",
+          "desc": "지정한 마운트 지점의 볼륨 GUID 경로 표시"
+        },
+        {
+          "flag": "/D",
+          "desc": "마운트 지점(드라이브 문자·폴더) 연결 해제"
+        },
+        {
+          "flag": "/P",
+          "desc": "마운트 지점을 해제하고 볼륨을 오프라인(분리) 상태로 만듦"
+        },
+        {
+          "flag": "/R",
+          "desc": "더 이상 존재하지 않는 볼륨의 마운트 지점 설정 정리"
+        },
+        {
+          "flag": "/N",
+          "desc": "새 볼륨 자동 마운트 비활성화"
+        },
+        {
+          "flag": "/E",
+          "desc": "새 볼륨 자동 마운트 다시 활성화"
+        },
+        {
+          "flag": "/S",
+          "desc": "EFI 시스템 파티션을 지정한 드라이브 문자로 마운트 (UEFI)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "볼륨 GUID 와 연결 위치 목록",
+          "command": "mountvol"
+        },
+        {
+          "title": "볼륨을 E: 로 연결",
+          "command": "mountvol E: {{VOLUME_GUID_PATH}}",
+          "note": "\\\\?\\Volume{...}\\ 형식의 경로를 mountvol 출력에서 복사"
+        },
+        {
+          "title": "EFI 시스템 파티션을 S: 로 마운트 (부트 복구 시)",
+          "command": "mountvol S: /S"
+        },
+        {
+          "title": "드라이브 문자 연결 해제",
+          "command": "mountvol E: /D"
+        }
+      ],
+      "cautions": [
+        "/P 로 분리한 볼륨은 다시 마운트 지점을 만들기 전까지 접근할 수 없습니다."
+      ],
+      "help": "mountvol /?",
+      "keywords": [
+        "드라이브 문자",
+        "볼륨 연결",
+        "마운트",
+        "mountvol",
+        "GUID",
+        "EFI 파티션"
+      ],
+      "related": [
+        "diskpart",
+        "diskmgmt-msc",
+        "get-disk"
+      ]
+    },
+    {
+      "id": "blkid",
+      "name": "blkid",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.fs-info",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "블록 장치의 UUID·파일시스템 유형·레이블 확인",
+      "description": "블록 장치의 UUID, 파일시스템 유형(TYPE), 레이블, PARTUUID 를 출력합니다. fstab 에 UUID 로 등록할 때 주로 사용합니다. 트리 형태로 보려면 lsblk -f 가 편리합니다.",
+      "syntax": [
+        "blkid [{{DEVICE}}]",
+        "blkid -s UUID -o value {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-s {{TAG}}",
+          "desc": "특정 태그만 출력 (UUID, TYPE, LABEL, PARTUUID)"
+        },
+        {
+          "flag": "-o value",
+          "desc": "태그 이름 없이 값만 출력 (스크립트용)"
+        },
+        {
+          "flag": "-o list",
+          "desc": "표 형태로 출력 (일부 버전은 미지원)"
+        },
+        {
+          "flag": "-p",
+          "desc": "캐시를 무시하고 장치를 직접 저수준 탐색"
+        },
+        {
+          "flag": "-U {{UUID}}",
+          "desc": "UUID 로 해당 장치 경로 찾기"
+        },
+        {
+          "flag": "-L {{LABEL}}",
+          "desc": "레이블로 해당 장치 경로 찾기"
+        },
+        {
+          "flag": "-t TYPE={{FSTYPE}}",
+          "desc": "조건에 맞는 장치만 검색 (예: TYPE=xfs)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 장치의 UUID·유형 확인",
+          "command": "blkid",
+          "output": "/dev/sda1: UUID=\"3f1c...\" TYPE=\"xfs\" PARTUUID=\"9a2b...\""
+        },
+        {
+          "title": "fstab 등록용 UUID 값만 추출",
+          "command": "blkid -s UUID -o value {{DEVICE}}"
+        },
+        {
+          "title": "UUID 로 장치 찾기",
+          "command": "blkid -U {{UUID}}"
+        }
+      ],
+      "cautions": [
+        "일반 사용자로 실행하면 캐시된 정보만 보이거나 결과가 비어 있을 수 있으니 root 로 실행하세요."
+      ],
+      "help": "man blkid",
+      "keywords": [
+        "UUID 확인",
+        "파일시스템 유형",
+        "레이블",
+        "blkid",
+        "UUID",
+        "PARTUUID"
+      ],
+      "related": [
+        "lsblk",
+        "etc-fstab",
+        "mount",
+        "mkfs"
+      ]
+    },
+    {
+      "id": "get-disk",
+      "name": "Get-Disk",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "disk",
+      "task": "disk.fs-info",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "디스크 번호·상태·파티션 스타일 조회",
+      "description": "물리·가상 디스크의 번호, 크기, 온라인/오프라인 상태, 파티션 스타일(MBR/GPT)을 조회합니다. Get-Partition, Get-Volume 과 함께 쓰면 파티션과 볼륨(파일시스템·레이블)까지 확인할 수 있습니다.",
+      "syntax": [
+        "Get-Disk [-Number {{DISK_NUMBER}}]",
+        "Get-Disk | Get-Partition | Get-Volume"
+      ],
+      "options": [
+        {
+          "flag": "-Number {{DISK_NUMBER}}",
+          "desc": "디스크 번호로 지정"
+        },
+        {
+          "flag": "-FriendlyName {{NAME}}",
+          "desc": "디스크 이름으로 필터"
+        },
+        {
+          "flag": "-SerialNumber {{SERIAL}}",
+          "desc": "일련번호로 필터"
+        },
+        {
+          "flag": "| Format-List *",
+          "desc": "모든 속성 자세히 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 목록과 상태",
+          "command": "Get-Disk"
+        },
+        {
+          "title": "볼륨별 파일시스템·레이블·용량",
+          "command": "Get-Volume"
+        },
+        {
+          "title": "새로 붙인 디스크 찾아 온라인·초기화",
+          "command": "Get-Disk | Where-Object PartitionStyle -eq 'RAW'\nSet-Disk -Number {{DISK_NUMBER}} -IsOffline $false\nInitialize-Disk -Number {{DISK_NUMBER}} -PartitionStyle GPT"
+        },
+        {
+          "title": "오프라인 디스크 확인",
+          "command": "Get-Disk | Where-Object IsOffline -eq $true | Select-Object Number, FriendlyName, OfflineReason"
+        }
+      ],
+      "cautions": [
+        "Initialize-Disk·Clear-Disk 는 디스크 번호를 잘못 지정하면 데이터가 사라집니다. 크기·이름으로 대상을 다시 확인하세요."
+      ],
+      "help": "Get-Help Get-Disk -Full",
+      "keywords": [
+        "디스크 목록",
+        "디스크 상태",
+        "파티션 스타일",
+        "Get-Disk",
+        "Get-Volume",
+        "Get-Partition",
+        "GPT",
+        "MBR"
+      ],
+      "related": [
+        "diskpart",
+        "diskmgmt-msc",
+        "format-volume",
+        "resize-partition"
+      ]
+    },
+    {
+      "id": "fdisk",
+      "name": "fdisk",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.partition",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "대화형 파티션 생성·삭제 (MBR·GPT)",
+      "description": "디스크의 파티션 테이블을 조회하고 대화형으로 파티션을 만들거나 삭제합니다. 변경 내용은 w 로 저장할 때 디스크에 기록되며, 그 전에는 q 로 저장 없이 나갈 수 있습니다. 최신 util-linux 의 fdisk 는 GPT 도 지원합니다.",
+      "syntax": [
+        "fdisk -l [{{DEVICE}}]",
+        "fdisk {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "파티션 테이블 조회만 하고 종료"
+        },
+        {
+          "flag": "(대화형) p",
+          "desc": "현재 파티션 테이블 출력"
+        },
+        {
+          "flag": "(대화형) n",
+          "desc": "새 파티션 생성"
+        },
+        {
+          "flag": "(대화형) d",
+          "desc": "파티션 삭제"
+        },
+        {
+          "flag": "(대화형) t",
+          "desc": "파티션 유형 변경 (예: Linux LVM, swap)"
+        },
+        {
+          "flag": "(대화형) g / o",
+          "desc": "새 GPT / DOS(MBR) 파티션 테이블 생성 (기존 파티션 전부 사라짐)"
+        },
+        {
+          "flag": "(대화형) w",
+          "desc": "변경 내용을 디스크에 기록하고 종료"
+        },
+        {
+          "flag": "(대화형) q",
+          "desc": "저장하지 않고 종료"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 디스크 파티션 확인",
+          "command": "fdisk -l"
+        },
+        {
+          "title": "새 디스크에 파티션 1개 생성",
+          "command": "fdisk {{DEVICE}}\n# g → n → Enter(기본값) → Enter → Enter → w\npartprobe {{DEVICE}}\nlsblk {{DEVICE}}"
+        }
+      ],
+      "cautions": [
+        "대상 디스크를 lsblk 로 크기·마운트 여부를 꼭 확인하세요. 시스템 디스크를 잘못 고르면 복구가 어렵습니다.",
+        "2TB 를 넘는 디스크는 MBR 로 전체를 쓸 수 없으니 GPT(g)를 사용하세요.",
+        "사용 중인 디스크의 테이블을 바꾼 뒤에는 partprobe 또는 재부팅이 필요할 수 있습니다."
+      ],
+      "help": "man fdisk",
+      "keywords": [
+        "파티션 생성",
+        "파티션 삭제",
+        "파티션 조회",
+        "fdisk",
+        "partition",
+        "MBR",
+        "GPT"
+      ],
+      "related": [
+        "parted",
+        "gdisk",
+        "lsblk",
+        "mkfs",
+        "pvcreate"
+      ]
+    },
+    {
+      "id": "parted",
+      "name": "parted",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.partition",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "GPT 파티션 생성·크기 변경 (스크립트 가능)",
+      "description": "GPT·MBR 파티션 테이블을 만들고 파티션을 생성·삭제·크기 변경합니다. -s 옵션으로 한 줄 스크립트 실행이 가능해 자동화에 적합합니다. fdisk 와 달리 각 명령이 즉시 디스크에 반영됩니다.",
+      "syntax": [
+        "parted {{DEVICE}} print",
+        "parted -s {{DEVICE}} {{COMMAND}}"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "모든 디스크의 파티션 정보 출력"
+        },
+        {
+          "flag": "-s",
+          "desc": "스크립트 모드 (확인 질문 없이 실행)"
+        },
+        {
+          "flag": "-a optimal",
+          "desc": "성능에 맞는 정렬로 파티션 생성"
+        },
+        {
+          "flag": "mklabel gpt",
+          "desc": "새 GPT 파티션 테이블 생성 (기존 파티션 전부 사라짐)"
+        },
+        {
+          "flag": "mkpart {{NAME}} {{FSTYPE}} {{START}} {{END}}",
+          "desc": "파티션 생성 (예: 0% 100%)"
+        },
+        {
+          "flag": "set {{NUM}} lvm on",
+          "desc": "파티션에 LVM 플래그 설정"
+        },
+        {
+          "flag": "resizepart {{NUM}} {{END}}",
+          "desc": "파티션 끝 위치 변경 (확장)"
+        },
+        {
+          "flag": "unit GiB print free",
+          "desc": "GiB 단위로 빈 공간 포함 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 파티션과 빈 공간 확인",
+          "command": "parted {{DEVICE}} unit GiB print free"
+        },
+        {
+          "title": "새 디스크 전체를 GPT 파티션 1개로",
+          "command": "parted -s -a optimal {{DEVICE}} mklabel gpt mkpart data xfs 0% 100%\npartprobe {{DEVICE}}"
+        },
+        {
+          "title": "LVM 용 파티션 생성",
+          "command": "parted -s {{DEVICE}} mklabel gpt mkpart lvm 0% 100% set 1 lvm on"
+        },
+        {
+          "title": "마지막 파티션을 디스크 끝까지 확장",
+          "command": "parted {{DEVICE}} resizepart {{NUM}} 100%",
+          "note": "클라우드 환경이면 growpart 가 더 간단"
+        }
+      ],
+      "cautions": [
+        "parted 는 명령마다 즉시 디스크에 기록합니다. 되돌리기(undo)가 없습니다.",
+        "mklabel 은 기존 파티션 테이블을 지웁니다. 대상 디스크를 lsblk 로 반드시 확인하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "parted",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "parted",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음 → apt install parted"
+        }
+      },
+      "help": "man parted (대화형 모드에서 help)",
+      "keywords": [
+        "파티션 생성",
+        "GPT",
+        "파티션 확장",
+        "parted",
+        "mklabel",
+        "mkpart",
+        "resizepart"
+      ],
+      "related": [
+        "fdisk",
+        "gdisk",
+        "growpart",
+        "lsblk",
+        "mkfs"
+      ]
+    },
+    {
+      "id": "gdisk",
+      "name": "gdisk",
+      "aliases": [
+        "sgdisk"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.partition",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "GPT 전용 대화형 파티션 편집기",
+      "description": "GPT 파티션 테이블 전용 편집기로, fdisk 와 비슷한 대화형 방식입니다. GPT 헤더 손상 복구, MBR→GPT 변환 기능이 있으며, 같은 패키지의 sgdisk 로 스크립트 작업이 가능합니다.",
+      "syntax": [
+        "gdisk -l {{DEVICE}}",
+        "gdisk {{DEVICE}}",
+        "sgdisk {{OPTIONS}} {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l",
+          "desc": "파티션 테이블 조회만 하고 종료"
+        },
+        {
+          "flag": "(대화형) p / n / d / t",
+          "desc": "출력 / 생성 / 삭제 / 유형 변경 (8e00=Linux LVM, 8200=swap)"
+        },
+        {
+          "flag": "(대화형) o",
+          "desc": "새 빈 GPT 생성 (기존 파티션 전부 사라짐)"
+        },
+        {
+          "flag": "(대화형) w",
+          "desc": "변경 내용을 기록하고 종료"
+        },
+        {
+          "flag": "(대화형) r",
+          "desc": "복구·변환 메뉴 (GPT 백업 헤더로 복원 등)"
+        },
+        {
+          "flag": "sgdisk -p",
+          "desc": "파티션 테이블 출력"
+        },
+        {
+          "flag": "sgdisk -n {{NUM}}:0:0",
+          "desc": "남은 공간 전체로 파티션 생성"
+        },
+        {
+          "flag": "sgdisk -e",
+          "desc": "디스크 확장 후 백업 GPT 헤더를 디스크 끝으로 이동"
+        }
+      ],
+      "examples": [
+        {
+          "title": "GPT 파티션 확인",
+          "command": "gdisk -l {{DEVICE}}"
+        },
+        {
+          "title": "스크립트로 LVM 파티션 생성",
+          "command": "sgdisk -n 1:0:0 -t 1:8e00 {{DEVICE}}\npartprobe {{DEVICE}}"
+        },
+        {
+          "title": "가상 디스크 확장 후 GPT 백업 헤더 이동",
+          "command": "sgdisk -e {{DEVICE}}"
+        }
+      ],
+      "cautions": [
+        "w 로 저장하면 즉시 디스크에 기록됩니다. 대상 디스크를 반드시 확인하세요.",
+        "sgdisk 는 확인 질문 없이 바로 실행됩니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "gdisk",
+          "preinstalled": false,
+          "note": "dnf install gdisk"
+        },
+        "debian": {
+          "package": "gdisk",
+          "preinstalled": false,
+          "note": "Ubuntu Server·클라우드 이미지에는 포함된 경우가 많음. 없으면 apt install gdisk"
+        }
+      },
+      "help": "man gdisk, man sgdisk",
+      "keywords": [
+        "GPT 파티션",
+        "파티션 복구",
+        "gdisk",
+        "sgdisk",
+        "GPT",
+        "partition"
+      ],
+      "related": [
+        "fdisk",
+        "parted",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "diskpart",
+      "name": "diskpart",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "disk",
+      "task": "disk.partition",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "디스크·파티션·볼륨 관리 (대화형 콘솔)",
+      "description": "디스크 선택, 온라인 전환, 파티션 생성·삭제·확장, 포맷, 드라이브 문자 지정을 하는 대화형 도구입니다. select 로 대상을 고른 뒤 명령을 실행하며, /s 로 스크립트 파일을 실행할 수 있습니다.",
+      "syntax": [
+        "diskpart",
+        "diskpart /s {{SCRIPT_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "list disk / list volume / list partition",
+          "desc": "디스크·볼륨·파티션 목록"
+        },
+        {
+          "flag": "select disk {{DISK_NUMBER}}",
+          "desc": "작업할 디스크 선택 (* 표시가 선택된 대상)"
+        },
+        {
+          "flag": "online disk",
+          "desc": "오프라인 디스크를 온라인으로 전환"
+        },
+        {
+          "flag": "attributes disk clear readonly",
+          "desc": "디스크 읽기 전용 속성 해제"
+        },
+        {
+          "flag": "convert gpt",
+          "desc": "빈 디스크를 GPT 로 변환"
+        },
+        {
+          "flag": "create partition primary [size={{SIZE_MB}}]",
+          "desc": "기본 파티션 생성 (size 는 MB, 생략 시 전체)"
+        },
+        {
+          "flag": "format fs=ntfs quick label={{LABEL}}",
+          "desc": "선택한 파티션 빠른 포맷"
+        },
+        {
+          "flag": "assign letter={{DRIVE}}",
+          "desc": "드라이브 문자 지정"
+        },
+        {
+          "flag": "extend",
+          "desc": "선택한 볼륨을 뒤쪽 빈 공간만큼 확장"
+        },
+        {
+          "flag": "clean",
+          "desc": "선택한 디스크의 모든 파티션 정보 삭제 (데이터 손실)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크 초기화 → 파티션 → 포맷 → 문자 지정",
+          "command": "diskpart\nlist disk\nselect disk {{DISK_NUMBER}}\nonline disk\nattributes disk clear readonly\nconvert gpt\ncreate partition primary\nformat fs=ntfs quick label={{LABEL}}\nassign letter={{DRIVE}}\nexit"
+        },
+        {
+          "title": "가상 디스크 확장 후 볼륨 늘리기",
+          "command": "diskpart\nrescan\nlist volume\nselect volume {{VOLUME_NUMBER}}\nextend\nexit"
+        }
+      ],
+      "cautions": [
+        "clean 은 선택한 디스크의 파티션 테이블을 즉시 지웁니다. list disk 의 * 표시와 크기로 대상을 반드시 확인하세요.",
+        "extend 는 볼륨 바로 뒤에 붙은 빈 공간으로만 확장됩니다 (복구 파티션이 뒤에 있으면 불가)."
+      ],
+      "help": "diskpart 실행 후 help, help {{COMMAND}}",
+      "keywords": [
+        "파티션",
+        "디스크 초기화",
+        "볼륨 확장",
+        "diskpart",
+        "clean",
+        "online disk",
+        "GPT"
+      ],
+      "related": [
+        "diskmgmt-msc",
+        "get-disk",
+        "format-volume",
+        "resize-partition",
+        "mountvol"
+      ]
+    },
+    {
+      "id": "diskmgmt-msc",
+      "name": "diskmgmt.msc",
+      "kind": "gui",
+      "category": "disk",
+      "task": "disk.partition",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "디스크 관리 GUI (초기화·파티션·포맷·확장)",
+      "description": "디스크 관리 콘솔로, 디스크 온라인·초기화, 볼륨 생성·포맷·확장·축소, 드라이브 문자 변경을 마우스로 할 수 있습니다. 실행(Win+R) 창이나 CMD 에서 diskmgmt.msc 로 엽니다.",
+      "syntax": [
+        "diskmgmt.msc"
+      ],
+      "options": [
+        {
+          "flag": "디스크 우클릭 → 온라인",
+          "desc": "오프라인 디스크를 온라인으로 전환"
+        },
+        {
+          "flag": "디스크 우클릭 → 디스크 초기화",
+          "desc": "새 디스크를 GPT/MBR 로 초기화"
+        },
+        {
+          "flag": "빈 공간 우클릭 → 새 단순 볼륨",
+          "desc": "파티션 생성·포맷·문자 지정 마법사"
+        },
+        {
+          "flag": "볼륨 우클릭 → 볼륨 확장 / 축소",
+          "desc": "볼륨 크기 변경"
+        },
+        {
+          "flag": "동작 → 디스크 다시 검색",
+          "desc": "가상 디스크 크기 변경 후 새로 인식"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 관리 열기",
+          "command": "diskmgmt.msc"
+        }
+      ],
+      "cautions": [
+        "볼륨 삭제·포맷은 되돌릴 수 없습니다. 디스크 번호와 용량을 확인하세요."
+      ],
+      "keywords": [
+        "디스크 관리",
+        "파티션",
+        "볼륨 확장",
+        "디스크 초기화",
+        "diskmgmt",
+        "GUI"
+      ],
+      "related": [
+        "diskpart",
+        "get-disk",
+        "resize-partition"
+      ]
+    },
+    {
+      "id": "mkfs",
+      "name": "mkfs",
+      "aliases": [
+        "mkfs.xfs",
+        "mkfs.ext4"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "파티션·LV 에 파일시스템 생성 (xfs·ext4)",
+      "description": "파티션이나 논리 볼륨에 새 파일시스템을 만듭니다(포맷). mkfs -t xfs 처럼 쓰거나 mkfs.xfs, mkfs.ext4 를 직접 실행합니다. 대상의 기존 데이터는 모두 사라집니다.",
+      "syntax": [
+        "mkfs.xfs [-f] [-L {{LABEL}}] {{DEVICE}}",
+        "mkfs.ext4 [-L {{LABEL}}] {{DEVICE}}",
+        "mkfs -t {{FSTYPE}} {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-t {{FSTYPE}}",
+          "desc": "(mkfs) 만들 파일시스템 유형"
+        },
+        {
+          "flag": "-L {{LABEL}}",
+          "desc": "파일시스템 레이블 지정 (xfs 는 최대 12자)"
+        },
+        {
+          "flag": "-f",
+          "desc": "(mkfs.xfs) 기존 파일시스템이 있어도 강제로 덮어씀"
+        },
+        {
+          "flag": "-m {{PERCENT}}",
+          "desc": "(mkfs.ext4) root 예약 블록 비율 (기본 5%, 데이터 디스크는 1 또는 0)"
+        },
+        {
+          "flag": "-N {{COUNT}} / -i {{BYTES}}",
+          "desc": "(mkfs.ext4) inode 수 / inode 당 바이트 (작은 파일이 많을 때 조정)"
+        },
+        {
+          "flag": "-n",
+          "desc": "(mkfs.ext4) 실제로 만들지 않고 결과만 표시"
+        },
+        {
+          "flag": "-F",
+          "desc": "(mkfs.ext4) 강제 실행"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 를 xfs 로 포맷 (RHEL 기본)",
+          "command": "mkfs.xfs /dev/{{VG}}/{{LV}}"
+        },
+        {
+          "title": "파티션을 ext4 로 포맷, 레이블·예약 1%",
+          "command": "mkfs.ext4 -L {{LABEL}} -m 1 {{DEVICE}}"
+        },
+        {
+          "title": "새 디스크 전체 흐름: 포맷 → 마운트 → fstab",
+          "command": "mkfs.xfs {{DEVICE}}\nmkdir -p {{MOUNT_POINT}}\necho \"UUID=$(blkid -s UUID -o value {{DEVICE}}) {{MOUNT_POINT}} xfs defaults,nofail 0 0\" >> /etc/fstab\nsystemctl daemon-reload\nmount -a\ndf -hT {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "대상의 모든 데이터가 즉시 사라집니다. lsblk -f 로 장치·마운트 여부·기존 파일시스템을 반드시 확인하세요.",
+        "마운트된 장치나 LVM PV 로 쓰는 파티션에는 실행하지 마세요.",
+        "xfs 는 나중에 축소할 수 없습니다. 축소 가능성이 있으면 ext4 를 고려하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "xfsprogs",
+          "preinstalled": true,
+          "note": "ext4 용 e2fsprogs 도 기본 설치"
+        },
+        "debian": {
+          "package": "e2fsprogs",
+          "preinstalled": true,
+          "note": "xfs 는 xfsprogs 패키지 필요 (Ubuntu Server 는 대부분 포함, Debian 은 apt install xfsprogs)"
+        }
+      },
+      "platformNotes": {
+        "rhel": "RHEL 7 이후 기본 파일시스템은 xfs 입니다.",
+        "debian": "Ubuntu·Debian 기본 파일시스템은 ext4 입니다."
+      },
+      "help": "man mkfs.xfs, man mkfs.ext4",
+      "keywords": [
+        "포맷",
+        "파일시스템 생성",
+        "mkfs",
+        "xfs",
+        "ext4",
+        "format"
+      ],
+      "related": [
+        "blkid",
+        "lsblk",
+        "etc-fstab",
+        "mount",
+        "lvcreate",
+        "fdisk"
+      ]
+    },
+    {
+      "id": "win-format",
+      "name": "format",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "드라이브를 NTFS·ReFS·exFAT 등으로 포맷",
+      "description": "드라이브 문자로 지정한 볼륨을 지정한 파일시스템으로 포맷합니다. /Q 로 빠른 포맷을 하며, 볼륨 레이블과 할당 단위 크기를 함께 지정할 수 있습니다.",
+      "syntax": [
+        "format {{DRIVE}}: /FS:{{FSTYPE}} [/V:{{LABEL}}] [/Q] [/A:{{UNIT_SIZE}}]"
+      ],
+      "options": [
+        {
+          "flag": "/FS:{{FSTYPE}}",
+          "desc": "파일시스템 유형 (NTFS, ReFS, exFAT, FAT32)"
+        },
+        {
+          "flag": "/V:{{LABEL}}",
+          "desc": "볼륨 레이블 지정"
+        },
+        {
+          "flag": "/Q",
+          "desc": "빠른 포맷 (불량 섹터 검사 생략)"
+        },
+        {
+          "flag": "/A:{{UNIT_SIZE}}",
+          "desc": "할당 단위 크기 (예: 4096, 64K)"
+        },
+        {
+          "flag": "/X",
+          "desc": "필요하면 볼륨을 먼저 강제로 분리(dismount)"
+        },
+        {
+          "flag": "/C",
+          "desc": "(NTFS) 새 파일 기본 압축 사용"
+        }
+      ],
+      "examples": [
+        {
+          "title": "D: 를 NTFS 로 빠른 포맷",
+          "command": "format D: /FS:NTFS /V:{{LABEL}} /Q"
+        },
+        {
+          "title": "SQL 데이터 디스크용 64K 할당 단위",
+          "command": "format {{DRIVE}}: /FS:NTFS /A:64K /Q /V:{{LABEL}}"
+        }
+      ],
+      "cautions": [
+        "드라이브 문자를 잘못 입력하면 해당 볼륨 데이터가 모두 사라집니다.",
+        "/X 는 열려 있는 파일 핸들을 무효화하므로 사용 중인 서비스가 오류를 낼 수 있습니다."
+      ],
+      "help": "format /?",
+      "keywords": [
+        "포맷",
+        "NTFS",
+        "드라이브 포맷",
+        "format",
+        "빠른 포맷",
+        "할당 단위"
+      ],
+      "related": [
+        "format-volume",
+        "diskpart",
+        "diskmgmt-msc",
+        "chkdsk"
+      ]
+    },
+    {
+      "id": "format-volume",
+      "name": "Format-Volume",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "PowerShell 로 볼륨 포맷",
+      "description": "드라이브 문자나 파티션을 지정해 NTFS·ReFS·exFAT·FAT32 로 포맷합니다. New-Partition 과 파이프로 연결하면 새 디스크 준비를 한 줄로 끝낼 수 있습니다.",
+      "syntax": [
+        "Format-Volume -DriveLetter {{DRIVE}} -FileSystem {{FSTYPE}} [-NewFileSystemLabel {{LABEL}}]"
+      ],
+      "options": [
+        {
+          "flag": "-DriveLetter {{DRIVE}}",
+          "desc": "포맷할 드라이브 문자 (콜론 없이)"
+        },
+        {
+          "flag": "-FileSystem {{FSTYPE}}",
+          "desc": "NTFS, ReFS, exFAT, FAT32 등"
+        },
+        {
+          "flag": "-NewFileSystemLabel {{LABEL}}",
+          "desc": "볼륨 레이블"
+        },
+        {
+          "flag": "-AllocationUnitSize {{BYTES}}",
+          "desc": "할당 단위 크기 (예: 65536)"
+        },
+        {
+          "flag": "-Full",
+          "desc": "전체 포맷 (기본은 빠른 포맷)"
+        },
+        {
+          "flag": "-Force",
+          "desc": "확인 없이 진행"
+        },
+        {
+          "flag": "-Confirm:$false",
+          "desc": "확인 질문 생략"
+        }
+      ],
+      "examples": [
+        {
+          "title": "E: 를 NTFS 로 포맷",
+          "command": "Format-Volume -DriveLetter E -FileSystem NTFS -NewFileSystemLabel {{LABEL}}"
+        },
+        {
+          "title": "새 디스크 초기화 → 파티션 → 포맷 한 번에",
+          "command": "Initialize-Disk -Number {{DISK_NUMBER}} -PartitionStyle GPT\nNew-Partition -DiskNumber {{DISK_NUMBER}} -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem NTFS -NewFileSystemLabel {{LABEL}} -Confirm:$false"
+        }
+      ],
+      "cautions": [
+        "-Confirm:$false 나 -Force 를 쓰면 확인 없이 바로 지워집니다. Get-Volume 으로 대상을 먼저 확인하세요."
+      ],
+      "help": "Get-Help Format-Volume -Full",
+      "keywords": [
+        "포맷",
+        "볼륨 포맷",
+        "Format-Volume",
+        "New-Partition",
+        "Initialize-Disk",
+        "NTFS",
+        "ReFS"
+      ],
+      "related": [
+        "win-format",
+        "get-disk",
+        "diskpart"
+      ]
+    },
+    {
+      "id": "fsck",
+      "name": "fsck",
+      "aliases": [
+        "e2fsck",
+        "fsck.ext4"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.repair",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "ext4 등 파일시스템 점검·복구 (마운트 해제 상태)",
+      "description": "파일시스템의 일관성을 검사하고 오류를 복구합니다. ext2/3/4 는 내부적으로 e2fsck 가 실행됩니다. 반드시 마운트 해제 상태에서 실행해야 하며, xfs 에는 효과가 없으므로 xfs_repair 를 사용합니다.",
+      "syntax": [
+        "fsck [-n | -y] {{DEVICE}}",
+        "e2fsck -f {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-n",
+          "desc": "검사만 하고 아무것도 고치지 않음 (먼저 실행 권장)"
+        },
+        {
+          "flag": "-y",
+          "desc": "모든 복구 질문에 yes 로 자동 응답"
+        },
+        {
+          "flag": "-f",
+          "desc": "깨끗한(clean) 상태여도 강제로 검사"
+        },
+        {
+          "flag": "-p",
+          "desc": "안전한 문제만 자동 복구 (preen)"
+        },
+        {
+          "flag": "-C 0",
+          "desc": "진행률 표시"
+        },
+        {
+          "flag": "-t {{FSTYPE}}",
+          "desc": "파일시스템 유형 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "읽기 전용으로 오류만 확인",
+          "command": "umount {{DEVICE}}\nfsck -n {{DEVICE}}"
+        },
+        {
+          "title": "ext4 강제 점검·자동 복구",
+          "command": "umount {{MOUNT_POINT}}\ne2fsck -f -y -C 0 {{DEVICE}}\nmount {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "마운트된 상태에서 복구하면 파일시스템이 심하게 손상될 수 있습니다. 반드시 umount 후 실행하세요.",
+        "-y 는 손상 파일을 lost+found 로 옮기거나 삭제할 수 있습니다. 중요한 데이터는 먼저 백업(또는 스냅샷)하세요.",
+        "xfs 에서 fsck 는 아무것도 하지 않습니다. xfs_repair 를 사용하세요."
+      ],
+      "platformNotes": {
+        "rhel": "RHEL 은 기본이 xfs 이므로 대부분 xfs_repair 를 씁니다. 루트 파일시스템은 rescue 모드나 설치 ISO 에서 점검합니다."
+      },
+      "help": "man fsck, man e2fsck",
+      "keywords": [
+        "파일시스템 점검",
+        "디스크 복구",
+        "fsck",
+        "e2fsck",
+        "ext4",
+        "파일시스템 오류"
+      ],
+      "related": [
+        "xfs-repair",
+        "umount",
+        "dmesg"
+      ]
+    },
+    {
+      "id": "xfs-repair",
+      "name": "xfs_repair",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.repair",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "xfs 파일시스템 점검·복구",
+      "description": "xfs 파일시스템을 검사하고 복구합니다. 마운트 해제 상태에서 실행하며, 먼저 -n 으로 검사만 해 보는 것이 안전합니다. 로그(journal)가 남아 있으면 한 번 마운트했다가 해제해 로그를 재생한 뒤 실행합니다.",
+      "syntax": [
+        "xfs_repair [-n] {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-n",
+          "desc": "검사만 하고 수정하지 않음"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        },
+        {
+          "flag": "-L",
+          "desc": "로그를 강제로 비우고(zero) 복구. 최근 메타데이터 변경이 사라질 수 있음 (최후 수단)"
+        },
+        {
+          "flag": "-P",
+          "desc": "프리페치 비활성화 (복구가 멈출 때)"
+        },
+        {
+          "flag": "-m {{MB}}",
+          "desc": "사용 메모리 상한 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "검사만 하기",
+          "command": "umount {{MOUNT_POINT}}\nxfs_repair -n {{DEVICE}}"
+        },
+        {
+          "title": "로그 재생 후 복구",
+          "command": "mount {{DEVICE}} {{MOUNT_POINT}} && umount {{MOUNT_POINT}}\nxfs_repair {{DEVICE}}",
+          "note": "마운트가 안 되면 'log needs to be replayed' 오류가 나며, 이때만 -L 을 고려"
+        },
+        {
+          "title": "LVM 위 xfs 복구",
+          "command": "umount {{MOUNT_POINT}}\nxfs_repair /dev/mapper/{{VG}}-{{LV}}"
+        }
+      ],
+      "cautions": [
+        "-L 은 저널을 버리므로 최근 쓰기 내용이 사라지고 파일이 lost+found 로 옮겨질 수 있습니다. 백업·스냅샷 후 최후 수단으로만 사용하세요.",
+        "마운트된 장치에는 실행할 수 없습니다 (루트 파일시스템은 rescue 모드에서)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "xfsprogs",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "xfsprogs",
+          "preinstalled": false,
+          "note": "Ubuntu Server 는 대부분 포함. 없으면 apt install xfsprogs"
+        }
+      },
+      "help": "man xfs_repair",
+      "keywords": [
+        "xfs 복구",
+        "파일시스템 복구",
+        "xfs_repair",
+        "xfs",
+        "log replay",
+        "lost+found"
+      ],
+      "related": [
+        "fsck",
+        "umount",
+        "dmesg",
+        "xfs-growfs"
+      ]
+    },
+    {
+      "id": "chkdsk",
+      "name": "chkdsk",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "disk",
+      "task": "disk.repair",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NTFS 볼륨 오류 검사·복구",
+      "description": "볼륨의 파일시스템 오류와 불량 섹터를 검사하고 복구합니다. 옵션 없이 실행하면 읽기 전용 검사만 하며, 시스템 드라이브(C:)를 복구하면 다음 재부팅 때 실행하도록 예약됩니다.",
+      "syntax": [
+        "chkdsk {{DRIVE}}: [/f] [/r] [/x]",
+        "chkdsk {{DRIVE}}: /scan"
+      ],
+      "options": [
+        {
+          "flag": "/f",
+          "desc": "발견한 오류 수정 (볼륨 잠금 필요)"
+        },
+        {
+          "flag": "/r",
+          "desc": "불량 섹터를 찾아 읽을 수 있는 정보 복구 (/f 포함, 오래 걸림)"
+        },
+        {
+          "flag": "/x",
+          "desc": "필요하면 볼륨을 먼저 강제 분리 (/f 포함)"
+        },
+        {
+          "flag": "/scan",
+          "desc": "(NTFS) 볼륨을 분리하지 않고 온라인 검사"
+        },
+        {
+          "flag": "/spotfix",
+          "desc": "(NTFS) 온라인 검사에서 찾은 문제만 짧게 오프라인 복구"
+        },
+        {
+          "flag": "/offlinescanandfix",
+          "desc": "오프라인 검사 후 복구"
+        }
+      ],
+      "examples": [
+        {
+          "title": "읽기 전용 검사",
+          "command": "chkdsk D:"
+        },
+        {
+          "title": "서비스 중단 없이 온라인 검사",
+          "command": "chkdsk C: /scan"
+        },
+        {
+          "title": "데이터 드라이브 오류 복구",
+          "command": "chkdsk D: /f /x"
+        },
+        {
+          "title": "시스템 드라이브 복구 예약 (재부팅 시 실행)",
+          "command": "chkdsk C: /f /r",
+          "note": "'다음 재부팅 시 검사하시겠습니까?' 에 Y"
+        }
+      ],
+      "cautions": [
+        "/r 은 대용량 디스크에서 수 시간이 걸릴 수 있어 그동안 서버가 부팅되지 않습니다.",
+        "/x 는 사용 중인 파일 핸들을 끊으므로 서비스(DB 등)를 먼저 중지하세요."
+      ],
+      "help": "chkdsk /?",
+      "keywords": [
+        "디스크 검사",
+        "디스크 오류 복구",
+        "불량 섹터",
+        "chkdsk",
+        "NTFS",
+        "파일시스템 오류"
+      ],
+      "related": [
+        "sfc",
+        "win-format",
+        "get-winevent"
+      ]
+    },
+    {
+      "id": "pvcreate",
+      "name": "pvcreate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "디스크·파티션을 LVM 물리 볼륨(PV)으로 초기화",
+      "description": "디스크나 파티션을 LVM 이 사용할 물리 볼륨(PV)으로 초기화합니다. LVM 구성의 첫 단계이며, 이후 vgcreate 나 vgextend 로 볼륨 그룹에 넣습니다.",
+      "syntax": [
+        "pvcreate {{DEVICE}} [{{DEVICE2}} ...]"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "기존 서명이 있어도 강제로 초기화 (-ff 는 더 강제)"
+        },
+        {
+          "flag": "-y",
+          "desc": "모든 확인 질문에 yes"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        },
+        {
+          "flag": "--dataalignment {{SIZE}}",
+          "desc": "데이터 시작 위치 정렬 (스토리지 권장값이 있을 때)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크 전체를 PV 로",
+          "command": "pvcreate {{DEVICE}}\npvs"
+        },
+        {
+          "title": "PV 제거 (VG 에서 뺀 후)",
+          "command": "pvremove {{DEVICE}}"
+        }
+      ],
+      "cautions": [
+        "대상 장치의 기존 데이터·파일시스템 서명이 무효화됩니다. lsblk -f 로 비어 있는 디스크인지 확인하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true,
+          "note": "Ubuntu Server 설치본에는 포함. Debian 최소 설치·일부 클라우드 이미지는 apt install lvm2"
+        }
+      },
+      "help": "man pvcreate",
+      "keywords": [
+        "LVM",
+        "물리 볼륨",
+        "PV 생성",
+        "pvcreate",
+        "pvremove",
+        "디스크 추가"
+      ],
+      "related": [
+        "vgcreate",
+        "lvcreate",
+        "pvs",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "vgcreate",
+      "name": "vgcreate",
+      "aliases": [
+        "vgextend"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PV 를 묶어 볼륨 그룹(VG) 생성·확장",
+      "description": "하나 이상의 물리 볼륨(PV)을 묶어 볼륨 그룹(VG)을 만듭니다. 기존 VG 에 디스크를 추가할 때는 vgextend 를 사용합니다.",
+      "syntax": [
+        "vgcreate {{VG}} {{DEVICE}} [{{DEVICE2}} ...]",
+        "vgextend {{VG}} {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-s {{SIZE}}",
+          "desc": "PE(Physical Extent) 크기 지정 (기본 4MiB)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        },
+        {
+          "flag": "vgextend {{VG}} {{DEVICE}}",
+          "desc": "기존 VG 에 PV 추가"
+        },
+        {
+          "flag": "vgreduce {{VG}} {{DEVICE}}",
+          "desc": "VG 에서 사용하지 않는 PV 제거"
+        },
+        {
+          "flag": "vgchange -ay {{VG}}",
+          "desc": "VG 의 LV 활성화 (-an 은 비활성화)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 VG 생성",
+          "command": "pvcreate {{DEVICE}}\nvgcreate {{VG}} {{DEVICE}}\nvgs"
+        },
+        {
+          "title": "기존 VG 에 새 디스크 추가",
+          "command": "pvcreate {{DEVICE}}\nvgextend {{VG}} {{DEVICE}}\nvgs {{VG}}"
+        }
+      ],
+      "cautions": [
+        "VG 이름은 다른 서버의 VG 와 겹치지 않게 짓는 것이 좋습니다 (디스크 이동 시 충돌)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "help": "man vgcreate, man vgextend",
+      "keywords": [
+        "LVM",
+        "볼륨 그룹",
+        "VG 생성",
+        "VG 확장",
+        "vgcreate",
+        "vgextend",
+        "vgreduce"
+      ],
+      "related": [
+        "pvcreate",
+        "lvcreate",
+        "vgs",
+        "lvextend"
+      ]
+    },
+    {
+      "id": "lvcreate",
+      "name": "lvcreate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 안에 논리 볼륨(LV)·스냅샷 생성",
+      "description": "볼륨 그룹(VG)의 공간으로 논리 볼륨(LV)을 만듭니다. 생성된 LV 는 /dev/{{VG}}/{{LV}} 또는 /dev/mapper/{{VG}}-{{LV}} 경로로 접근하며, mkfs 로 포맷해 사용합니다. 스냅샷·씬 볼륨도 만들 수 있습니다.",
+      "syntax": [
+        "lvcreate -n {{LV}} -L {{SIZE}} {{VG}}",
+        "lvcreate -n {{LV}} -l 100%FREE {{VG}}"
+      ],
+      "options": [
+        {
+          "flag": "-n {{LV}}",
+          "desc": "LV 이름"
+        },
+        {
+          "flag": "-L {{SIZE}}",
+          "desc": "크기 지정 (예: 50G, 500M)"
+        },
+        {
+          "flag": "-l {{EXTENTS}}",
+          "desc": "PE 개수나 비율로 지정 (100%FREE, 50%VG)"
+        },
+        {
+          "flag": "-s",
+          "desc": "스냅샷 LV 생성 (-s -n {{NAME}} -L {{SIZE}} {{VG}}/{{LV}})"
+        },
+        {
+          "flag": "-i {{N}} -I {{SIZE}}",
+          "desc": "스트라이프 개수와 크기"
+        },
+        {
+          "flag": "--type thin-pool / -T",
+          "desc": "씬 풀·씬 볼륨 생성"
+        },
+        {
+          "flag": "-y",
+          "desc": "기존 서명 삭제 등 질문에 yes"
+        }
+      ],
+      "examples": [
+        {
+          "title": "남은 공간 전체로 LV 생성 후 포맷·마운트",
+          "command": "lvcreate -n {{LV}} -l 100%FREE {{VG}}\nmkfs.xfs /dev/{{VG}}/{{LV}}\nmkdir -p {{MOUNT_POINT}}\necho '/dev/mapper/{{VG}}-{{LV}} {{MOUNT_POINT}} xfs defaults 0 0' >> /etc/fstab\nsystemctl daemon-reload\nmount -a"
+        },
+        {
+          "title": "50G LV 생성",
+          "command": "lvcreate -n {{LV}} -L 50G {{VG}}"
+        },
+        {
+          "title": "작업 전 스냅샷 생성",
+          "command": "lvcreate -s -n {{LV}}_snap -L 5G {{VG}}/{{LV}}\nlvs",
+          "note": "스냅샷 공간이 가득 차면 스냅샷이 무효화됨"
+        }
+      ],
+      "cautions": [
+        "스냅샷은 백업이 아닙니다. 원본과 같은 디스크에 있으며 공간이 차면 무효화됩니다.",
+        "lvremove 는 LV 의 데이터를 되돌릴 수 없게 삭제합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "help": "man lvcreate",
+      "keywords": [
+        "LVM",
+        "논리 볼륨",
+        "LV 생성",
+        "스냅샷",
+        "lvcreate",
+        "100%FREE",
+        "snapshot"
+      ],
+      "related": [
+        "vgcreate",
+        "lvs",
+        "mkfs",
+        "lvextend",
+        "etc-fstab"
+      ]
+    },
+    {
+      "id": "pvs",
+      "name": "pvs",
+      "aliases": [
+        "pvdisplay"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "LVM 물리 볼륨(PV) 목록·여유 공간 조회",
+      "description": "물리 볼륨(PV)별 소속 VG, 크기, 여유 공간(PFree)을 한 줄씩 보여 줍니다. 자세한 정보는 pvdisplay 를 사용합니다.",
+      "syntax": [
+        "pvs [{{DEVICE}}]",
+        "pvdisplay [{{DEVICE}}]"
+      ],
+      "options": [
+        {
+          "flag": "-o +{{FIELDS}}",
+          "desc": "출력 필드 추가 (예: +pv_uuid,dev_size)"
+        },
+        {
+          "flag": "-a",
+          "desc": "PV 가 아닌 장치까지 모두 표시"
+        },
+        {
+          "flag": "--units g",
+          "desc": "크기 단위 지정 (g, m, t)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "PV 목록",
+          "command": "pvs",
+          "output": "  PV         VG   Fmt  Attr PSize   PFree\n  /dev/sda2  rhel lvm2 a--  <99.00g    0\n  /dev/sdb   data lvm2 a--  <50.00g 10.00g"
+        },
+        {
+          "title": "디스크 확장 후 PV 크기 반영",
+          "command": "pvresize {{DEVICE}}\npvs {{DEVICE}}"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true
+        }
+      },
+      "help": "man pvs",
+      "keywords": [
+        "LVM 조회",
+        "물리 볼륨",
+        "PV 목록",
+        "pvs",
+        "pvdisplay",
+        "pvresize"
+      ],
+      "related": [
+        "vgs",
+        "lvs",
+        "pvcreate",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "vgs",
+      "name": "vgs",
+      "aliases": [
+        "vgdisplay"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "볼륨 그룹(VG) 크기·남은 공간(VFree) 조회",
+      "description": "볼륨 그룹별 PV·LV 개수, 전체 크기, 남은 공간(VFree)을 보여 줍니다. LV 확장 전에 VG 에 여유 공간이 있는지 확인할 때 사용합니다.",
+      "syntax": [
+        "vgs [{{VG}}]",
+        "vgdisplay [{{VG}}]"
+      ],
+      "options": [
+        {
+          "flag": "-o +{{FIELDS}}",
+          "desc": "출력 필드 추가 (예: +vg_extent_size)"
+        },
+        {
+          "flag": "--units g",
+          "desc": "크기 단위 지정"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력 (UUID 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "VG 여유 공간 확인",
+          "command": "vgs",
+          "output": "  VG   #PV #LV #SN Attr   VSize   VFree\n  rhel   1   2   0 wz--n- <99.00g 20.00g"
+        },
+        {
+          "title": "VG 상세 정보",
+          "command": "vgdisplay {{VG}}"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true
+        }
+      },
+      "help": "man vgs",
+      "keywords": [
+        "LVM 조회",
+        "볼륨 그룹",
+        "VG 여유 공간",
+        "vgs",
+        "vgdisplay",
+        "VFree"
+      ],
+      "related": [
+        "pvs",
+        "lvs",
+        "vgcreate",
+        "lvextend"
+      ]
+    },
+    {
+      "id": "lvs",
+      "name": "lvs",
+      "aliases": [
+        "lvdisplay"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "논리 볼륨(LV) 목록·크기·스냅샷 사용률 조회",
+      "description": "논리 볼륨별 소속 VG, 속성, 크기, 스냅샷·씬 풀 사용률을 보여 줍니다. -o +devices 로 LV 가 어떤 PV 위에 있는지도 확인할 수 있습니다.",
+      "syntax": [
+        "lvs [{{VG}}[/{{LV}}]]",
+        "lvdisplay [/dev/{{VG}}/{{LV}}]"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "내부 LV(미러·씬 메타데이터 등)까지 표시"
+        },
+        {
+          "flag": "-o +devices",
+          "desc": "LV 가 위치한 PV 장치 표시"
+        },
+        {
+          "flag": "--units g",
+          "desc": "크기 단위 지정"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 목록",
+          "command": "lvs",
+          "output": "  LV   VG   Attr       LSize   Pool Origin Data%\n  root rhel -wi-ao---- <70.00g\n  swap rhel -wi-ao----   8.00g"
+        },
+        {
+          "title": "LV 가 놓인 디스크 확인",
+          "command": "lvs -a -o +devices"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true
+        }
+      },
+      "help": "man lvs",
+      "keywords": [
+        "LVM 조회",
+        "논리 볼륨",
+        "LV 목록",
+        "lvs",
+        "lvdisplay",
+        "스냅샷 사용률"
+      ],
+      "related": [
+        "pvs",
+        "vgs",
+        "lvcreate",
+        "lvextend"
+      ]
+    },
+    {
+      "id": "lvextend",
+      "name": "lvextend",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "논리 볼륨(LV) 용량 확장 (-r 로 FS 까지)",
+      "description": "논리 볼륨의 크기를 늘립니다. -r(--resizefs) 옵션을 주면 xfs_growfs 나 resize2fs 를 자동으로 호출해 파일시스템까지 온라인으로 함께 확장합니다. VG 에 여유 공간이 있어야 합니다.",
+      "syntax": [
+        "lvextend -r -L +{{SIZE}} /dev/{{VG}}/{{LV}}",
+        "lvextend -r -l +100%FREE /dev/{{VG}}/{{LV}}"
+      ],
+      "options": [
+        {
+          "flag": "-L +{{SIZE}}",
+          "desc": "지정 크기만큼 늘림 (+ 없이 쓰면 최종 크기)"
+        },
+        {
+          "flag": "-l +100%FREE",
+          "desc": "VG 의 남은 공간 전부 사용"
+        },
+        {
+          "flag": "-r, --resizefs",
+          "desc": "파일시스템도 함께 확장"
+        },
+        {
+          "flag": "-t",
+          "desc": "실제로 바꾸지 않고 테스트만"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 를 20G 늘리고 파일시스템까지 온라인 확장",
+          "command": "vgs\nlvextend -r -L +20G /dev/{{VG}}/{{LV}}\ndf -hT {{MOUNT_POINT}}"
+        },
+        {
+          "title": "VG 남은 공간 전부로 확장",
+          "command": "lvextend -r -l +100%FREE /dev/{{VG}}/{{LV}}"
+        },
+        {
+          "title": "새 디스크 추가 → VG 확장 → LV 확장",
+          "command": "pvcreate {{DEVICE}}\nvgextend {{VG}} {{DEVICE}}\nlvextend -r -l +100%FREE /dev/{{VG}}/{{LV}}"
+        },
+        {
+          "title": "기존 디스크 크기를 늘린 경우 (클라우드·VM)",
+          "command": "growpart /dev/sda 2\npvresize /dev/sda2\nlvextend -r -l +100%FREE /dev/{{VG}}/{{LV}}"
+        }
+      ],
+      "cautions": [
+        "-r 없이 확장하면 LV 만 커지고 df 결과는 그대로입니다. 이때는 xfs_growfs 나 resize2fs 를 따로 실행하세요.",
+        "축소(lvreduce)는 데이터 손실 위험이 크며 xfs 는 축소 자체가 불가능합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "lvm2",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "lvm2",
+          "preinstalled": true
+        }
+      },
+      "help": "man lvextend",
+      "keywords": [
+        "용량 확장",
+        "LV 확장",
+        "디스크 늘리기",
+        "lvextend",
+        "resizefs",
+        "100%FREE",
+        "온라인 확장"
+      ],
+      "related": [
+        "vgs",
+        "lvs",
+        "xfs-growfs",
+        "resize2fs",
+        "growpart",
+        "df"
+      ]
+    },
+    {
+      "id": "xfs-growfs",
+      "name": "xfs_growfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "마운트된 xfs 파일시스템을 온라인 확장",
+      "description": "아래쪽 장치(파티션·LV)가 커진 뒤, 마운트된 상태의 xfs 파일시스템을 늘어난 크기만큼 확장합니다. 마운트 포인트를 인자로 주며, xfs 는 확장만 가능하고 축소는 불가능합니다.",
+      "syntax": [
+        "xfs_growfs {{MOUNT_POINT}}"
+      ],
+      "options": [
+        {
+          "flag": "-d",
+          "desc": "데이터 영역을 장치 최대 크기로 확장 (기본 동작)"
+        },
+        {
+          "flag": "-D {{BLOCKS}}",
+          "desc": "지정한 블록 수까지 확장"
+        },
+        {
+          "flag": "-n",
+          "desc": "변경 없이 현재 파일시스템 구조 정보만 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 확장 후 xfs 확장",
+          "command": "lvextend -L +10G /dev/{{VG}}/{{LV}}\nxfs_growfs {{MOUNT_POINT}}\ndf -hT {{MOUNT_POINT}}"
+        },
+        {
+          "title": "클라우드 디스크 증설 후 루트 확장 (파티션 직접 사용)",
+          "command": "growpart /dev/{{DISK}} {{PART_NUM}}\nxfs_growfs /"
+        }
+      ],
+      "cautions": [
+        "xfs 는 축소할 수 없습니다. 용량을 줄이려면 백업 → 재생성 → 복원해야 합니다.",
+        "마운트되지 않은 상태에서는 실행할 수 없습니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "xfsprogs",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "xfsprogs",
+          "preinstalled": false,
+          "note": "Ubuntu Server 는 대부분 포함"
+        }
+      },
+      "help": "man xfs_growfs",
+      "keywords": [
+        "xfs 확장",
+        "파일시스템 확장",
+        "온라인 확장",
+        "xfs_growfs",
+        "xfs",
+        "grow"
+      ],
+      "related": [
+        "lvextend",
+        "growpart",
+        "resize2fs",
+        "df"
+      ]
+    },
+    {
+      "id": "resize2fs",
+      "name": "resize2fs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "ext2/3/4 파일시스템 크기 변경",
+      "description": "ext 계열 파일시스템을 늘리거나 줄입니다. 확장은 마운트된 상태에서 온라인으로 가능하고, 축소는 마운트 해제 후 e2fsck -f 를 먼저 실행해야 합니다. 크기를 생략하면 장치 크기만큼 확장합니다.",
+      "syntax": [
+        "resize2fs {{DEVICE}} [{{SIZE}}]"
+      ],
+      "options": [
+        {
+          "flag": "{{SIZE}}",
+          "desc": "목표 크기 (예: 40G). 생략하면 장치 최대 크기"
+        },
+        {
+          "flag": "-p",
+          "desc": "진행률 표시"
+        },
+        {
+          "flag": "-P",
+          "desc": "줄일 수 있는 최소 크기 추정값 출력"
+        },
+        {
+          "flag": "-f",
+          "desc": "안전 검사를 무시하고 강제 실행"
+        },
+        {
+          "flag": "-M",
+          "desc": "가능한 최소 크기로 축소"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 확장 후 ext4 온라인 확장",
+          "command": "lvextend -L +10G /dev/{{VG}}/{{LV}}\nresize2fs /dev/{{VG}}/{{LV}}"
+        },
+        {
+          "title": "클라우드 디스크 증설 후 루트 확장 (Ubuntu)",
+          "command": "growpart /dev/{{DISK}} {{PART_NUM}}\nresize2fs /dev/{{DISK}}{{PART_NUM}}"
+        }
+      ],
+      "cautions": [
+        "축소는 마운트 해제 → e2fsck -f → resize2fs → lvreduce 순서를 지켜야 합니다. 순서가 틀리면 데이터가 손상됩니다.",
+        "xfs 에는 사용할 수 없습니다 (xfs_growfs 사용)."
+      ],
+      "help": "man resize2fs",
+      "keywords": [
+        "ext4 확장",
+        "파일시스템 크기 변경",
+        "resize2fs",
+        "ext4",
+        "축소",
+        "온라인 확장"
+      ],
+      "related": [
+        "lvextend",
+        "growpart",
+        "xfs-growfs",
+        "fsck",
+        "df"
+      ]
+    },
+    {
+      "id": "growpart",
+      "name": "growpart",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "디스크 증설 후 파티션을 끝까지 확장",
+      "description": "클라우드·가상 디스크 크기를 늘린 뒤, 지정한 파티션을 디스크 끝까지 온라인으로 확장합니다. 디스크와 파티션 번호를 띄어서 지정하며, 이후 pvresize 나 파일시스템 확장을 이어서 해야 합니다.",
+      "syntax": [
+        "growpart {{DISK_DEVICE}} {{PART_NUM}}"
+      ],
+      "options": [
+        {
+          "flag": "-N, --dry-run",
+          "desc": "실제로 바꾸지 않고 변경 예정 내용만 표시"
+        },
+        {
+          "flag": "-u {{MODE}}, --update {{MODE}}",
+          "desc": "커널 파티션 정보 갱신 방식 (auto, on, off, force)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 증설 인식 → 파티션 확장 → xfs 확장",
+          "command": "echo 1 > /sys/class/block/{{DISK}}/device/rescan\nlsblk /dev/{{DISK}}\ngrowpart /dev/{{DISK}} {{PART_NUM}}\nxfs_growfs {{MOUNT_POINT}}",
+          "note": "디스크명은 sda, nvme0n1 처럼 /dev 없이. NVMe 는 rescan 경로가 다를 수 있음"
+        },
+        {
+          "title": "LVM 루트 디스크 확장",
+          "command": "growpart /dev/sda 2\npvresize /dev/sda2\nlvextend -r -l +100%FREE /dev/{{VG}}/{{LV}}"
+        },
+        {
+          "title": "변경 예정 내용만 확인",
+          "command": "growpart -N /dev/{{DISK}} {{PART_NUM}}"
+        }
+      ],
+      "cautions": [
+        "'/dev/sda2' 가 아니라 '/dev/sda 2' 처럼 디스크와 번호를 띄어 써야 합니다.",
+        "확장할 파티션 바로 뒤에 다른 파티션이 있으면 확장할 수 없습니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "cloud-utils-growpart",
+          "preinstalled": false,
+          "note": "클라우드 이미지에는 기본 포함. 없으면 dnf install cloud-utils-growpart"
+        },
+        "debian": {
+          "package": "cloud-guest-utils",
+          "preinstalled": false,
+          "note": "Ubuntu Server·클라우드 이미지에는 대부분 포함. 없으면 apt install cloud-guest-utils"
+        }
+      },
+      "help": "growpart --help",
+      "keywords": [
+        "파티션 확장",
+        "디스크 증설",
+        "클라우드 디스크",
+        "growpart",
+        "cloud-utils",
+        "pvresize"
+      ],
+      "related": [
+        "lvextend",
+        "xfs-growfs",
+        "resize2fs",
+        "parted",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "resize-partition",
+      "name": "Resize-Partition",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PowerShell 로 파티션(볼륨) 크기 확장·축소",
+      "description": "파티션의 크기를 지정한 바이트 크기로 변경합니다. Get-PartitionSupportedSize 로 가능한 최대·최소 크기를 확인해 넘겨 주는 방식이 일반적입니다. 가상 디스크 증설 후 C: 를 늘릴 때 사용합니다.",
+      "syntax": [
+        "Resize-Partition -DriveLetter {{DRIVE}} -Size {{BYTES}}",
+        "Resize-Partition -DiskNumber {{DISK_NUMBER}} -PartitionNumber {{PART_NUM}} -Size {{BYTES}}"
+      ],
+      "options": [
+        {
+          "flag": "-DriveLetter {{DRIVE}}",
+          "desc": "대상 드라이브 문자"
+        },
+        {
+          "flag": "-DiskNumber / -PartitionNumber",
+          "desc": "디스크·파티션 번호로 지정"
+        },
+        {
+          "flag": "-Size {{BYTES}}",
+          "desc": "새 크기 (바이트, 100GB 같은 표기 가능)"
+        },
+        {
+          "flag": "Get-PartitionSupportedSize",
+          "desc": "설정 가능한 SizeMin·SizeMax 조회"
+        },
+        {
+          "flag": "Update-HostStorageCache",
+          "desc": "디스크 정보 다시 검색 (증설 직후 인식 안 될 때)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "증설된 공간만큼 C: 최대 확장",
+          "command": "Update-HostStorageCache\n$max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax\nResize-Partition -DriveLetter C -Size $max"
+        },
+        {
+          "title": "확장 가능 크기 확인",
+          "command": "Get-PartitionSupportedSize -DriveLetter {{DRIVE}}"
+        }
+      ],
+      "cautions": [
+        "C: 뒤에 복구 파티션이 있으면 바로 뒤가 빈 공간이 아니어서 확장할 수 없습니다.",
+        "축소는 이동할 수 없는 파일 위치에 따라 제한됩니다."
+      ],
+      "help": "Get-Help Resize-Partition -Full",
+      "keywords": [
+        "볼륨 확장",
+        "파티션 확장",
+        "C 드라이브 늘리기",
+        "Resize-Partition",
+        "Get-PartitionSupportedSize"
+      ],
+      "related": [
+        "get-disk",
+        "diskpart",
+        "diskmgmt-msc"
+      ]
+    },
+    {
+      "id": "mkswap",
+      "name": "mkswap",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "파티션·LV·파일을 스왑 영역으로 초기화",
+      "description": "파티션, 논리 볼륨, 또는 파일을 스왑 영역으로 초기화합니다. 초기화 후 swapon 으로 활성화하고, 영구 적용하려면 /etc/fstab 에 등록합니다.",
+      "syntax": [
+        "mkswap [-L {{LABEL}}] {{DEVICE_OR_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-L {{LABEL}}",
+          "desc": "스왑 레이블 지정"
+        },
+        {
+          "flag": "-U {{UUID}}",
+          "desc": "UUID 직접 지정"
+        },
+        {
+          "flag": "-f",
+          "desc": "검사를 무시하고 강제 실행"
+        },
+        {
+          "flag": "-c",
+          "desc": "생성 전에 불량 블록 검사"
+        }
+      ],
+      "examples": [
+        {
+          "title": "4GB 스왑 파일 만들기 (영구 적용)",
+          "command": "dd if=/dev/zero of=/swapfile bs=1M count=4096\nchmod 600 /swapfile\nmkswap /swapfile\nswapon /swapfile\necho '/swapfile none swap defaults 0 0' >> /etc/fstab\nswapon --show"
+        },
+        {
+          "title": "LV 로 스왑 추가",
+          "command": "lvcreate -n swap2 -L 8G {{VG}}\nmkswap /dev/{{VG}}/swap2\nswapon /dev/{{VG}}/swap2"
+        }
+      ],
+      "cautions": [
+        "대상의 기존 데이터가 사라집니다. 장치를 반드시 확인하세요.",
+        "스왑 파일 권한은 600 이어야 합니다 (다른 사용자가 메모리 내용을 읽을 수 있음)."
+      ],
+      "platformNotes": {
+        "rhel": "xfs 위 스왑 파일은 fallocate 대신 dd 로 만드는 것이 안전합니다 (Red Hat 문서 권장 방식).",
+        "debian": "Ubuntu 기본 설치는 /swap.img 스왑 파일을 사용합니다."
+      },
+      "help": "man mkswap",
+      "keywords": [
+        "스왑 생성",
+        "스왑 파일",
+        "가상 메모리",
+        "mkswap",
+        "swap",
+        "swapfile"
+      ],
+      "related": [
+        "swapon",
+        "free",
+        "etc-fstab"
+      ]
+    },
+    {
+      "id": "swapon",
+      "name": "swapon",
+      "aliases": [
+        "swapoff"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "스왑 활성화·비활성화·사용량 확인",
+      "description": "스왑 영역을 활성화하거나(swapon) 비활성화하고(swapoff), 현재 사용 중인 스왑 장치와 사용량을 보여 줍니다.",
+      "syntax": [
+        "swapon --show",
+        "swapon {{DEVICE_OR_FILE}}",
+        "swapoff {{DEVICE_OR_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "--show",
+          "desc": "사용 중인 스왑 장치·크기·사용량·우선순위 표시"
+        },
+        {
+          "flag": "-s",
+          "desc": "스왑 요약 출력 (구형 형식)"
+        },
+        {
+          "flag": "-a",
+          "desc": "/etc/fstab 의 swap 항목 모두 활성화"
+        },
+        {
+          "flag": "-p {{PRIORITY}}",
+          "desc": "우선순위 지정 (높을수록 먼저 사용)"
+        },
+        {
+          "flag": "swapoff -a",
+          "desc": "모든 스왑 비활성화"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "스왑 사용 현황",
+          "command": "swapon --show\nfree -h"
+        },
+        {
+          "title": "스왑 비우기 (스왑 내용을 메모리로 되돌림)",
+          "command": "swapoff -a && swapon -a",
+          "note": "여유 메모리가 스왑 사용량보다 충분할 때만"
+        },
+        {
+          "title": "fstab 의 스왑 설정 검증",
+          "command": "swapon -a\nswapon --show"
+        }
+      ],
+      "cautions": [
+        "여유 메모리가 부족한 상태에서 swapoff 하면 OOM Killer 가 프로세스를 종료시킬 수 있습니다."
+      ],
+      "platformNotes": {
+        "rhel": "Kubernetes 노드처럼 스왑을 끄라고 요구하는 경우 swapoff -a 후 /etc/fstab 의 swap 줄을 주석 처리합니다."
+      },
+      "help": "man swapon",
+      "keywords": [
+        "스왑 활성화",
+        "스왑 끄기",
+        "스왑 사용량",
+        "swapon",
+        "swapoff",
+        "swap"
+      ],
+      "related": [
+        "mkswap",
+        "free",
+        "etc-fstab"
+      ]
+    },
+    {
+      "id": "showmount",
+      "name": "showmount",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.network-fs",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "NFS 서버가 공유(export)하는 목록 확인",
+      "description": "NFS 서버에 질의해 공유(export) 중인 디렉토리와 허용 대상을 보여 줍니다. 클라이언트에서 마운트 전에 서버 설정과 방화벽을 확인할 때 사용합니다.",
+      "syntax": [
+        "showmount -e {{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "-e",
+          "desc": "서버의 export 목록과 허용 클라이언트"
+        },
+        {
+          "flag": "-a",
+          "desc": "클라이언트 호스트와 마운트한 디렉토리 목록"
+        },
+        {
+          "flag": "-d",
+          "desc": "클라이언트가 마운트한 디렉토리만"
+        }
+      ],
+      "examples": [
+        {
+          "title": "NFS 서버 공유 목록 확인",
+          "command": "showmount -e {{HOST}}",
+          "output": "Export list for nfs01:\n/data 192.168.10.0/24"
+        },
+        {
+          "title": "확인 후 마운트",
+          "command": "showmount -e {{HOST}}\nmount -t nfs {{HOST}}:{{EXPORT_PATH}} {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "showmount 는 rpcbind(111)·mountd 를 사용합니다. NFSv4 전용 서버나 방화벽에서 막힌 경우 응답이 없어도 마운트는 될 수 있습니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "nfs-utils",
+          "preinstalled": false,
+          "note": "dnf install nfs-utils"
+        },
+        "debian": {
+          "package": "nfs-common",
+          "preinstalled": false,
+          "note": "apt install nfs-common"
+        }
+      },
+      "help": "man showmount",
+      "keywords": [
+        "NFS 공유 목록",
+        "NFS 확인",
+        "showmount",
+        "export",
+        "NFS",
+        "rpcbind"
+      ],
+      "related": [
+        "mount",
+        "etc-exports",
+        "etc-fstab",
+        "firewall-cmd"
+      ]
+    },
+    {
+      "id": "etc-exports",
+      "name": "/etc/exports",
+      "aliases": [
+        "exportfs"
+      ],
+      "kind": "file",
+      "category": "disk",
+      "task": "disk.network-fs",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NFS 서버의 공유 디렉토리·허용 대상 설정",
+      "description": "NFS 서버에서 공유할 디렉토리와 접근을 허용할 클라이언트, 옵션을 한 줄씩 정의하는 파일입니다. 수정 후 exportfs -ra 로 반영하며, /etc/exports.d/*.exports 파일로 나눠 관리할 수도 있습니다.",
+      "syntax": [
+        "{{EXPORT_PATH}}  {{CLIENT}}({{OPTIONS}}) [{{CLIENT2}}({{OPTIONS}})]"
+      ],
+      "options": [
+        {
+          "flag": "rw / ro",
+          "desc": "읽기·쓰기 / 읽기 전용"
+        },
+        {
+          "flag": "sync",
+          "desc": "디스크에 기록한 뒤 응답 (기본, 안전)"
+        },
+        {
+          "flag": "root_squash",
+          "desc": "클라이언트 root 를 nobody 로 매핑 (기본)"
+        },
+        {
+          "flag": "no_root_squash",
+          "desc": "클라이언트 root 를 그대로 root 로 허용 (보안 주의)"
+        },
+        {
+          "flag": "all_squash,anonuid={{UID}},anongid={{GID}}",
+          "desc": "모든 사용자를 지정 UID/GID 로 매핑"
+        },
+        {
+          "flag": "no_subtree_check",
+          "desc": "하위 트리 검사 생략 (기본값, 성능·안정성)"
+        },
+        {
+          "flag": "exportfs -ra",
+          "desc": "설정 파일 다시 읽어 반영"
+        },
+        {
+          "flag": "exportfs -v",
+          "desc": "현재 적용된 export 와 옵션 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 대역에 읽기·쓰기 공유",
+          "command": "echo '/data 192.168.10.0/24(rw,sync,no_subtree_check)' >> /etc/exports\nexportfs -ra\nexportfs -v"
+        },
+        {
+          "title": "NFS 서버 구성 (RHEL)",
+          "command": "dnf install -y nfs-utils\nsystemctl enable --now nfs-server\nfirewall-cmd --permanent --add-service={nfs,rpc-bind,mountd}\nfirewall-cmd --reload",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "NFS 서버 구성 (Ubuntu)",
+          "command": "apt install -y nfs-kernel-server\nsystemctl enable --now nfs-server",
+          "platforms": [
+            "debian"
+          ]
+        }
+      ],
+      "cautions": [
+        "호스트와 괄호 사이에 공백을 넣으면 안 됩니다. '대역 (rw)' 로 쓰면 옵션이 모든 호스트(*)에 적용됩니다.",
+        "no_root_squash 는 클라이언트 root 가 서버 파일을 root 권한으로 다룰 수 있어 꼭 필요한 경우에만 사용하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "nfs-utils",
+          "preinstalled": false
+        },
+        "debian": {
+          "package": "nfs-kernel-server",
+          "preinstalled": false
+        }
+      },
+      "help": "man 5 exports, man exportfs",
+      "keywords": [
+        "NFS 서버",
+        "NFS 공유 설정",
+        "exports",
+        "exportfs",
+        "no_root_squash",
+        "NFS"
+      ],
+      "related": [
+        "showmount",
+        "mount",
+        "firewall-cmd",
+        "systemctl"
+      ]
+    },
+    {
+      "id": "net-use",
+      "name": "net use",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "disk",
+      "task": "disk.network-fs",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "SMB 공유 폴더를 네트워크 드라이브로 연결",
+      "description": "원격 SMB 공유를 드라이브 문자에 연결하거나 연결을 끊고, 현재 연결 목록을 보여 줍니다. 인자 없이 실행하면 연결된 네트워크 드라이브 목록이 나옵니다.",
+      "syntax": [
+        "net use [{{DRIVE}}:] \\\\{{HOST}}\\{{SHARE}} [/user:{{DOMAIN}}\\{{USER}}] [*] [/persistent:yes|no]",
+        "net use {{DRIVE}}: /delete"
+      ],
+      "options": [
+        {
+          "flag": "/user:{{DOMAIN}}\\{{USER}}",
+          "desc": "다른 계정으로 연결"
+        },
+        {
+          "flag": "*",
+          "desc": "비밀번호를 프롬프트로 입력 (명령줄에 노출 방지)"
+        },
+        {
+          "flag": "/persistent:yes",
+          "desc": "로그온 시 자동 재연결"
+        },
+        {
+          "flag": "/delete",
+          "desc": "연결 해제 (* /delete 는 전체 해제)"
+        },
+        {
+          "flag": "/savecred",
+          "desc": "자격 증명 저장 (보안 주의)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 연결 목록",
+          "command": "net use"
+        },
+        {
+          "title": "Z: 로 공유 연결 (비밀번호 입력)",
+          "command": "net use Z: \\\\{{HOST}}\\{{SHARE}} /user:{{DOMAIN}}\\{{USER}} * /persistent:yes"
+        },
+        {
+          "title": "연결 해제",
+          "command": "net use Z: /delete"
+        }
+      ],
+      "cautions": [
+        "명령줄에 비밀번호를 직접 쓰면 기록에 남습니다. * 로 입력받으세요.",
+        "같은 서버에 서로 다른 계정으로 동시에 연결할 수 없습니다 (오류 1219). 기존 연결을 먼저 끊으세요."
+      ],
+      "platformNotes": {
+        "windows": "관리자 권한 CMD 에서 연결한 드라이브는 일반 탐색기 창에 보이지 않을 수 있습니다 (UAC 세션 분리). PowerShell 에서는 New-SmbMapping 도 사용 가능."
+      },
+      "help": "net use /?, net help use",
+      "keywords": [
+        "네트워크 드라이브",
+        "공유 폴더 연결",
+        "SMB",
+        "net use",
+        "드라이브 매핑",
+        "CIFS"
+      ],
+      "related": [
+        "new-smbshare",
+        "mount"
+      ]
+    },
+    {
+      "id": "new-smbshare",
+      "name": "New-SmbShare",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "disk",
+      "task": "disk.network-fs",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "폴더를 SMB 공유로 생성·권한 지정",
+      "description": "로컬 폴더를 SMB 공유로 만들고 공유 권한을 지정합니다. Get-SmbShare 로 조회, Grant-SmbShareAccess 로 권한 추가, Remove-SmbShare 로 삭제합니다. 실제 접근은 공유 권한과 NTFS 권한이 모두 허용해야 가능합니다.",
+      "syntax": [
+        "New-SmbShare -Name {{SHARE}} -Path {{PATH}} [-FullAccess {{ACCOUNT}}] [-ReadAccess {{ACCOUNT}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Name {{SHARE}}",
+          "desc": "공유 이름"
+        },
+        {
+          "flag": "-Path {{PATH}}",
+          "desc": "공유할 로컬 폴더 경로"
+        },
+        {
+          "flag": "-FullAccess {{ACCOUNT}}",
+          "desc": "모든 권한 계정 (쉼표로 여러 개)"
+        },
+        {
+          "flag": "-ChangeAccess {{ACCOUNT}}",
+          "desc": "변경 권한 계정"
+        },
+        {
+          "flag": "-ReadAccess {{ACCOUNT}}",
+          "desc": "읽기 권한 계정"
+        },
+        {
+          "flag": "-Description {{TEXT}}",
+          "desc": "공유 설명"
+        },
+        {
+          "flag": "-FolderEnumerationMode AccessBased",
+          "desc": "권한 있는 항목만 보이게 (ABE)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "폴더 공유 생성",
+          "command": "New-Item -ItemType Directory -Path D:\\Share\nNew-SmbShare -Name {{SHARE}} -Path D:\\Share -FullAccess 'Administrators' -ChangeAccess '{{DOMAIN}}\\{{GROUP}}'"
+        },
+        {
+          "title": "공유 목록·권한 확인",
+          "command": "Get-SmbShare\nGet-SmbShareAccess -Name {{SHARE}}"
+        },
+        {
+          "title": "현재 접속 세션 확인",
+          "command": "Get-SmbSession\nGet-SmbOpenFile"
+        }
+      ],
+      "cautions": [
+        "공유 권한만 주고 NTFS 권한을 주지 않으면 접근이 거부됩니다. icacls 등으로 NTFS 권한도 확인하세요."
+      ],
+      "help": "Get-Help New-SmbShare -Full",
+      "keywords": [
+        "공유 폴더 생성",
+        "SMB 공유",
+        "파일 서버",
+        "New-SmbShare",
+        "Get-SmbShare",
+        "공유 권한"
+      ],
+      "related": [
+        "net-use",
+        "icacls"
+      ]
+    }
+  ]
+}

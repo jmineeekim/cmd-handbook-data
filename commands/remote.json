@@ -1,0 +1,1312 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "remote",
+  "commands": [
+    {
+      "id": "ssh",
+      "name": "ssh",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.connect",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "SSH 원격 접속·원격 명령 실행·포트 포워딩",
+      "description": "OpenSSH 클라이언트로 원격 서버에 암호화된 셸 접속을 합니다. 원격 명령 한 줄 실행, 점프 호스트 경유 접속, 로컬·원격·동적(SOCKS) 포트 포워딩까지 처리합니다. 자주 쓰는 접속 정보는 ~/.ssh/config 에 Host 별칭으로 저장해 두면 편합니다.",
+      "syntax": [
+        "ssh [-p {{PORT}}] [-i {{KEY_FILE}}] {{USER}}@{{HOST}} [{{COMMAND}}]",
+        "ssh -L {{LOCAL_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}} {{USER}}@{{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "-p {{PORT}}",
+          "desc": "접속 포트 지정 (기본 22)"
+        },
+        {
+          "flag": "-i {{KEY_FILE}}",
+          "desc": "사용할 개인키 파일 지정"
+        },
+        {
+          "flag": "-J {{USER}}@{{JUMP_HOST}}",
+          "desc": "점프 호스트(배스천)를 경유해 접속 (ProxyJump)"
+        },
+        {
+          "flag": "-L {{LOCAL_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}}",
+          "desc": "로컬 포트 포워딩: 내 PC 포트 → 원격에서 본 대상"
+        },
+        {
+          "flag": "-R {{REMOTE_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}}",
+          "desc": "원격(리버스) 포트 포워딩: 원격 서버 포트 → 내 쪽 대상"
+        },
+        {
+          "flag": "-D {{LOCAL_PORT}}",
+          "desc": "동적 포워딩 (SOCKS 프록시)"
+        },
+        {
+          "flag": "-N",
+          "desc": "원격 명령 실행 없이 포워딩만 유지"
+        },
+        {
+          "flag": "-f",
+          "desc": "인증 후 백그라운드로 전환 (-N 과 함께 터널용)"
+        },
+        {
+          "flag": "-o {{OPTION}}={{VALUE}}",
+          "desc": "설정 옵션 직접 지정 (예: -o StrictHostKeyChecking=no, -o ConnectTimeout=5)"
+        },
+        {
+          "flag": "-v",
+          "desc": "디버그 출력 (-vvv 까지). 인증 실패 원인 확인용"
+        }
+      ],
+      "examples": [
+        {
+          "title": "포트·키를 지정해 접속",
+          "command": "ssh -p {{PORT}} -i ~/.ssh/id_ed25519 {{USER}}@{{HOST}}"
+        },
+        {
+          "title": "원격 명령 한 줄 실행",
+          "command": "ssh {{USER}}@{{HOST}} 'uptime; df -h'"
+        },
+        {
+          "title": "점프 호스트 경유 접속",
+          "command": "ssh -J {{USER}}@{{JUMP_HOST}} {{USER}}@{{HOST}}",
+          "note": "여러 단계는 -J host1,host2 처럼 쉼표로 연결"
+        },
+        {
+          "title": "로컬 포트 포워딩으로 내부 DB 접근",
+          "command": "ssh -N -L 13306:{{DB_HOST}}:3306 {{USER}}@{{HOST}}",
+          "note": "내 PC 의 127.0.0.1:13306 으로 접속하면 {{HOST}} 를 거쳐 {{DB_HOST}}:3306 으로 연결됨"
+        },
+        {
+          "title": "SOCKS 프록시 터널을 백그라운드로 열기",
+          "command": "ssh -f -N -D 1080 {{USER}}@{{HOST}}",
+          "note": "브라우저 프록시를 SOCKS5 127.0.0.1:1080 으로 설정"
+        }
+      ],
+      "cautions": [
+        "호스트 키가 바뀌었다는 경고(REMOTE HOST IDENTIFICATION HAS CHANGED)는 서버 재설치 또는 중간자 공격일 수 있으니 확인 후 ssh-keygen -R {{HOST}} 로 지우세요.",
+        "-o StrictHostKeyChecking=no 는 호스트 키 검증을 끄므로 테스트 환경에서만 쓰세요.",
+        "-R 로 연 원격 포트는 기본적으로 원격 서버의 localhost 에만 열립니다 (sshd 의 GatewayPorts 설정에 따라 다름)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "openssh-clients",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "openssh-client",
+          "preinstalled": true
+        }
+      },
+      "help": "man ssh, man ssh_config",
+      "keywords": [
+        "원격 접속",
+        "SSH 접속",
+        "터널링",
+        "포트 포워딩",
+        "점프 호스트",
+        "배스천",
+        "ssh",
+        "ProxyJump",
+        "SOCKS"
+      ],
+      "related": [
+        "scp",
+        "sftp",
+        "rsync",
+        "ssh-keygen",
+        "ssh-copy-id",
+        "etc-ssh-sshd-config"
+      ]
+    },
+    {
+      "id": "win-ssh",
+      "name": "ssh",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "remote",
+      "task": "remote.connect",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "Windows 내장 OpenSSH 클라이언트로 SSH 접속",
+      "description": "Windows 10 1809 / Server 2019 이후 기본 제공되는 OpenSSH 클라이언트입니다. 사용법과 옵션은 Linux 의 ssh 와 거의 같으며, scp·sftp·ssh-keygen 도 함께 들어 있습니다. PuTTY 없이 CMD·PowerShell 에서 바로 Linux 서버에 접속할 수 있습니다.",
+      "syntax": [
+        "ssh [-p {{PORT}}] [-i {{KEY_FILE}}] {{USER}}@{{HOST}} [{{COMMAND}}]"
+      ],
+      "options": [
+        {
+          "flag": "-p {{PORT}}",
+          "desc": "접속 포트 지정 (기본 22)"
+        },
+        {
+          "flag": "-i {{KEY_FILE}}",
+          "desc": "개인키 파일 지정 (기본 %USERPROFILE%\\.ssh\\id_ed25519 등)"
+        },
+        {
+          "flag": "-J {{USER}}@{{JUMP_HOST}}",
+          "desc": "점프 호스트 경유 접속"
+        },
+        {
+          "flag": "-L {{LOCAL_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}}",
+          "desc": "로컬 포트 포워딩"
+        },
+        {
+          "flag": "-D {{LOCAL_PORT}}",
+          "desc": "SOCKS 프록시 (동적 포워딩)"
+        },
+        {
+          "flag": "-N",
+          "desc": "명령 실행 없이 포워딩만 유지"
+        },
+        {
+          "flag": "-v",
+          "desc": "디버그 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Linux 서버 접속",
+          "command": "ssh {{USER}}@{{HOST}}"
+        },
+        {
+          "title": "OpenSSH 클라이언트 설치 여부 확인 (PowerShell, 관리자)",
+          "command": "Get-WindowsCapability -Online -Name OpenSSH.Client*"
+        },
+        {
+          "title": "OpenSSH 클라이언트 설치 (PowerShell, 관리자)",
+          "command": "Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0"
+        },
+        {
+          "title": "공개키를 Linux 서버에 등록 (ssh-copy-id 대체)",
+          "command": "type %USERPROFILE%\\.ssh\\id_ed25519.pub | ssh {{USER}}@{{HOST}} \"mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys\"",
+          "note": "Windows 에는 ssh-copy-id 가 없음"
+        }
+      ],
+      "cautions": [
+        "개인키 파일 권한이 넓으면(다른 사용자 읽기 가능) 'UNPROTECTED PRIVATE KEY FILE' 오류로 키가 무시됩니다. 파일 속성 > 보안에서 본인만 남기세요.",
+        "Windows 를 SSH 서버(sshd)로 쓸 때 관리자 계정의 공개키는 C:\\ProgramData\\ssh\\administrators_authorized_keys 에 넣어야 합니다."
+      ],
+      "install": {
+        "windows": {
+          "package": "OpenSSH.Client (선택적 기능)",
+          "preinstalled": true,
+          "note": "Windows 10 1809+/Server 2019+ 에서 기본 설치. 없으면 설정 > 선택적 기능 또는 Add-WindowsCapability 로 추가"
+        }
+      },
+      "platformNotes": {
+        "windows": "설정 파일·키 위치는 %USERPROFILE%\\.ssh\\ (config, known_hosts, id_ed25519). 실행 파일은 C:\\Windows\\System32\\OpenSSH\\ 에 있습니다."
+      },
+      "help": "ssh (인자 없이 실행하면 사용법 출력)",
+      "keywords": [
+        "원격 접속",
+        "SSH 접속",
+        "윈도우 SSH",
+        "OpenSSH",
+        "ssh",
+        "PuTTY 대체"
+      ],
+      "related": [
+        "mstsc",
+        "enter-pssession",
+        "ssh-keygen",
+        "scp"
+      ]
+    },
+    {
+      "id": "mstsc",
+      "name": "mstsc",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "remote",
+      "task": "remote.connect",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "원격 데스크톱(RDP) 연결 실행",
+      "description": "원격 데스크톱 연결(RDP) 클라이언트를 실행합니다. 명령줄 옵션으로 접속 대상·포트·전체 화면·해상도를 지정할 수 있고, 관리 세션(/admin)이나 세션 섀도잉도 가능합니다.",
+      "syntax": [
+        "mstsc [/v:{{HOST}}[:{{PORT}}]] [/admin] [/f] [/w:{{WIDTH}} /h:{{HEIGHT}}]",
+        "mstsc {{RDP_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "/v:{{HOST}}:{{PORT}}",
+          "desc": "접속할 서버와 포트 (기본 3389)"
+        },
+        {
+          "flag": "/admin",
+          "desc": "관리 세션으로 접속 (RDS 라이선스를 쓰지 않는 관리용 접속)"
+        },
+        {
+          "flag": "/f",
+          "desc": "전체 화면으로 시작"
+        },
+        {
+          "flag": "/w:{{WIDTH}} /h:{{HEIGHT}}",
+          "desc": "창 크기 지정"
+        },
+        {
+          "flag": "/multimon",
+          "desc": "여러 모니터 사용"
+        },
+        {
+          "flag": "/edit {{RDP_FILE}}",
+          "desc": ".rdp 파일 편집 창 열기"
+        },
+        {
+          "flag": "/shadow:{{SESSION_ID}}",
+          "desc": "다른 사용자 세션 섀도잉 (/control 로 제어, /noConsentPrompt 로 동의 생략)"
+        },
+        {
+          "flag": "/restrictedAdmin",
+          "desc": "자격 증명을 원격에 넘기지 않는 제한된 관리 모드"
+        }
+      ],
+      "examples": [
+        {
+          "title": "포트를 지정해 원격 데스크톱 접속",
+          "command": "mstsc /v:{{HOST}}:{{PORT}}"
+        },
+        {
+          "title": "관리 세션으로 전체 화면 접속",
+          "command": "mstsc /v:{{HOST}} /admin /f"
+        },
+        {
+          "title": "원격 서버의 세션 확인 후 섀도잉",
+          "command": "qwinsta /server:{{HOST}}\nmstsc /v:{{HOST}} /shadow:{{SESSION_ID}} /control",
+          "note": "섀도잉은 그룹 정책(원격 제어 규칙) 설정과 관리자 권한이 필요"
+        }
+      ],
+      "cautions": [
+        "서버 측에서 원격 데스크톱 허용과 방화벽(TCP 3389) 허용이 되어 있어야 합니다.",
+        "Windows Server 기본은 관리용 동시 접속 2세션입니다. 초과 시 기존 세션을 끊어야 접속됩니다."
+      ],
+      "help": "mstsc /?",
+      "keywords": [
+        "원격 데스크톱",
+        "RDP",
+        "원격 접속",
+        "mstsc",
+        "Remote Desktop",
+        "3389",
+        "섀도잉"
+      ],
+      "related": [
+        "win-ssh",
+        "enter-pssession"
+      ]
+    },
+    {
+      "id": "enter-pssession",
+      "name": "Enter-PSSession",
+      "aliases": [
+        "etsn"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "remote",
+      "task": "remote.connect",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "원격 Windows 에 대화형 PowerShell 세션 접속",
+      "description": "WinRM(WS-Management)을 통해 원격 컴퓨터에 대화형 PowerShell 세션으로 들어갑니다. 프롬프트 앞에 [서버명]: 이 붙고, Exit-PSSession 으로 빠져나옵니다. 대상 서버에 PowerShell Remoting 이 활성화되어 있어야 합니다.",
+      "syntax": [
+        "Enter-PSSession -ComputerName {{HOST}} [-Credential {{DOMAIN}}\\{{USER}}]",
+        "Enter-PSSession -HostName {{HOST}} -UserName {{USER}}"
+      ],
+      "options": [
+        {
+          "flag": "-ComputerName {{HOST}}",
+          "desc": "접속할 컴퓨터 (WinRM 사용)"
+        },
+        {
+          "flag": "-Credential {{USER}}",
+          "desc": "다른 계정으로 접속 (암호 입력 창 표시)"
+        },
+        {
+          "flag": "-UseSSL",
+          "desc": "HTTPS(5986) 리스너로 접속"
+        },
+        {
+          "flag": "-Port {{PORT}}",
+          "desc": "WinRM 포트 지정 (기본 HTTP 5985 / HTTPS 5986)"
+        },
+        {
+          "flag": "-Authentication {{AUTH}}",
+          "desc": "인증 방식 (Default, Kerberos, Negotiate, CredSSP 등)"
+        },
+        {
+          "flag": "-Session {{SESSION}}",
+          "desc": "New-PSSession 으로 만든 기존 세션에 접속"
+        },
+        {
+          "flag": "-HostName {{HOST}}",
+          "desc": "WinRM 대신 SSH 로 접속 (PowerShell 7 이상)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "도메인 서버에 원격 접속",
+          "command": "Enter-PSSession -ComputerName {{HOST}}\nExit-PSSession"
+        },
+        {
+          "title": "다른 계정으로 접속",
+          "command": "Enter-PSSession -ComputerName {{HOST}} -Credential (Get-Credential)"
+        },
+        {
+          "title": "워크그룹(비도메인) 서버 접속 준비",
+          "command": "Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value '{{HOST}}' -Force\nEnter-PSSession -ComputerName {{HOST}} -Credential {{HOST}}\\{{USER}}",
+          "note": "TrustedHosts 설정은 클라이언트(내 PC)에서 관리자 권한으로 실행"
+        }
+      ],
+      "cautions": [
+        "원격 세션 안에서는 GUI 프로그램을 실행할 수 없고, 다른 서버로 다시 접속할 때(2차 홉) 자격 증명이 전달되지 않습니다.",
+        "TrustedHosts 에 '*' 를 넣으면 모든 호스트를 신뢰하게 되므로 피하세요."
+      ],
+      "platformNotes": {
+        "windows": "Windows Server 는 기본으로 WinRM 이 켜져 있고, Windows 10/11 은 Enable-PSRemoting 또는 winrm quickconfig 로 켜야 합니다."
+      },
+      "help": "Get-Help Enter-PSSession -Full",
+      "keywords": [
+        "원격 PowerShell",
+        "원격 접속",
+        "PS 원격",
+        "WinRM",
+        "PSSession",
+        "PowerShell Remoting"
+      ],
+      "related": [
+        "invoke-command",
+        "winrm",
+        "mstsc"
+      ]
+    },
+    {
+      "id": "scp",
+      "name": "scp",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.transfer",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "SSH 로 원격 서버와 파일 복사",
+      "description": "SSH 연결을 이용해 로컬과 원격, 또는 원격과 원격 사이에 파일을 복사합니다. 사용법이 cp 와 비슷해 간단한 전송에 적합하며, 대용량·반복 전송이나 이어받기가 필요하면 rsync 가 낫습니다.",
+      "syntax": [
+        "scp [-P {{PORT}}] [-r] {{FILE}} {{USER}}@{{HOST}}:{{REMOTE_PATH}}",
+        "scp [-P {{PORT}}] {{USER}}@{{HOST}}:{{REMOTE_PATH}} {{LOCAL_PATH}}"
+      ],
+      "options": [
+        {
+          "flag": "-P {{PORT}}",
+          "desc": "SSH 포트 지정 (대문자 P, ssh 의 -p 와 다름)"
+        },
+        {
+          "flag": "-r",
+          "desc": "디렉토리 전체 재귀 복사"
+        },
+        {
+          "flag": "-p",
+          "desc": "수정 시간·권한 보존"
+        },
+        {
+          "flag": "-i {{KEY_FILE}}",
+          "desc": "개인키 파일 지정"
+        },
+        {
+          "flag": "-C",
+          "desc": "전송 중 압축"
+        },
+        {
+          "flag": "-l {{KBITS}}",
+          "desc": "대역폭 제한 (Kbit/s 단위)"
+        },
+        {
+          "flag": "-J {{USER}}@{{JUMP_HOST}}",
+          "desc": "점프 호스트 경유"
+        },
+        {
+          "flag": "-3",
+          "desc": "원격↔원격 복사 시 로컬을 거쳐 전송"
+        },
+        {
+          "flag": "-O",
+          "desc": "구식 SCP 프로토콜 강제 (SFTP 서버가 없는 구형 장비용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 파일을 원격으로 업로드",
+          "command": "scp {{FILE}} {{USER}}@{{HOST}}:/tmp/"
+        },
+        {
+          "title": "원격 로그를 로컬로 다운로드 (포트 지정)",
+          "command": "scp -P {{PORT}} {{USER}}@{{HOST}}:/var/log/messages ./"
+        },
+        {
+          "title": "디렉토리 전체를 권한 보존하며 복사",
+          "command": "scp -rp {{DIR}} {{USER}}@{{HOST}}:/backup/"
+        },
+        {
+          "title": "점프 호스트 너머 서버로 복사",
+          "command": "scp -J {{USER}}@{{JUMP_HOST}} {{FILE}} {{USER}}@{{HOST}}:/tmp/"
+        }
+      ],
+      "cautions": [
+        "대상에 같은 이름 파일이 있으면 확인 없이 덮어씁니다.",
+        "원격 경로에 공백·특수문자가 있으면 따옴표로 감싸야 합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "openssh-clients",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "openssh-client",
+          "preinstalled": true
+        }
+      },
+      "platformNotes": {
+        "rhel": "RHEL 9 의 scp 는 내부적으로 SFTP 프로토콜을 기본 사용합니다. SFTP 서브시스템이 꺼진 서버로 보낼 때는 -O 를 붙이세요.",
+        "debian": "OpenSSH 9.0 이상(Ubuntu 24.04, Debian 12 등)은 SFTP 프로토콜이 기본입니다. Windows 내장 OpenSSH 에도 같은 scp 가 있습니다."
+      },
+      "help": "man scp",
+      "keywords": [
+        "파일 전송",
+        "파일 복사",
+        "원격 복사",
+        "업로드",
+        "다운로드",
+        "scp",
+        "ssh"
+      ],
+      "related": [
+        "sftp",
+        "rsync",
+        "ssh"
+      ]
+    },
+    {
+      "id": "sftp",
+      "name": "sftp",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.transfer",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "SSH 기반 대화형 파일 전송 (SFTP)",
+      "description": "SSH 위에서 동작하는 대화형 파일 전송 클라이언트입니다. FTP 처럼 ls, cd, get, put 명령으로 원격 파일을 탐색하며 주고받을 수 있고, -b 배치 파일로 자동화도 가능합니다.",
+      "syntax": [
+        "sftp [-P {{PORT}}] [-i {{KEY_FILE}}] {{USER}}@{{HOST}}",
+        "sftp -b {{BATCH_FILE}} {{USER}}@{{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "-P {{PORT}}",
+          "desc": "SSH 포트 지정 (대문자 P)"
+        },
+        {
+          "flag": "-i {{KEY_FILE}}",
+          "desc": "개인키 파일 지정"
+        },
+        {
+          "flag": "-b {{BATCH_FILE}}",
+          "desc": "파일에 적힌 sftp 명령을 순서대로 실행 (- 는 표준입력)"
+        },
+        {
+          "flag": "-r",
+          "desc": "get/put 시 디렉토리 재귀 전송"
+        },
+        {
+          "flag": "-J {{USER}}@{{JUMP_HOST}}",
+          "desc": "점프 호스트 경유"
+        },
+        {
+          "flag": "-l {{KBITS}}",
+          "desc": "대역폭 제한 (Kbit/s)"
+        },
+        {
+          "flag": "-o {{OPTION}}={{VALUE}}",
+          "desc": "ssh 설정 옵션 전달"
+        }
+      ],
+      "examples": [
+        {
+          "title": "대화형으로 접속해 파일 주고받기",
+          "command": "sftp {{USER}}@{{HOST}}\nsftp> ls -l\nsftp> cd /var/log\nsftp> get messages\nsftp> lcd /tmp\nsftp> put {{FILE}}\nsftp> bye",
+          "note": "lcd·lls 는 로컬 쪽 명령. get -r / put -r 로 디렉토리 전송"
+        },
+        {
+          "title": "배치로 파일 업로드 (표준입력)",
+          "command": "echo \"put {{FILE}} /upload/\" | sftp -b - {{USER}}@{{HOST}}"
+        }
+      ],
+      "cautions": [
+        "-b 배치 모드에서는 비밀번호 입력이 안 되므로 키 인증이 필요합니다.",
+        "put/get 은 같은 이름 파일을 확인 없이 덮어씁니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "openssh-clients",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "openssh-client",
+          "preinstalled": true
+        }
+      },
+      "platformNotes": {
+        "debian": "Windows 내장 OpenSSH 에도 같은 sftp 가 있습니다."
+      },
+      "help": "man sftp (접속 후 help 또는 ?)",
+      "keywords": [
+        "파일 전송",
+        "SFTP",
+        "대화형 전송",
+        "업로드",
+        "다운로드",
+        "sftp",
+        "FTP 대체"
+      ],
+      "related": [
+        "scp",
+        "rsync",
+        "ssh"
+      ]
+    },
+    {
+      "id": "rsync",
+      "name": "rsync",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.sync",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "변경분만 전송하는 로컬·원격 디렉토리 동기화",
+      "description": "원본과 대상의 차이(변경된 파일·블록)만 전송해 디렉토리를 동기화합니다. SSH 를 통한 원격 전송, 권한·소유자·시간 보존, 중단된 전송 이어받기를 지원해 백업과 서버 이전에 널리 쓰입니다. 원본 경로 끝의 / 유무에 따라 결과가 달라지니 주의하세요.",
+      "syntax": [
+        "rsync -avz [--delete] {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/",
+        "rsync -avz {{USER}}@{{HOST}}:{{SRC_DIR}}/ {{DEST_DIR}}/"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "아카이브 모드: 재귀 + 권한·소유자·시간·링크 보존"
+        },
+        {
+          "flag": "-v",
+          "desc": "전송 파일 목록 출력"
+        },
+        {
+          "flag": "-z",
+          "desc": "전송 중 압축"
+        },
+        {
+          "flag": "-h",
+          "desc": "크기를 읽기 쉬운 단위로 표시"
+        },
+        {
+          "flag": "-P",
+          "desc": "--partial --progress: 진행률 표시 + 중단 시 이어받기"
+        },
+        {
+          "flag": "-n, --dry-run",
+          "desc": "실제 전송 없이 어떤 파일이 바뀔지만 확인"
+        },
+        {
+          "flag": "--delete",
+          "desc": "원본에 없는 파일을 대상에서 삭제 (완전 미러링)"
+        },
+        {
+          "flag": "--exclude={{PATTERN}}",
+          "desc": "제외할 파일·디렉토리 패턴 (여러 번 지정 가능)"
+        },
+        {
+          "flag": "-e \"ssh -p {{PORT}}\"",
+          "desc": "원격 셸 지정 (SSH 포트·키 변경 시)"
+        },
+        {
+          "flag": "--bwlimit={{KBPS}}",
+          "desc": "대역폭 제한 (기본 단위 KB/s)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "--dry-run 으로 먼저 확인 후 미러링",
+          "command": "rsync -avhn --delete {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/\nrsync -avh --delete {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/",
+          "note": "첫 줄 결과에 deleting 으로 표시된 파일이 실제로 삭제됨"
+        },
+        {
+          "title": "SSH 포트를 바꿔 원격 백업 (진행률 표시)",
+          "command": "rsync -avzP -e \"ssh -p {{PORT}}\" {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/"
+        },
+        {
+          "title": "로그·캐시 제외하고 동기화",
+          "command": "rsync -av --exclude='*.log' --exclude='cache/' {{SRC_DIR}}/ {{DEST_DIR}}/"
+        },
+        {
+          "title": "대역폭 제한해 업무 시간 중 전송",
+          "command": "rsync -avP --bwlimit=10000 {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/",
+          "note": "약 10MB/s 로 제한"
+        }
+      ],
+      "cautions": [
+        "원본 끝에 / 가 있으면 '디렉토리 안의 내용'을, 없으면 '디렉토리 자체'를 대상 아래에 복사합니다.",
+        "--delete 는 원본과 대상을 바꿔 쓰면 원본 데이터를 지울 수 있습니다. 반드시 -n 으로 먼저 확인하세요.",
+        "원격 동기화 시 양쪽 서버 모두 rsync 가 설치되어 있어야 합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "rsync",
+          "preinstalled": false,
+          "note": "minimal 설치에는 없을 수 있음: dnf install rsync"
+        },
+        "debian": {
+          "package": "rsync",
+          "preinstalled": true,
+          "note": "Ubuntu Server 는 기본 포함. Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "platformNotes": {
+        "rhel": "Windows 에서는 robocopy 가 비슷한 역할(미러링 /MIR)을 합니다."
+      },
+      "help": "man rsync",
+      "keywords": [
+        "동기화",
+        "백업",
+        "미러링",
+        "변경분 전송",
+        "이어받기",
+        "rsync",
+        "sync",
+        "dry-run"
+      ],
+      "related": [
+        "scp",
+        "robocopy",
+        "ssh",
+        "tar"
+      ]
+    },
+    {
+      "id": "ssh-keygen",
+      "name": "ssh-keygen",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.keys",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "SSH 키 쌍 생성·지문 확인·known_hosts 정리",
+      "description": "SSH 공개키 인증에 쓰는 개인키·공개키 쌍을 만들고, 키 지문 확인, 암호 변경, known_hosts 의 오래된 호스트 키 삭제 등을 합니다. Windows 내장 OpenSSH 에도 같은 ssh-keygen 이 있으며 키는 %USERPROFILE%\\.ssh\\ 에 저장됩니다.",
+      "syntax": [
+        "ssh-keygen -t ed25519 [-C {{COMMENT}}] [-f {{KEY_FILE}}]",
+        "ssh-keygen -R {{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "-t {{TYPE}}",
+          "desc": "키 종류 (ed25519 권장, rsa, ecdsa)"
+        },
+        {
+          "flag": "-b {{BITS}}",
+          "desc": "키 길이 (RSA 는 3072 이상 권장)"
+        },
+        {
+          "flag": "-C {{COMMENT}}",
+          "desc": "키 주석 (보통 user@host 나 이메일)"
+        },
+        {
+          "flag": "-f {{KEY_FILE}}",
+          "desc": "키 파일 경로 지정"
+        },
+        {
+          "flag": "-N {{PASSPHRASE}}",
+          "desc": "개인키 암호 지정 (빈 값 '' 은 암호 없음)"
+        },
+        {
+          "flag": "-p -f {{KEY_FILE}}",
+          "desc": "기존 개인키의 암호 변경"
+        },
+        {
+          "flag": "-l -f {{KEY_FILE}}",
+          "desc": "키 지문(fingerprint) 출력"
+        },
+        {
+          "flag": "-y -f {{KEY_FILE}}",
+          "desc": "개인키에서 공개키 다시 추출"
+        },
+        {
+          "flag": "-R {{HOST}}",
+          "desc": "known_hosts 에서 해당 호스트 키 삭제"
+        },
+        {
+          "flag": "-F {{HOST}}",
+          "desc": "known_hosts 에서 해당 호스트 키 검색"
+        }
+      ],
+      "examples": [
+        {
+          "title": "ed25519 키 생성",
+          "command": "ssh-keygen -t ed25519 -C \"{{USER}}@{{HOST}}\"",
+          "note": "기본 저장 위치 ~/.ssh/id_ed25519(개인키), id_ed25519.pub(공개키)"
+        },
+        {
+          "title": "구형 장비 호환용 RSA 4096 키 생성",
+          "command": "ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa_legacy"
+        },
+        {
+          "title": "서버 재설치 후 호스트 키 경고 해결",
+          "command": "ssh-keygen -R {{HOST}}"
+        },
+        {
+          "title": "서버 호스트 키 지문 확인 (서버에서)",
+          "command": "ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub"
+        }
+      ],
+      "cautions": [
+        "기존 키 파일과 같은 경로로 생성하면 덮어쓸지 묻습니다. 덮어쓰면 그 키로 등록된 서버에 접속할 수 없게 됩니다.",
+        "개인키(.pub 가 없는 파일)는 절대 다른 곳에 복사·공유하지 말고 권한을 600 으로 유지하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "openssh",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "openssh-client",
+          "preinstalled": true
+        }
+      },
+      "help": "man ssh-keygen",
+      "keywords": [
+        "SSH 키",
+        "키 생성",
+        "공개키",
+        "개인키",
+        "지문",
+        "known_hosts",
+        "ssh-keygen",
+        "ed25519"
+      ],
+      "related": [
+        "ssh-copy-id",
+        "ssh",
+        "etc-ssh-sshd-config"
+      ]
+    },
+    {
+      "id": "ssh-copy-id",
+      "name": "ssh-copy-id",
+      "kind": "command",
+      "shell": "sh",
+      "category": "remote",
+      "task": "remote.keys",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "공개키를 원격 서버 authorized_keys 에 등록",
+      "description": "내 공개키를 원격 서버 사용자의 ~/.ssh/authorized_keys 에 추가해 비밀번호 없이 키로 접속할 수 있게 합니다. 디렉토리 생성과 권한 설정까지 자동으로 처리하며, 처음 한 번은 비밀번호 인증이 필요합니다.",
+      "syntax": [
+        "ssh-copy-id [-i {{KEY_FILE}}.pub] [-p {{PORT}}] {{USER}}@{{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "-i {{KEY_FILE}}.pub",
+          "desc": "등록할 공개키 지정 (생략 시 기본 키)"
+        },
+        {
+          "flag": "-p {{PORT}}",
+          "desc": "SSH 포트 지정"
+        },
+        {
+          "flag": "-f",
+          "desc": "이미 등록된 키인지 검사하지 않고 강제로 추가"
+        },
+        {
+          "flag": "-n",
+          "desc": "실제 등록 없이 어떤 키가 추가될지 확인 (dry run)"
+        },
+        {
+          "flag": "-o {{OPTION}}={{VALUE}}",
+          "desc": "ssh 옵션 전달"
+        }
+      ],
+      "examples": [
+        {
+          "title": "기본 키를 서버에 등록 후 접속 확인",
+          "command": "ssh-copy-id {{USER}}@{{HOST}}\nssh {{USER}}@{{HOST}}"
+        },
+        {
+          "title": "특정 키를 다른 포트 서버에 등록",
+          "command": "ssh-copy-id -i ~/.ssh/id_ed25519.pub -p {{PORT}} {{USER}}@{{HOST}}"
+        }
+      ],
+      "cautions": [
+        "키를 등록해도 접속이 안 되면 서버의 ~/.ssh 권한(700), authorized_keys 권한(600), 홈 디렉토리 쓰기 권한, SELinux 컨텍스트(restorecon -Rv ~/.ssh)를 확인하세요.",
+        "서버가 PasswordAuthentication no 이면 ssh-copy-id 를 쓸 수 없어 콘솔 등 다른 방법으로 키를 넣어야 합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "openssh-clients",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "openssh-client",
+          "preinstalled": true
+        }
+      },
+      "help": "man ssh-copy-id",
+      "keywords": [
+        "SSH 키 등록",
+        "키 복사",
+        "비밀번호 없이 접속",
+        "authorized_keys",
+        "ssh-copy-id",
+        "공개키 인증"
+      ],
+      "related": [
+        "ssh-keygen",
+        "ssh",
+        "etc-ssh-sshd-config"
+      ]
+    },
+    {
+      "id": "etc-ssh-sshd-config",
+      "name": "/etc/ssh/sshd_config",
+      "kind": "file",
+      "category": "remote",
+      "task": "remote.keys",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SSH 서버(sshd) 설정 파일: 포트·root 로그인·인증 방식",
+      "description": "SSH 서버의 포트, root 로그인 허용 여부, 비밀번호·키 인증 방식, 접속 허용 사용자 등을 설정하는 파일입니다. 최근 배포판은 /etc/ssh/sshd_config.d/*.conf 를 먼저 Include 하므로 그쪽 파일 설정이 우선할 수 있습니다. 수정 후 sshd -t 로 문법을 검사하고 서비스를 reload 하세요.",
+      "syntax": [
+        "/etc/ssh/sshd_config",
+        "/etc/ssh/sshd_config.d/{{NAME}}.conf"
+      ],
+      "options": [
+        {
+          "flag": "Port {{PORT}}",
+          "desc": "SSH 수신 포트 (기본 22)"
+        },
+        {
+          "flag": "ListenAddress {{IP}}",
+          "desc": "수신할 IP 주소 제한"
+        },
+        {
+          "flag": "PermitRootLogin no|prohibit-password|yes",
+          "desc": "root 직접 로그인 허용 여부 (prohibit-password = 키만 허용)"
+        },
+        {
+          "flag": "PasswordAuthentication yes|no",
+          "desc": "비밀번호 인증 허용 여부"
+        },
+        {
+          "flag": "PubkeyAuthentication yes",
+          "desc": "공개키 인증 허용 (기본 yes)"
+        },
+        {
+          "flag": "AllowUsers {{USER}} {{USER}}@{{CIDR}}",
+          "desc": "접속 허용 사용자 제한 (AllowGroups 도 가능)"
+        },
+        {
+          "flag": "ClientAliveInterval {{SECONDS}}",
+          "desc": "유휴 세션 확인 주기 (ClientAliveCountMax 와 함께 끊김 시간 결정)"
+        },
+        {
+          "flag": "MaxAuthTries {{N}}",
+          "desc": "접속당 최대 인증 시도 횟수"
+        },
+        {
+          "flag": "Include /etc/ssh/sshd_config.d/*.conf",
+          "desc": "추가 설정 파일 포함 (파일 맨 위에 있음)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "실제 적용되는 설정값 확인",
+          "command": "sshd -T | grep -Ei 'port|permitrootlogin|passwordauthentication'"
+        },
+        {
+          "title": "문법 검사 후 반영",
+          "command": "sshd -t && systemctl reload sshd",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "문법 검사 후 반영",
+          "command": "sshd -t && systemctl reload ssh",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "포트 변경 시 SELinux·방화벽 허용 (RHEL)",
+          "command": "semanage port -a -t ssh_port_t -p tcp {{PORT}}\nfirewall-cmd --permanent --add-port={{PORT}}/tcp\nfirewall-cmd --reload\nsystemctl restart sshd",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "포트 변경 반영 (Ubuntu 24.04 소켓 활성화)",
+          "command": "systemctl daemon-reload\nsystemctl restart ssh.socket",
+          "platforms": [
+            "debian"
+          ],
+          "note": "Ubuntu 22.10 이후 ssh.socket 이 포트를 수신하므로 sshd_config 의 Port 변경 후 이 절차가 필요"
+        }
+      ],
+      "cautions": [
+        "같은 항목이 여러 번 나오면 처음 읽힌 값이 적용됩니다. sshd_config.d/ 안의 파일(예: 50-cloud-init.conf)이 본 파일 설정을 덮을 수 있습니다.",
+        "원격으로 수정할 때는 기존 세션을 유지한 채 새 세션으로 접속을 시험하세요. 설정 오류 시 접속이 막힐 수 있습니다.",
+        "PasswordAuthentication no 적용 전에 키 로그인이 되는지 반드시 확인하세요."
+      ],
+      "platformNotes": {
+        "rhel": "서비스명은 sshd. RHEL 9 는 /etc/ssh/sshd_config.d/50-redhat.conf 를 기본 포함하며 PermitRootLogin 기본값이 prohibit-password 입니다. 포트 변경 시 SELinux(semanage port) 등록 필요.",
+        "debian": "서비스명은 ssh. Ubuntu 22.10 이후는 ssh.socket 소켓 활성화를 사용하며, 클라우드 이미지는 50-cloud-init.conf 에 PasswordAuthentication 이 들어 있는 경우가 많습니다."
+      },
+      "help": "man sshd_config",
+      "keywords": [
+        "SSH 서버 설정",
+        "sshd 설정",
+        "포트 변경",
+        "root 로그인 차단",
+        "비밀번호 인증",
+        "sshd_config",
+        "PermitRootLogin"
+      ],
+      "related": [
+        "ssh",
+        "ssh-keygen",
+        "ssh-copy-id",
+        "systemctl",
+        "firewall-cmd"
+      ]
+    },
+    {
+      "id": "netsh-interface-portproxy",
+      "name": "netsh interface portproxy",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "remote",
+      "task": "remote.tunnel",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Windows 에서 TCP 포트 포워딩(포트 프록시) 설정",
+      "description": "Windows 서버가 받은 TCP 연결을 다른 IP·포트로 전달하는 포트 프록시를 설정합니다. 중계 서버를 통한 내부망 접근이나 WSL 포트 노출 등에 쓰입니다. 설정은 재부팅 후에도 유지되며 IP Helper(iphlpsvc) 서비스가 동작해야 합니다.",
+      "syntax": [
+        "netsh interface portproxy add v4tov4 listenport={{LISTEN_PORT}} listenaddress={{LISTEN_IP}} connectport={{TARGET_PORT}} connectaddress={{TARGET_HOST}}",
+        "netsh interface portproxy delete v4tov4 listenport={{LISTEN_PORT}} listenaddress={{LISTEN_IP}}"
+      ],
+      "options": [
+        {
+          "flag": "add v4tov4",
+          "desc": "IPv4 → IPv4 포워딩 추가 (v4tov6, v6tov4, v6tov6 도 있음)"
+        },
+        {
+          "flag": "listenport={{PORT}}",
+          "desc": "이 서버에서 수신할 포트"
+        },
+        {
+          "flag": "listenaddress={{IP}}",
+          "desc": "수신할 로컬 IP (생략 시 모든 IP)"
+        },
+        {
+          "flag": "connectport={{PORT}}",
+          "desc": "전달할 대상 포트"
+        },
+        {
+          "flag": "connectaddress={{HOST}}",
+          "desc": "전달할 대상 IP 또는 호스트명"
+        },
+        {
+          "flag": "show all",
+          "desc": "설정된 포트 프록시 목록 확인"
+        },
+        {
+          "flag": "delete v4tov4",
+          "desc": "포워딩 규칙 삭제"
+        },
+        {
+          "flag": "reset",
+          "desc": "모든 포트 프록시 설정 초기화"
+        }
+      ],
+      "examples": [
+        {
+          "title": "8080 으로 받은 연결을 내부 서버 RDP 로 전달",
+          "command": "netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=3389 connectaddress={{TARGET_HOST}}\nnetsh advfirewall firewall add rule name=\"portproxy 8080\" dir=in action=allow protocol=TCP localport=8080"
+        },
+        {
+          "title": "설정 확인",
+          "command": "netsh interface portproxy show all",
+          "output": "Listen on ipv4:             Connect to ipv4:\n\nAddress         Port        Address         Port\n--------------- ----------  --------------- ----------\n0.0.0.0         8080        10.0.0.20       3389"
+        },
+        {
+          "title": "규칙 삭제",
+          "command": "netsh interface portproxy delete v4tov4 listenport=8080 listenaddress=0.0.0.0"
+        }
+      ],
+      "cautions": [
+        "TCP 만 지원하며 UDP 는 포워딩되지 않습니다.",
+        "수신 포트에 대한 Windows 방화벽 인바운드 허용 규칙을 따로 추가해야 합니다.",
+        "IP Helper(iphlpsvc) 서비스가 중지되어 있으면 동작하지 않습니다."
+      ],
+      "help": "netsh interface portproxy /?",
+      "keywords": [
+        "포트 포워딩",
+        "포트 프록시",
+        "터널링",
+        "중계",
+        "portproxy",
+        "netsh",
+        "port forwarding"
+      ],
+      "related": [
+        "ssh",
+        "win-ssh",
+        "mstsc"
+      ]
+    },
+    {
+      "id": "winrm",
+      "name": "winrm",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "remote",
+      "task": "remote.manage",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "WinRM(원격 관리) 서비스 설정·리스너 확인",
+      "description": "PowerShell 원격(Enter-PSSession, Invoke-Command)이 사용하는 Windows Remote Management 서비스를 구성합니다. quickconfig 로 서비스 시작·리스너 생성·방화벽 예외를 한 번에 설정하고, 리스너·TrustedHosts 등 설정을 조회·변경할 수 있습니다.",
+      "syntax": [
+        "winrm quickconfig [-q] [-transport:https]",
+        "winrm enumerate winrm/config/listener",
+        "winrm get winrm/config"
+      ],
+      "options": [
+        {
+          "flag": "quickconfig",
+          "desc": "WinRM 서비스 시작·자동 시작, HTTP 리스너, 방화벽 예외를 한 번에 설정 (줄여서 qc)"
+        },
+        {
+          "flag": "-q",
+          "desc": "확인 질문 없이 실행"
+        },
+        {
+          "flag": "-transport:https",
+          "desc": "HTTPS(5986) 리스너 구성 (서버 인증서 필요)"
+        },
+        {
+          "flag": "enumerate winrm/config/listener",
+          "desc": "리스너(주소·포트·전송 방식) 목록 확인"
+        },
+        {
+          "flag": "get winrm/config",
+          "desc": "WinRM 전체 설정 확인"
+        },
+        {
+          "flag": "set winrm/config/client @{TrustedHosts=\"{{HOST}}\"}",
+          "desc": "클라이언트의 TrustedHosts 설정 (워크그룹 접속용)"
+        },
+        {
+          "flag": "id -r:{{HOST}}",
+          "desc": "원격 서버 WinRM 응답 테스트"
+        }
+      ],
+      "examples": [
+        {
+          "title": "WinRM 빠른 구성",
+          "command": "winrm quickconfig -q"
+        },
+        {
+          "title": "리스너 확인",
+          "command": "winrm enumerate winrm/config/listener"
+        },
+        {
+          "title": "원격 서버의 WinRM 응답 확인",
+          "command": "winrm id -r:{{HOST}}"
+        },
+        {
+          "title": "워크그룹 서버를 TrustedHosts 에 추가",
+          "command": "winrm set winrm/config/client @{TrustedHosts=\"{{HOST}}\"}",
+          "note": "PowerShell 에서 실행할 때는 '@{TrustedHosts=\"{{HOST}}\"}' 처럼 작은따옴표로 감싸야 함. 기존 값은 덮어씀"
+        }
+      ],
+      "cautions": [
+        "TrustedHosts 설정은 기존 값을 덮어씁니다. 추가하려면 기존 값과 쉼표로 이어서 지정하세요.",
+        "네트워크 프로필이 '공용'이면 quickconfig 의 방화벽 예외가 실패할 수 있습니다."
+      ],
+      "platformNotes": {
+        "windows": "Windows Server 2012 이후는 WinRM 이 기본 활성화되어 있습니다. PowerShell 에서는 Enable-PSRemoting -Force 가 같은 역할을 합니다. 기본 포트 HTTP 5985, HTTPS 5986."
+      },
+      "help": "winrm help config",
+      "keywords": [
+        "원격 관리",
+        "WinRM",
+        "PowerShell 원격 활성화",
+        "TrustedHosts",
+        "5985",
+        "quickconfig",
+        "WS-Management"
+      ],
+      "related": [
+        "enter-pssession",
+        "invoke-command"
+      ]
+    },
+    {
+      "id": "invoke-command",
+      "name": "Invoke-Command",
+      "aliases": [
+        "icm"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "remote",
+      "task": "remote.manage",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "여러 원격 Windows 서버에 명령 일괄 실행",
+      "description": "PowerShell 원격(WinRM)으로 하나 이상의 원격 컴퓨터에서 스크립트 블록이나 스크립트 파일을 실행하고 결과를 받아옵니다. 여러 서버에 동시에 실행되며 결과에 PSComputerName 속성이 붙어 어느 서버의 결과인지 구분됩니다.",
+      "syntax": [
+        "Invoke-Command -ComputerName {{HOST}},{{HOST2}} -ScriptBlock { {{COMMAND}} }",
+        "Invoke-Command -ComputerName {{HOST}} -FilePath {{SCRIPT_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-ComputerName {{HOST}}",
+          "desc": "실행할 원격 컴퓨터 (쉼표로 여러 대)"
+        },
+        {
+          "flag": "-ScriptBlock { }",
+          "desc": "원격에서 실행할 명령"
+        },
+        {
+          "flag": "-FilePath {{SCRIPT_FILE}}",
+          "desc": "로컬 스크립트 파일을 원격에서 실행"
+        },
+        {
+          "flag": "-ArgumentList {{VALUE}}",
+          "desc": "스크립트 블록에 인자 전달 (param() 으로 받음)"
+        },
+        {
+          "flag": "-Credential {{USER}}",
+          "desc": "다른 계정으로 실행"
+        },
+        {
+          "flag": "-Session {{SESSION}}",
+          "desc": "New-PSSession 으로 만든 세션 재사용"
+        },
+        {
+          "flag": "-AsJob",
+          "desc": "백그라운드 작업으로 실행 (Receive-Job 으로 결과 수신)"
+        },
+        {
+          "flag": "-ThrottleLimit {{N}}",
+          "desc": "동시 연결 수 (기본 32)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "여러 서버의 서비스 상태 확인",
+          "command": "Invoke-Command -ComputerName {{HOST}},{{HOST2}} -ScriptBlock { Get-Service W32Time }"
+        },
+        {
+          "title": "로컬 변수 값을 원격에 전달",
+          "command": "$svc = 'Spooler'\nInvoke-Command -ComputerName {{HOST}} -ScriptBlock { Get-Service -Name $using:svc }",
+          "note": "$using: 접두어로 로컬 변수 참조"
+        },
+        {
+          "title": "서버 목록 파일로 일괄 실행",
+          "command": "Invoke-Command -ComputerName (Get-Content .\\servers.txt) -ScriptBlock { Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 1 }"
+        },
+        {
+          "title": "세션을 만들어 여러 번 재사용",
+          "command": "$s = New-PSSession -ComputerName {{HOST}}\nInvoke-Command -Session $s -ScriptBlock { hostname }\nRemove-PSSession $s"
+        }
+      ],
+      "cautions": [
+        "변경 명령(재시작·삭제 등)은 여러 서버에 동시에 적용되므로 대상 목록을 먼저 확인하세요.",
+        "원격에서 다른 서버 자원(파일 공유 등)에 접근하면 2차 홉 문제로 인증이 실패할 수 있습니다."
+      ],
+      "help": "Get-Help Invoke-Command -Full",
+      "keywords": [
+        "원격 실행",
+        "일괄 실행",
+        "원격 명령",
+        "PowerShell 원격",
+        "Invoke-Command",
+        "WinRM",
+        "icm"
+      ],
+      "related": [
+        "enter-pssession",
+        "winrm"
+      ]
+    }
+  ]
+}

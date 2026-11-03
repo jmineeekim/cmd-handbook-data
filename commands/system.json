@@ -1,0 +1,2585 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "system",
+  "commands": [
+    {
+      "id": "uname",
+      "name": "uname",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "커널 버전·아키텍처 확인",
+      "description": "실행 중인 커널 이름, 릴리스(버전), 아키텍처, 호스트명을 출력합니다. 드라이버·에이전트 호환성 확인이나 커널 업데이트 후 재부팅 여부 확인에 사용합니다. 배포판 버전은 /etc/os-release 로 확인합니다.",
+      "syntax": [
+        "uname [-a | -r | -m | -n | -s | -v]"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "모든 정보 출력"
+        },
+        {
+          "flag": "-r",
+          "desc": "커널 릴리스 (예: 5.14.0-427.13.1.el9_4.x86_64)"
+        },
+        {
+          "flag": "-m",
+          "desc": "하드웨어 아키텍처 (x86_64, aarch64)"
+        },
+        {
+          "flag": "-n",
+          "desc": "호스트명"
+        },
+        {
+          "flag": "-s",
+          "desc": "커널 이름 (Linux)"
+        },
+        {
+          "flag": "-v",
+          "desc": "커널 빌드 정보·날짜"
+        }
+      ],
+      "examples": [
+        {
+          "title": "커널 버전 확인",
+          "command": "uname -r",
+          "output": "5.14.0-427.13.1.el9_4.x86_64"
+        },
+        {
+          "title": "전체 정보",
+          "command": "uname -a"
+        },
+        {
+          "title": "업데이트 후 재부팅 필요 여부 (실행 커널 vs 설치 커널)",
+          "command": "uname -r\nrpm -q kernel --last | head -3",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "업데이트 후 재부팅 필요 여부",
+          "command": "uname -r\nls /var/run/reboot-required 2>/dev/null && cat /var/run/reboot-required",
+          "platforms": [
+            "debian"
+          ]
+        }
+      ],
+      "cautions": [],
+      "help": "man uname",
+      "keywords": [
+        "커널 버전",
+        "아키텍처",
+        "uname",
+        "kernel version",
+        "OS 정보"
+      ],
+      "related": [
+        "hostnamectl",
+        "etc-os-release",
+        "lscpu"
+      ]
+    },
+    {
+      "id": "hostnamectl",
+      "name": "hostnamectl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "OS·커널·가상화 정보 확인 및 호스트명 영구 변경",
+      "description": "systemd 의 호스트 정보 도구로 호스트명, OS 이름, 커널, 아키텍처, 가상화 종류(kvm, vmware 등), 하드웨어 모델을 한 번에 보여줍니다. set-hostname 으로 호스트명을 재부팅 후에도 유지되도록 변경합니다(/etc/hostname 갱신, root 필요).",
+      "syntax": [
+        "hostnamectl [status]",
+        "hostnamectl set-hostname {{HOSTNAME}}"
+      ],
+      "options": [
+        {
+          "flag": "status",
+          "desc": "호스트·OS·커널·가상화 정보 (기본 동작)"
+        },
+        {
+          "flag": "set-hostname {{HOSTNAME}}",
+          "desc": "호스트명 영구 변경"
+        },
+        {
+          "flag": "--static / --transient / --pretty",
+          "desc": "변경·조회할 호스트명 종류 지정"
+        },
+        {
+          "flag": "-H {{USER}}@{{HOST}}",
+          "desc": "원격 호스트 조회 (SSH)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OS·커널·가상화 정보 한 번에 보기",
+          "command": "hostnamectl",
+          "output": " Static hostname: web01\n  Virtualization: vmware\nOperating System: Rocky Linux 9.4 (Blue Onyx)\n          Kernel: Linux 5.14.0-427.13.1.el9_4.x86_64\n    Architecture: x86-64"
+        },
+        {
+          "title": "호스트명 영구 변경",
+          "command": "sudo hostnamectl set-hostname {{HOSTNAME}}"
+        }
+      ],
+      "cautions": [
+        "호스트명을 바꾼 뒤 /etc/hosts 의 기존 이름 항목도 함께 수정해야 sudo 지연이나 이름 해석 문제가 없습니다."
+      ],
+      "help": "man hostnamectl",
+      "keywords": [
+        "OS 버전",
+        "호스트명 변경",
+        "가상화 확인",
+        "hostnamectl",
+        "hostname",
+        "VM 여부"
+      ],
+      "related": [
+        "hostname",
+        "uname",
+        "etc-os-release"
+      ]
+    },
+    {
+      "id": "etc-os-release",
+      "name": "/etc/os-release",
+      "kind": "file",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "배포판 이름·버전 정보 파일 (모든 배포판 공통)",
+      "description": "systemd 표준 OS 식별 파일로 배포판 이름(NAME), 버전(VERSION_ID), ID, 계열(ID_LIKE) 등을 KEY=VALUE 형식으로 담고 있습니다. 배포판에 관계없이 같은 방법으로 읽을 수 있어 스크립트에서 OS 분기에 가장 많이 씁니다.",
+      "syntax": [
+        "cat /etc/os-release",
+        ". /etc/os-release; echo $ID $VERSION_ID"
+      ],
+      "options": [
+        {
+          "flag": "PRETTY_NAME",
+          "desc": "사람이 읽기 좋은 전체 이름"
+        },
+        {
+          "flag": "ID / ID_LIKE",
+          "desc": "배포판 ID (rhel, rocky, ubuntu, debian) / 계열"
+        },
+        {
+          "flag": "VERSION_ID",
+          "desc": "버전 번호 (9.4, 22.04, 12)"
+        },
+        {
+          "flag": "VERSION_CODENAME",
+          "desc": "코드명 (jammy, noble, bookworm)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OS 버전 확인",
+          "command": "cat /etc/os-release",
+          "output": "NAME=\"Rocky Linux\"\nVERSION_ID=\"9.4\"\nID=\"rocky\"\nID_LIKE=\"rhel centos fedora\"\nPRETTY_NAME=\"Rocky Linux 9.4 (Blue Onyx)\""
+        },
+        {
+          "title": "스크립트에서 배포판 분기",
+          "command": ". /etc/os-release\ncase \"$ID\" in rhel|rocky|almalinux) echo RHEL계열;; ubuntu|debian) echo Debian계열;; esac"
+        }
+      ],
+      "cautions": [],
+      "keywords": [
+        "OS 버전",
+        "배포판 확인",
+        "os-release",
+        "릴리스",
+        "distribution version"
+      ],
+      "related": [
+        "uname",
+        "hostnamectl",
+        "lsb-release",
+        "etc-redhat-release"
+      ]
+    },
+    {
+      "id": "etc-redhat-release",
+      "name": "/etc/redhat-release",
+      "aliases": [
+        "/etc/rocky-release",
+        "/etc/system-release"
+      ],
+      "kind": "file",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "RHEL 계열 릴리스 한 줄 정보 파일",
+      "description": "RHEL 계열 배포판의 이름과 마이너 버전을 한 줄로 담은 파일입니다. Rocky·Alma 등 파생 배포판에서도 제공되며(/etc/rocky-release 등으로 링크), 기존 스크립트·벤더 설치 프로그램이 OS 판별에 자주 참조합니다.",
+      "syntax": [
+        "cat /etc/redhat-release"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "릴리스 확인",
+          "command": "cat /etc/redhat-release",
+          "output": "Rocky Linux release 9.4 (Blue Onyx)"
+        }
+      ],
+      "cautions": [
+        "벤더 설치 프로그램이 이 파일 문자열로 RHEL 여부를 판단해 Rocky·Alma 를 거부하는 경우가 있습니다."
+      ],
+      "keywords": [
+        "RHEL 버전",
+        "릴리스 확인",
+        "redhat-release",
+        "rocky-release",
+        "OS 버전"
+      ],
+      "related": [
+        "etc-os-release",
+        "uname"
+      ]
+    },
+    {
+      "id": "lsb-release",
+      "name": "lsb_release",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "배포판 ID·버전·코드명 출력 (Ubuntu·Debian)",
+      "description": "LSB 표준 형식으로 배포판 ID, 설명, 릴리스 번호, 코드명을 출력합니다. Ubuntu 에서 버전과 코드명(jammy, noble)을 확인하는 대표적인 명령입니다.",
+      "syntax": [
+        "lsb_release [-a | -d | -r | -c | -i] [-s]"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "모든 정보"
+        },
+        {
+          "flag": "-d",
+          "desc": "설명 (예: Ubuntu 22.04.4 LTS)"
+        },
+        {
+          "flag": "-r",
+          "desc": "릴리스 번호"
+        },
+        {
+          "flag": "-c",
+          "desc": "코드명"
+        },
+        {
+          "flag": "-i",
+          "desc": "배포판 ID"
+        },
+        {
+          "flag": "-s",
+          "desc": "항목 이름 없이 값만 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "배포판 정보 전체",
+          "command": "lsb_release -a",
+          "output": "Distributor ID:\tUbuntu\nDescription:\tUbuntu 22.04.4 LTS\nRelease:\t22.04\nCodename:\tjammy"
+        },
+        {
+          "title": "코드명만 출력 (저장소 설정 스크립트용)",
+          "command": "lsb_release -cs"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "debian": {
+          "package": "lsb-release",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음. /etc/os-release 로 대체 가능"
+        }
+      },
+      "platformNotes": {
+        "debian": "RHEL 8 이상에서는 redhat-lsb 패키지가 제공되지 않아 이 명령을 쓰기 어렵습니다. 공통 스크립트는 /etc/os-release 를 사용하세요."
+      },
+      "help": "man lsb_release",
+      "keywords": [
+        "Ubuntu 버전",
+        "코드명",
+        "lsb_release",
+        "배포판 확인",
+        "OS 버전"
+      ],
+      "related": [
+        "etc-os-release",
+        "uname"
+      ]
+    },
+    {
+      "id": "systeminfo",
+      "name": "systeminfo",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "OS 버전·빌드·부팅 시각·핫픽스·메모리 요약",
+      "description": "OS 이름·버전·빌드, 설치 날짜, 시스템 부트 시간, 제조사·모델, BIOS, 메모리, 도메인, 설치된 핫픽스(KB), 네트워크 카드 정보를 한 번에 출력합니다. 서버 점검 보고서의 기본 자료로 많이 씁니다.",
+      "syntax": [
+        "systeminfo [/s {{COMPUTER}} [/u {{DOMAIN}}\\{{USER}} [/p {{PASSWORD}}]]] [/fo table|list|csv] [/nh]"
+      ],
+      "options": [
+        {
+          "flag": "/fo list|table|csv",
+          "desc": "출력 형식"
+        },
+        {
+          "flag": "/nh",
+          "desc": "table·csv 에서 헤더 생략"
+        },
+        {
+          "flag": "/s {{COMPUTER}}",
+          "desc": "원격 컴퓨터 조회"
+        },
+        {
+          "flag": "/u {{DOMAIN}}\\{{USER}} /p {{PASSWORD}}",
+          "desc": "원격 조회용 자격 증명"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OS 이름·버전만 보기 (한글 Windows)",
+          "command": "systeminfo | findstr /B /C:\"OS 이름\" /C:\"OS 버전\""
+        },
+        {
+          "title": "OS 이름·버전만 보기 (영문 Windows)",
+          "command": "systeminfo | findstr /B /C:\"OS Name\" /C:\"OS Version\""
+        },
+        {
+          "title": "마지막 부팅 시각 (가동 시간 확인)",
+          "command": "systeminfo | find \"부트 시간\"",
+          "note": "영문 Windows 는 \"System Boot Time\""
+        },
+        {
+          "title": "결과를 파일로 저장",
+          "command": "systeminfo > C:\\temp\\%COMPUTERNAME%_sysinfo.txt"
+        }
+      ],
+      "cautions": [
+        "출력 항목 이름이 OS 언어에 따라 현지화되므로 findstr 검색어를 OS 언어에 맞춰야 합니다.",
+        "실행에 수 초~수십 초가 걸리며, 핫픽스 목록이 많으면 일부만 표시될 수 있습니다."
+      ],
+      "help": "systeminfo /?",
+      "keywords": [
+        "OS 버전",
+        "시스템 정보",
+        "부팅 시간",
+        "가동 시간",
+        "핫픽스",
+        "systeminfo",
+        "uptime"
+      ],
+      "related": [
+        "winver",
+        "get-computerinfo",
+        "get-ciminstance",
+        "msinfo32"
+      ]
+    },
+    {
+      "id": "winver",
+      "name": "winver",
+      "kind": "gui",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "Windows 버전·빌드 정보 창 표시",
+      "description": "'Windows 정보' 대화상자를 띄워 에디션, 버전(예: 22H2), OS 빌드 번호를 보여줍니다. 실행(Win+R)에서 바로 열 수 있는 가장 간단한 버전 확인 방법입니다.",
+      "syntax": [
+        "winver"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "버전 정보 창 열기",
+          "command": "winver"
+        },
+        {
+          "title": "CLI 로 버전·빌드 확인 (cmd)",
+          "command": "ver"
+        }
+      ],
+      "cautions": [],
+      "keywords": [
+        "Windows 버전",
+        "빌드 번호",
+        "winver",
+        "ver",
+        "Windows 정보"
+      ],
+      "related": [
+        "systeminfo",
+        "get-computerinfo"
+      ]
+    },
+    {
+      "id": "get-computerinfo",
+      "name": "Get-ComputerInfo",
+      "aliases": [
+        "gin"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "OS·하드웨어·BIOS 정보를 개체로 조회 (PowerShell)",
+      "description": "OS 이름·버전·빌드, 설치 날짜, 마지막 부팅·가동 시간, 하드웨어 모델, BIOS, 메모리, 도메인 등 수백 개 속성을 하나의 개체로 반환합니다. -Property 로 필요한 항목만 골라 보면 빠르고 깔끔합니다.",
+      "syntax": [
+        "Get-ComputerInfo [-Property {{PROPERTY}}[,...]]"
+      ],
+      "options": [
+        {
+          "flag": "-Property OsName,OsVersion,OsBuildNumber",
+          "desc": "OS 이름·버전·빌드"
+        },
+        {
+          "flag": "-Property OsLastBootUpTime,OsUptime",
+          "desc": "마지막 부팅 시각·가동 시간"
+        },
+        {
+          "flag": "-Property CsManufacturer,CsModel,BiosSeralNumber",
+          "desc": "제조사·모델·시리얼 (속성명 철자가 Seral 임에 주의)"
+        },
+        {
+          "flag": "-Property CsTotalPhysicalMemory,CsDomain",
+          "desc": "물리 메모리·도메인"
+        },
+        {
+          "flag": "-Property Os*",
+          "desc": "와일드카드로 속성 묶음 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OS 버전·빌드 확인",
+          "command": "Get-ComputerInfo -Property OsName, OsVersion, OsBuildNumber, OsDisplayVersion"
+        },
+        {
+          "title": "가동 시간 확인",
+          "command": "Get-ComputerInfo -Property OsLastBootUpTime, OsUptime"
+        },
+        {
+          "title": "하드웨어 모델·시리얼",
+          "command": "Get-ComputerInfo -Property CsManufacturer, CsModel, BiosSeralNumber"
+        }
+      ],
+      "cautions": [
+        "-Property 없이 실행하면 모든 정보를 수집해 수십 초가 걸릴 수 있습니다.",
+        "Windows 11 에서 WindowsProductName 이 'Windows 10' 으로 표시되는 경우가 있습니다. OsName 을 확인하세요."
+      ],
+      "help": "Get-Help Get-ComputerInfo -Full",
+      "keywords": [
+        "OS 버전",
+        "시스템 정보",
+        "가동 시간",
+        "Get-ComputerInfo",
+        "computer info",
+        "시리얼"
+      ],
+      "related": [
+        "systeminfo",
+        "get-ciminstance",
+        "winver"
+      ]
+    },
+    {
+      "id": "hostname",
+      "name": "hostname",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hostname",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "호스트명·FQDN·IP 주소 확인",
+      "description": "현재 호스트명을 출력하고, 옵션으로 FQDN, 짧은 이름, 모든 IP 주소를 확인합니다. 인자를 주면 호스트명을 임시로(재부팅 전까지) 변경합니다. 영구 변경은 hostnamectl set-hostname 을 사용합니다.",
+      "syntax": [
+        "hostname [-f | -s | -I | -i]",
+        "hostname {{HOSTNAME}}"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "FQDN (DNS·/etc/hosts 기준)"
+        },
+        {
+          "flag": "-s",
+          "desc": "첫 번째 점 앞의 짧은 이름"
+        },
+        {
+          "flag": "-I",
+          "desc": "모든 인터페이스의 IP 주소 (루프백 제외)"
+        },
+        {
+          "flag": "-i",
+          "desc": "호스트명이 해석되는 IP 주소"
+        },
+        {
+          "flag": "-d",
+          "desc": "DNS 도메인 이름"
+        }
+      ],
+      "examples": [
+        {
+          "title": "호스트명 확인",
+          "command": "hostname"
+        },
+        {
+          "title": "서버 IP 빠르게 확인",
+          "command": "hostname -I"
+        },
+        {
+          "title": "FQDN 확인 (클러스터·인증서 설정 전)",
+          "command": "hostname -f"
+        }
+      ],
+      "cautions": [
+        "hostname {{HOSTNAME}} 으로 바꾼 이름은 재부팅하면 원래대로 돌아갑니다.",
+        "hostname -i 가 127.0.1.1 이나 127.0.0.1 을 반환하면 /etc/hosts 설정 때문에 클러스터 소프트웨어가 잘못된 IP 로 바인딩할 수 있습니다."
+      ],
+      "help": "man hostname",
+      "keywords": [
+        "호스트명",
+        "서버 이름",
+        "FQDN",
+        "hostname",
+        "IP 확인"
+      ],
+      "related": [
+        "hostnamectl",
+        "ip",
+        "etc-hosts"
+      ]
+    },
+    {
+      "id": "win-hostname",
+      "name": "hostname",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "system",
+      "task": "system.hostname",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "컴퓨터 이름 출력 (CMD)",
+      "description": "현재 컴퓨터 이름을 출력합니다. Windows 의 hostname 은 조회만 가능하고 이름 변경은 지원하지 않습니다. 변경은 Rename-Computer 또는 sysdm.cpl 을 사용합니다.",
+      "syntax": [
+        "hostname"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "컴퓨터 이름 확인",
+          "command": "hostname"
+        },
+        {
+          "title": "환경 변수로 확인",
+          "command": "echo %COMPUTERNAME%"
+        },
+        {
+          "title": "FQDN·도메인 확인 (PowerShell)",
+          "command": "[System.Net.Dns]::GetHostEntry($env:COMPUTERNAME).HostName"
+        }
+      ],
+      "cautions": [],
+      "help": "hostname /?",
+      "keywords": [
+        "컴퓨터 이름",
+        "호스트명",
+        "hostname",
+        "COMPUTERNAME"
+      ],
+      "related": [
+        "rename-computer",
+        "systeminfo"
+      ]
+    },
+    {
+      "id": "rename-computer",
+      "name": "Rename-Computer",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.hostname",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "컴퓨터 이름 변경 (재부팅 필요)",
+      "description": "로컬 또는 원격 컴퓨터의 이름을 변경합니다. 도메인 가입 컴퓨터는 AD 의 컴퓨터 개체 이름도 함께 바뀌며 도메인 자격 증명이 필요합니다. 변경은 재부팅 후 적용됩니다.",
+      "syntax": [
+        "Rename-Computer -NewName {{HOSTNAME}} [-DomainCredential {{DOMAIN}}\\{{USER}}] [-Restart] [-Force]"
+      ],
+      "options": [
+        {
+          "flag": "-NewName {{HOSTNAME}}",
+          "desc": "새 이름 (NetBIOS 호환을 위해 15자 이하 권장)"
+        },
+        {
+          "flag": "-Restart",
+          "desc": "변경 후 즉시 재부팅"
+        },
+        {
+          "flag": "-DomainCredential {{DOMAIN}}\\{{USER}}",
+          "desc": "도메인 컴퓨터일 때 AD 변경 권한 자격 증명"
+        },
+        {
+          "flag": "-ComputerName {{COMPUTER}}",
+          "desc": "원격 컴퓨터 대상"
+        },
+        {
+          "flag": "-LocalCredential {{CRED}}",
+          "desc": "원격 컴퓨터 로컬 자격 증명"
+        },
+        {
+          "flag": "-Force",
+          "desc": "확인 생략"
+        }
+      ],
+      "examples": [
+        {
+          "title": "이름 변경 후 재부팅",
+          "command": "Rename-Computer -NewName {{HOSTNAME}} -Restart"
+        },
+        {
+          "title": "도메인 컴퓨터 이름 변경",
+          "command": "Rename-Computer -NewName {{HOSTNAME}} -DomainCredential {{DOMAIN}}\\{{USER}} -Restart"
+        }
+      ],
+      "cautions": [
+        "-Restart 를 쓰면 확인 없이 바로 재부팅됩니다. 운영 서버는 작업 시간을 확인하세요.",
+        "이름을 바꾸면 해당 이름을 참조하는 DNS 레코드, SPN, 라이선스·클러스터 설정을 함께 점검해야 합니다."
+      ],
+      "help": "Get-Help Rename-Computer -Full",
+      "keywords": [
+        "컴퓨터 이름 변경",
+        "호스트명 변경",
+        "Rename-Computer",
+        "rename"
+      ],
+      "related": [
+        "win-hostname",
+        "systeminfo"
+      ]
+    },
+    {
+      "id": "uptime",
+      "name": "uptime",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.uptime",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "가동 시간·로그인 사용자 수·load average",
+      "description": "현재 시각, 부팅 후 가동 시간, 로그인 사용자 수, 1·5·15분 평균 부하(load average)를 출력합니다. load average 는 실행 대기 + 디스크 대기(D 상태) 프로세스 수의 평균으로, CPU 코어 수와 비교해 판단합니다.",
+      "syntax": [
+        "uptime [-p | -s]"
+      ],
+      "options": [
+        {
+          "flag": "-p",
+          "desc": "가동 시간을 읽기 쉬운 형식으로 (up 3 weeks, 2 days)"
+        },
+        {
+          "flag": "-s",
+          "desc": "부팅 시각 (YYYY-MM-DD HH:MM:SS)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "가동 시간·부하 확인",
+          "command": "uptime",
+          "output": " 14:02:11 up 42 days,  3:15,  2 users,  load average: 0.52, 0.61, 0.58"
+        },
+        {
+          "title": "부팅 시각 확인 (예기치 않은 재부팅 확인)",
+          "command": "uptime -s\nlast -x reboot | head -5"
+        },
+        {
+          "title": "부하를 코어 수와 비교",
+          "command": "uptime\nnproc"
+        }
+      ],
+      "cautions": [
+        "load average 가 높아도 CPU 가 아니라 디스크·NFS I/O 대기(D 상태) 때문일 수 있습니다. top 의 wa 와 vmstat 의 b 열을 함께 확인하세요."
+      ],
+      "help": "man uptime",
+      "keywords": [
+        "가동 시간",
+        "부팅 시간",
+        "load average",
+        "부하",
+        "uptime",
+        "재부팅 확인"
+      ],
+      "related": [
+        "top",
+        "vmstat",
+        "last",
+        "w"
+      ]
+    },
+    {
+      "id": "free",
+      "name": "free",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.memory",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "메모리·스왑 사용량 확인",
+      "description": "전체·사용·여유 메모리와 버퍼/캐시, 실제 사용 가능한 메모리(available), 스왑 사용량을 출력합니다. 리눅스는 남는 메모리를 캐시로 쓰므로 free 가 작아도 available 이 충분하면 정상입니다.",
+      "syntax": [
+        "free [-h | -m | -g] [-s {{SEC}}] [-t] [-w]"
+      ],
+      "options": [
+        {
+          "flag": "-h",
+          "desc": "사람이 읽기 쉬운 단위 (Gi, Mi)"
+        },
+        {
+          "flag": "-m / -g",
+          "desc": "MiB / GiB 단위"
+        },
+        {
+          "flag": "-s {{SEC}}",
+          "desc": "지정 초 간격으로 반복 출력"
+        },
+        {
+          "flag": "-c {{COUNT}}",
+          "desc": "-s 와 함께 반복 횟수"
+        },
+        {
+          "flag": "-t",
+          "desc": "메모리 + 스왑 합계 행 추가"
+        },
+        {
+          "flag": "-w",
+          "desc": "buffers 와 cache 를 분리 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "메모리 사용량 확인",
+          "command": "free -h",
+          "output": "               total        used        free      shared  buff/cache   available\nMem:            15Gi       6.2Gi       1.1Gi       210Mi       8.3Gi       8.9Gi\nSwap:          4.0Gi       120Mi       3.9Gi"
+        },
+        {
+          "title": "5초 간격 모니터링",
+          "command": "free -m -s 5"
+        },
+        {
+          "title": "OOM 발생 여부 함께 확인",
+          "command": "free -h\ndmesg -T | grep -i -E 'out of memory|killed process'"
+        }
+      ],
+      "cautions": [
+        "free 열이 작다고 메모리 부족이 아닙니다. 판단은 available 열로 하세요.",
+        "스왑 사용량이 있어도 si/so(vmstat) 가 계속 발생하지 않으면 문제가 아닐 수 있습니다."
+      ],
+      "help": "man free",
+      "keywords": [
+        "메모리 사용량",
+        "여유 메모리",
+        "스왑",
+        "free",
+        "memory",
+        "available",
+        "buff/cache"
+      ],
+      "related": [
+        "proc-meminfo",
+        "vmstat",
+        "top",
+        "dmesg",
+        "swapon"
+      ]
+    },
+    {
+      "id": "proc-meminfo",
+      "name": "/proc/meminfo",
+      "kind": "file",
+      "category": "system",
+      "task": "system.memory",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "커널 메모리 상세 통계 (HugePages·Slab·Dirty 등)",
+      "description": "커널이 제공하는 메모리 상세 통계 가상 파일입니다. free 의 원본 데이터이며, HugePages, Slab, Dirty, Committed_AS 등 free 로 보이지 않는 항목을 확인할 때 씁니다. DB 서버의 HugePages 설정 확인에 특히 자주 사용합니다.",
+      "syntax": [
+        "cat /proc/meminfo",
+        "grep -E '{{FIELD}}' /proc/meminfo"
+      ],
+      "options": [
+        {
+          "flag": "MemTotal / MemAvailable",
+          "desc": "전체 / 실제 사용 가능 메모리"
+        },
+        {
+          "flag": "SwapTotal / SwapFree",
+          "desc": "스왑 전체 / 여유"
+        },
+        {
+          "flag": "HugePages_Total / HugePages_Free / Hugepagesize",
+          "desc": "HugePages 할당·여유·페이지 크기"
+        },
+        {
+          "flag": "Slab / SReclaimable / SUnreclaim",
+          "desc": "커널 slab 캐시 (회수 가능 / 불가)"
+        },
+        {
+          "flag": "Dirty / Writeback",
+          "desc": "디스크에 아직 쓰지 않은 페이지"
+        },
+        {
+          "flag": "Committed_AS / CommitLimit",
+          "desc": "할당 약속된 메모리 / 오버커밋 한계"
+        }
+      ],
+      "examples": [
+        {
+          "title": "HugePages 설정 확인 (Oracle 등)",
+          "command": "grep -i huge /proc/meminfo"
+        },
+        {
+          "title": "주요 항목만 보기",
+          "command": "grep -E 'MemTotal|MemAvailable|SwapFree|Slab|SUnreclaim|Dirty' /proc/meminfo"
+        }
+      ],
+      "cautions": [
+        "SUnreclaim 이 계속 증가하면 커널 메모리 누수일 수 있습니다. slabtop 으로 원인 캐시를 확인하세요."
+      ],
+      "keywords": [
+        "메모리 상세",
+        "HugePages",
+        "meminfo",
+        "slab",
+        "Dirty",
+        "메모리 누수"
+      ],
+      "related": [
+        "free",
+        "vmstat",
+        "sysctl"
+      ]
+    },
+    {
+      "id": "df",
+      "name": "df",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.disk-usage",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일시스템별 디스크 용량·inode 사용률",
+      "description": "마운트된 파일시스템별 전체·사용·여유 용량과 사용률, 마운트 위치를 출력합니다. -i 로 inode 사용률을 확인할 수 있어 '공간이 있는데 파일을 못 만드는' 문제 진단에도 씁니다.",
+      "syntax": [
+        "df [-h] [-T] [-i] [{{PATH}}]"
+      ],
+      "options": [
+        {
+          "flag": "-h",
+          "desc": "사람이 읽기 쉬운 단위 (G, M)"
+        },
+        {
+          "flag": "-T",
+          "desc": "파일시스템 종류 표시 (xfs, ext4, nfs)"
+        },
+        {
+          "flag": "-i",
+          "desc": "inode 사용률"
+        },
+        {
+          "flag": "-x tmpfs -x devtmpfs",
+          "desc": "지정 종류 제외"
+        },
+        {
+          "flag": "-t {{FSTYPE}}",
+          "desc": "지정 종류만 표시"
+        },
+        {
+          "flag": "-P",
+          "desc": "POSIX 형식 (한 줄에 한 파일시스템, 스크립트용)"
+        },
+        {
+          "flag": "-l",
+          "desc": "로컬 파일시스템만 (NFS 제외)"
+        },
+        {
+          "flag": "{{PATH}}",
+          "desc": "해당 경로가 속한 파일시스템만"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 사용량 확인",
+          "command": "df -hT"
+        },
+        {
+          "title": "inode 고갈 확인",
+          "command": "df -i"
+        },
+        {
+          "title": "특정 경로가 속한 파일시스템",
+          "command": "df -h {{PATH}}"
+        },
+        {
+          "title": "사용률 80% 이상 파일시스템",
+          "command": "df -hP | awk 'NR>1 && $5+0 >= 80'"
+        }
+      ],
+      "cautions": [
+        "응답하지 않는 NFS 마운트가 있으면 df 가 멈춥니다. df -l 로 로컬만 확인하세요.",
+        "df 사용량이 du 합계보다 훨씬 크면 삭제됐지만 프로세스가 열고 있는 파일이 원인일 수 있습니다 (lsof +L1)."
+      ],
+      "help": "man df",
+      "keywords": [
+        "디스크 용량",
+        "디스크 여유",
+        "inode",
+        "df",
+        "disk free",
+        "파일시스템 사용률"
+      ],
+      "related": [
+        "du",
+        "lsblk",
+        "lsof",
+        "mount"
+      ]
+    },
+    {
+      "id": "du",
+      "name": "du",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.disk-usage",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "디렉토리·파일별 디스크 사용량",
+      "description": "디렉토리와 파일이 실제로 차지하는 디스크 용량을 계산합니다. 디스크가 찼을 때 어느 디렉토리가 큰지 단계적으로 찾아 들어가는 데 사용합니다. 권한이 없는 디렉토리는 계산되지 않으므로 전체 점검은 root 로 실행합니다.",
+      "syntax": [
+        "du [-sh] {{PATH}}",
+        "du -h --max-depth={{N}} {{PATH}}"
+      ],
+      "options": [
+        {
+          "flag": "-s",
+          "desc": "지정 경로의 합계만"
+        },
+        {
+          "flag": "-h",
+          "desc": "사람이 읽기 쉬운 단위"
+        },
+        {
+          "flag": "-d {{N}}, --max-depth={{N}}",
+          "desc": "출력할 하위 디렉토리 깊이"
+        },
+        {
+          "flag": "-x",
+          "desc": "다른 파일시스템(마운트)으로 넘어가지 않음"
+        },
+        {
+          "flag": "-a",
+          "desc": "디렉토리뿐 아니라 파일도 표시"
+        },
+        {
+          "flag": "-c",
+          "desc": "마지막에 총합 표시"
+        },
+        {
+          "flag": "--apparent-size",
+          "desc": "실제 블록 대신 파일 크기 기준 (sparse 파일 비교)"
+        },
+        {
+          "flag": "--exclude={{PATTERN}}",
+          "desc": "패턴에 맞는 파일 제외"
+        }
+      ],
+      "examples": [
+        {
+          "title": "루트 파일시스템에서 큰 디렉토리 찾기",
+          "command": "du -xh --max-depth=1 / 2>/dev/null | sort -hr | head -15"
+        },
+        {
+          "title": "디렉토리 총 용량",
+          "command": "du -sh {{DIR}}"
+        },
+        {
+          "title": "/var/log 아래 큰 파일·디렉토리 상위 20",
+          "command": "du -ah /var/log 2>/dev/null | sort -hr | head -20"
+        }
+      ],
+      "cautions": [
+        "파일이 매우 많은 디렉토리에서는 오래 걸리고 I/O 부하를 줍니다. 운영 시간에는 범위를 좁혀 실행하세요.",
+        "삭제됐지만 열린 파일은 du 에 잡히지 않습니다. df 와 차이가 크면 lsof +L1 로 확인하세요."
+      ],
+      "help": "man du",
+      "keywords": [
+        "디렉토리 용량",
+        "폴더 크기",
+        "큰 파일 찾기",
+        "du",
+        "disk usage"
+      ],
+      "related": [
+        "df",
+        "find",
+        "lsof"
+      ]
+    },
+    {
+      "id": "get-volume",
+      "name": "Get-Volume",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.disk-usage",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "볼륨별 파일시스템·용량·상태 조회 (PowerShell)",
+      "description": "드라이브 문자, 레이블, 파일시스템(NTFS, ReFS), 전체·남은 용량, 상태(HealthStatus)를 볼륨 단위로 조회합니다. 드라이브 문자가 없는 볼륨(복구 파티션 등)도 표시됩니다.",
+      "syntax": [
+        "Get-Volume [-DriveLetter {{LETTER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-DriveLetter {{LETTER}}",
+          "desc": "특정 드라이브만 (예: C)"
+        },
+        {
+          "flag": "-FileSystemLabel {{LABEL}}",
+          "desc": "레이블로 조회"
+        },
+        {
+          "flag": "-CimSession {{COMPUTER}}",
+          "desc": "원격 컴퓨터 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "볼륨 목록과 남은 용량",
+          "command": "Get-Volume"
+        },
+        {
+          "title": "드라이브별 사용률(%) 계산",
+          "command": "Get-Volume | Where-Object DriveLetter | Select-Object DriveLetter, FileSystemLabel, @{n='Size(GB)';e={[math]::Round($_.Size/1GB,1)}}, @{n='Free(GB)';e={[math]::Round($_.SizeRemaining/1GB,1)}}, @{n='Used%';e={[math]::Round(100-($_.SizeRemaining/$_.Size*100),1)}}"
+        },
+        {
+          "title": "원격 서버 볼륨 조회",
+          "command": "Get-Volume -CimSession {{COMPUTER}}"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Get-Volume -Full",
+      "keywords": [
+        "디스크 용량",
+        "드라이브 용량",
+        "볼륨",
+        "Get-Volume",
+        "disk free",
+        "남은 용량"
+      ],
+      "related": [
+        "get-psdrive",
+        "get-ciminstance",
+        "get-disk"
+      ]
+    },
+    {
+      "id": "get-psdrive",
+      "name": "Get-PSDrive",
+      "aliases": [
+        "gdr"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.disk-usage",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "드라이브별 사용·여유 용량 빠른 확인 (PowerShell)",
+      "description": "PowerShell 드라이브 목록을 보여주며, 파일시스템 드라이브는 사용(Used)·여유(Free) 용량이 함께 표시됩니다. 관리자 권한 없이 드라이브 용량을 가장 빠르게 확인하는 방법입니다. 매핑된 네트워크 드라이브도 포함됩니다.",
+      "syntax": [
+        "Get-PSDrive [-Name {{LETTER}}] [-PSProvider FileSystem]"
+      ],
+      "options": [
+        {
+          "flag": "-PSProvider FileSystem",
+          "desc": "파일시스템 드라이브만 (레지스트리·환경변수 드라이브 제외)"
+        },
+        {
+          "flag": "-Name {{LETTER}}",
+          "desc": "특정 드라이브만 (콜론 없이 C)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "드라이브별 사용·여유 용량",
+          "command": "Get-PSDrive -PSProvider FileSystem"
+        },
+        {
+          "title": "C 드라이브 여유 용량(GB)",
+          "command": "[math]::Round((Get-PSDrive C).Free/1GB, 1)"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Get-PSDrive -Full",
+      "keywords": [
+        "드라이브 용량",
+        "여유 공간",
+        "Get-PSDrive",
+        "disk free",
+        "gdr"
+      ],
+      "related": [
+        "get-volume",
+        "get-ciminstance"
+      ]
+    },
+    {
+      "id": "lscpu",
+      "name": "lscpu",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CPU 모델·소켓·코어·스레드·NUMA 정보",
+      "description": "CPU 모델명, 아키텍처, 소켓·코어·스레드 수, 클럭, 캐시, NUMA 노드 구성, 가상화 지원, 하이퍼바이저 종류를 출력합니다. 라이선스(코어 기준) 산정, 성능 튜닝, VM 사양 확인에 사용합니다.",
+      "syntax": [
+        "lscpu [-e | -p] [-J]"
+      ],
+      "options": [
+        {
+          "flag": "-e",
+          "desc": "논리 CPU 별 표 형식 (CPU, NODE, SOCKET, CORE, 온라인 여부)"
+        },
+        {
+          "flag": "-p",
+          "desc": "파싱용 CSV 형식"
+        },
+        {
+          "flag": "-J",
+          "desc": "JSON 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "CPU 요약 정보",
+          "command": "lscpu"
+        },
+        {
+          "title": "소켓·코어·스레드 수만 보기",
+          "command": "lscpu | grep -E '^(Model name|Socket|Core|Thread|CPU\\(s\\)|NUMA node\\(s\\))'"
+        },
+        {
+          "title": "논리 CPU 와 NUMA 노드 매핑",
+          "command": "lscpu -e"
+        }
+      ],
+      "cautions": [
+        "한글 로케일에서는 항목 이름이 번역되어 grep 이 실패할 수 있습니다. LC_ALL=C lscpu 로 실행하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "util-linux",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "util-linux",
+          "preinstalled": true
+        }
+      },
+      "help": "man lscpu",
+      "keywords": [
+        "CPU 정보",
+        "코어 수",
+        "소켓",
+        "NUMA",
+        "lscpu",
+        "cpu info",
+        "하이퍼스레딩"
+      ],
+      "related": [
+        "dmidecode",
+        "mpstat",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "lsblk",
+      "name": "lsblk",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "디스크·파티션·LVM 블록 장치 트리",
+      "description": "디스크, 파티션, LVM 논리 볼륨, RAID, 멀티패스 등 블록 장치를 트리 형태로 보여주며 크기, 종류, 마운트 위치를 함께 출력합니다. 새 디스크 추가 인식 여부나 디스크-파티션-LV-마운트 관계를 한눈에 확인할 때 가장 먼저 쓰는 명령입니다.",
+      "syntax": [
+        "lsblk [-f] [-o {{COLUMNS}}] [-d] [-p] [{{DEVICE}}]"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "파일시스템 종류·UUID·레이블 표시"
+        },
+        {
+          "flag": "-o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT",
+          "desc": "출력 컬럼 지정"
+        },
+        {
+          "flag": "-d",
+          "desc": "디스크만 (파티션 제외)"
+        },
+        {
+          "flag": "-p",
+          "desc": "전체 장치 경로 표시 (/dev/sda1)"
+        },
+        {
+          "flag": "-S",
+          "desc": "SCSI 장치 정보 (HCTL, 벤더, 모델, 시리얼)"
+        },
+        {
+          "flag": "-b",
+          "desc": "크기를 바이트로 표시"
+        },
+        {
+          "flag": "-J",
+          "desc": "JSON 출력"
+        },
+        {
+          "flag": "-t",
+          "desc": "토폴로지 (정렬, 섹터 크기, 스케줄러)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "블록 장치 트리",
+          "command": "lsblk",
+          "output": "NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS\nsda           8:0    0  100G  0 disk \n├─sda1        8:1    0    1G  0 part /boot\n└─sda2        8:2    0   99G  0 part \n  ├─rl-root 253:0    0   91G  0 lvm  /\n  └─rl-swap 253:1    0    8G  0 lvm  [SWAP]"
+        },
+        {
+          "title": "파일시스템·UUID 함께 보기",
+          "command": "lsblk -f"
+        },
+        {
+          "title": "디스크별 벤더·모델·시리얼",
+          "command": "lsblk -d -o NAME,SIZE,TYPE,VENDOR,MODEL,SERIAL"
+        },
+        {
+          "title": "새 디스크 추가 후 재스캔하고 확인",
+          "command": "for h in /sys/class/scsi_host/host*/scan; do echo '- - -' > $h; done\nlsblk",
+          "note": "root 필요"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "util-linux",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "util-linux",
+          "preinstalled": true
+        }
+      },
+      "help": "man lsblk",
+      "keywords": [
+        "디스크 목록",
+        "파티션 확인",
+        "블록 장치",
+        "lsblk",
+        "disk",
+        "UUID",
+        "LVM"
+      ],
+      "related": [
+        "df",
+        "blkid",
+        "fdisk",
+        "lvs",
+        "lscpu"
+      ]
+    },
+    {
+      "id": "lspci",
+      "name": "lspci",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PCI 장치(NIC·HBA·GPU·RAID) 목록과 드라이버",
+      "description": "PCI 버스에 연결된 네트워크 카드, HBA(FC), RAID 컨트롤러, GPU 등을 나열합니다. -k 로 사용 중인 커널 드라이버를, -nn 으로 벤더·장치 ID 를 확인해 드라이버 호환성(HCL)을 점검할 때 사용합니다.",
+      "syntax": [
+        "lspci [-v | -vv] [-k] [-nn] [-s {{SLOT}}]"
+      ],
+      "options": [
+        {
+          "flag": "-k",
+          "desc": "사용 중인 커널 드라이버·모듈 표시"
+        },
+        {
+          "flag": "-nn",
+          "desc": "벤더·장치 ID 숫자 함께 표시 ([8086:1572])"
+        },
+        {
+          "flag": "-v / -vv",
+          "desc": "상세 / 더 상세 (링크 속도 등은 root 필요)"
+        },
+        {
+          "flag": "-s {{SLOT}}",
+          "desc": "특정 슬롯(버스 주소)만 (예: 3b:00.0)"
+        },
+        {
+          "flag": "-d {{VENDOR}}:{{DEVICE}}",
+          "desc": "벤더·장치 ID 로 필터"
+        },
+        {
+          "flag": "-t",
+          "desc": "버스 트리 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "NIC·HBA·RAID 컨트롤러 확인",
+          "command": "lspci | grep -i -E 'ethernet|network|fibre|raid|sas'"
+        },
+        {
+          "title": "장치 ID 와 드라이버 확인 (HCL 점검)",
+          "command": "lspci -nnk | grep -A3 -i ethernet"
+        },
+        {
+          "title": "PCIe 링크 속도·폭 확인",
+          "command": "sudo lspci -vv -s {{SLOT}} | grep -E 'LnkCap|LnkSta'"
+        }
+      ],
+      "cautions": [
+        "장치 이름은 pci.ids 데이터베이스 기준이라 최신 장치는 이름 대신 ID 로만 보일 수 있습니다 (update-pciids)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "pciutils",
+          "preinstalled": false,
+          "note": "최소 설치에는 없을 수 있음: dnf install -y pciutils"
+        },
+        "debian": {
+          "package": "pciutils",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "help": "man lspci",
+      "keywords": [
+        "PCI 장치",
+        "NIC 확인",
+        "HBA",
+        "RAID 컨트롤러",
+        "드라이버 확인",
+        "lspci",
+        "GPU"
+      ],
+      "related": [
+        "lsusb",
+        "dmidecode",
+        "ethtool"
+      ]
+    },
+    {
+      "id": "lsusb",
+      "name": "lsusb",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "USB 장치 목록 확인",
+      "description": "연결된 USB 장치의 버스·장치 번호, 벤더·제품 ID, 이름을 나열합니다. USB 동글(라이선스 키), 시리얼 변환기, 외장 디스크 인식 여부를 확인할 때 사용합니다.",
+      "syntax": [
+        "lsusb [-t] [-v] [-s {{BUS}}:{{DEV}}] [-d {{VENDOR}}:{{PRODUCT}}]"
+      ],
+      "options": [
+        {
+          "flag": "-t",
+          "desc": "트리 형식 (포트·속도·드라이버)"
+        },
+        {
+          "flag": "-v",
+          "desc": "상세 디스크립터 정보 (전체 보기는 root)"
+        },
+        {
+          "flag": "-s {{BUS}}:{{DEV}}",
+          "desc": "특정 버스·장치만"
+        },
+        {
+          "flag": "-d {{VENDOR}}:{{PRODUCT}}",
+          "desc": "벤더·제품 ID 로 필터"
+        }
+      ],
+      "examples": [
+        {
+          "title": "USB 장치 목록",
+          "command": "lsusb"
+        },
+        {
+          "title": "장치 연결 속도·드라이버 트리",
+          "command": "lsusb -t"
+        },
+        {
+          "title": "장치 연결 직후 커널 인식 로그 확인",
+          "command": "dmesg -T | tail -20"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "usbutils",
+          "preinstalled": false,
+          "note": "최소 설치에는 없을 수 있음: dnf install -y usbutils"
+        },
+        "debian": {
+          "package": "usbutils",
+          "preinstalled": true,
+          "note": "Debian 최소 설치에는 없을 수 있음"
+        }
+      },
+      "help": "man lsusb",
+      "keywords": [
+        "USB 장치",
+        "USB 인식",
+        "lsusb",
+        "동글",
+        "usb"
+      ],
+      "related": [
+        "lspci",
+        "dmesg"
+      ]
+    },
+    {
+      "id": "dmidecode",
+      "name": "dmidecode",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "BIOS·시리얼·모델·메모리 슬롯 정보 (SMBIOS)",
+      "description": "SMBIOS(DMI) 테이블을 읽어 서버 제조사·모델·시리얼 번호, BIOS 버전, 메모리 슬롯별 장착 현황, CPU 소켓 정보를 출력합니다. 유지보수 계약 확인·벤더 장애 접수 시 시리얼 번호를 확인하는 표준 방법입니다.",
+      "syntax": [
+        "dmidecode [-t {{TYPE}}]",
+        "dmidecode -s {{KEYWORD}}"
+      ],
+      "options": [
+        {
+          "flag": "-t system",
+          "desc": "제조사·모델·시리얼·UUID"
+        },
+        {
+          "flag": "-t bios",
+          "desc": "BIOS 벤더·버전·날짜"
+        },
+        {
+          "flag": "-t memory",
+          "desc": "메모리 슬롯별 크기·속도·제조사 (빈 슬롯 포함)"
+        },
+        {
+          "flag": "-t processor",
+          "desc": "CPU 소켓 정보"
+        },
+        {
+          "flag": "-t baseboard / chassis",
+          "desc": "메인보드 / 섀시 정보"
+        },
+        {
+          "flag": "-s system-serial-number",
+          "desc": "시리얼 번호만 출력"
+        },
+        {
+          "flag": "-s system-product-name / system-manufacturer / bios-version",
+          "desc": "모델 / 제조사 / BIOS 버전만 출력"
+        },
+        {
+          "flag": "-q",
+          "desc": "간략 출력 (알 수 없는 항목·핸들 숨김)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서버 시리얼·모델 확인 (벤더 장애 접수)",
+          "command": "dmidecode -s system-manufacturer\ndmidecode -s system-product-name\ndmidecode -s system-serial-number"
+        },
+        {
+          "title": "메모리 슬롯 장착 현황",
+          "command": "dmidecode -t memory | grep -E 'Size|Locator|Speed' | grep -v -E 'Bank|Configured'"
+        },
+        {
+          "title": "BIOS 버전 확인",
+          "command": "dmidecode -t bios -q"
+        }
+      ],
+      "cautions": [
+        "VM 에서는 하이퍼바이저가 제공하는 가상 정보(예: VMware, QEMU)가 출력됩니다.",
+        "SMBIOS 정보는 제조사가 기입한 값이라 'To Be Filled By O.E.M.' 처럼 비어 있을 수 있습니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "dmidecode",
+          "preinstalled": true,
+          "note": "x86_64 기본 포함"
+        },
+        "debian": {
+          "package": "dmidecode",
+          "preinstalled": true,
+          "note": "x86 계열 기본 포함"
+        }
+      },
+      "help": "man dmidecode",
+      "keywords": [
+        "시리얼 번호",
+        "서버 모델",
+        "BIOS 버전",
+        "메모리 슬롯",
+        "dmidecode",
+        "SMBIOS",
+        "serial number"
+      ],
+      "related": [
+        "lscpu",
+        "lspci",
+        "free"
+      ]
+    },
+    {
+      "id": "msinfo32",
+      "name": "msinfo32",
+      "kind": "gui",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "시스템 정보 창 (하드웨어·드라이버·부팅 모드)",
+      "description": "'시스템 정보' 도구로 OS, 제조사·모델, BIOS 버전·모드(UEFI/레거시), 보안 부팅 상태, 프로세서, 메모리, 하드웨어 리소스, 드라이버, 서비스 정보를 보여줍니다. 결과를 .nfo 나 텍스트로 저장해 벤더에 전달할 수 있습니다.",
+      "syntax": [
+        "msinfo32 [/nfo {{FILE}}.nfo] [/report {{FILE}}.txt] [/computer {{COMPUTER}}]"
+      ],
+      "options": [
+        {
+          "flag": "/nfo {{FILE}}.nfo",
+          "desc": "정보를 .nfo 파일로 저장"
+        },
+        {
+          "flag": "/report {{FILE}}.txt",
+          "desc": "정보를 텍스트 파일로 저장"
+        },
+        {
+          "flag": "/computer {{COMPUTER}}",
+          "desc": "원격 컴퓨터 정보 조회"
+        },
+        {
+          "flag": "시스템 요약 > BIOS 모드 / 보안 부팅 상태",
+          "desc": "UEFI 여부, Secure Boot 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "시스템 정보 열기",
+          "command": "msinfo32"
+        },
+        {
+          "title": "벤더 전달용 파일로 저장",
+          "command": "msinfo32 /nfo C:\\temp\\%COMPUTERNAME%.nfo"
+        }
+      ],
+      "cautions": [
+        "/report 나 /nfo 저장은 정보를 모두 수집하므로 수 분이 걸릴 수 있습니다."
+      ],
+      "keywords": [
+        "시스템 정보",
+        "하드웨어 정보",
+        "BIOS 모드",
+        "UEFI",
+        "msinfo32",
+        "System Information"
+      ],
+      "related": [
+        "systeminfo",
+        "get-ciminstance",
+        "get-computerinfo"
+      ]
+    },
+    {
+      "id": "get-ciminstance",
+      "name": "Get-CimInstance",
+      "aliases": [
+        "gcim"
+      ],
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "WMI/CIM 으로 OS·하드웨어·가동 시간 조회",
+      "description": "WMI(CIM) 클래스를 조회해 OS, 부팅 시각, BIOS·시리얼, CPU, 메모리, 디스크, 서비스 등 거의 모든 시스템 정보를 얻습니다. wmic 의 공식 대체 수단이며 -ComputerName 으로 원격 서버도 조회할 수 있습니다.",
+      "syntax": [
+        "Get-CimInstance -ClassName {{CLASS}} [-Filter \"{{WQL_FILTER}}\"] [-ComputerName {{COMPUTER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-ClassName Win32_OperatingSystem",
+          "desc": "OS 이름·버전·LastBootUpTime·메모리"
+        },
+        {
+          "flag": "-ClassName Win32_ComputerSystem",
+          "desc": "제조사·모델·도메인·총 메모리"
+        },
+        {
+          "flag": "-ClassName Win32_BIOS",
+          "desc": "BIOS 버전·시리얼 번호"
+        },
+        {
+          "flag": "-ClassName Win32_Processor",
+          "desc": "CPU 이름·코어·논리 프로세서 수"
+        },
+        {
+          "flag": "-ClassName Win32_PhysicalMemory",
+          "desc": "메모리 모듈별 용량·속도"
+        },
+        {
+          "flag": "-ClassName Win32_LogicalDisk",
+          "desc": "드라이브별 용량·여유 공간"
+        },
+        {
+          "flag": "-Filter \"{{WQL_FILTER}}\"",
+          "desc": "WQL 조건 (예: \"DriveType=3\")"
+        },
+        {
+          "flag": "-ComputerName {{COMPUTER}}",
+          "desc": "원격 컴퓨터 조회 (WinRM)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "가동 시간(uptime) 확인",
+          "command": "(Get-Date) - (Get-CimInstance Win32_OperatingSystem).LastBootUpTime"
+        },
+        {
+          "title": "서버 시리얼·모델",
+          "command": "Get-CimInstance Win32_BIOS | Select-Object SerialNumber, SMBIOSBIOSVersion\nGet-CimInstance Win32_ComputerSystem | Select-Object Manufacturer, Model"
+        },
+        {
+          "title": "CPU 코어·논리 프로세서 수",
+          "command": "Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors"
+        },
+        {
+          "title": "메모리 총량·여유(GB)",
+          "command": "Get-CimInstance Win32_OperatingSystem | Select-Object @{n='Total(GB)';e={[math]::Round($_.TotalVisibleMemorySize/1MB,1)}}, @{n='Free(GB)';e={[math]::Round($_.FreePhysicalMemory/1MB,1)}}"
+        },
+        {
+          "title": "로컬 디스크 용량",
+          "command": "Get-CimInstance Win32_LogicalDisk -Filter \"DriveType=3\" | Select-Object DeviceID, Size, FreeSpace"
+        }
+      ],
+      "cautions": [
+        "구형 Get-WmiObject 는 PowerShell 7 에서 제거되었습니다. Get-CimInstance 를 사용하세요."
+      ],
+      "help": "Get-Help Get-CimInstance -Full",
+      "keywords": [
+        "WMI",
+        "CIM",
+        "하드웨어 정보",
+        "가동 시간",
+        "시리얼 번호",
+        "Get-CimInstance",
+        "uptime",
+        "메모리"
+      ],
+      "related": [
+        "wmic",
+        "get-computerinfo",
+        "systeminfo",
+        "get-counter"
+      ]
+    },
+    {
+      "id": "wmic",
+      "name": "wmic",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "WMI 명령줄 조회 (사용 중단 예정, CIM 권장)",
+      "description": "cmd 에서 WMI 정보를 조회하는 구형 도구로 시리얼 번호, OS, CPU, 메모리, 디스크, 프로세스 명령줄 등을 확인할 수 있습니다. 사용 중단(deprecated)되었으므로 새 스크립트는 PowerShell 의 Get-CimInstance 를 사용하세요.",
+      "syntax": [
+        "wmic {{ALIAS}} [where \"{{CONDITION}}\"] get {{PROPERTY}}[,...] [/format:list]"
+      ],
+      "options": [
+        {
+          "flag": "bios get serialnumber",
+          "desc": "시리얼 번호"
+        },
+        {
+          "flag": "os get caption,version,lastbootuptime",
+          "desc": "OS 이름·버전·마지막 부팅"
+        },
+        {
+          "flag": "cpu get name,numberofcores,numberoflogicalprocessors",
+          "desc": "CPU 정보"
+        },
+        {
+          "flag": "memorychip get capacity,speed,devicelocator",
+          "desc": "메모리 모듈"
+        },
+        {
+          "flag": "logicaldisk get name,size,freespace",
+          "desc": "드라이브 용량"
+        },
+        {
+          "flag": "process where name=\"{{NAME}}.exe\" get processid,commandline",
+          "desc": "프로세스 실행 명령줄"
+        },
+        {
+          "flag": "/format:list",
+          "desc": "목록 형식 출력"
+        },
+        {
+          "flag": "/node:{{COMPUTER}}",
+          "desc": "원격 컴퓨터 조회"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서버 시리얼 번호",
+          "command": "wmic bios get serialnumber"
+        },
+        {
+          "title": "OS 정보와 마지막 부팅 시각",
+          "command": "wmic os get caption,version,lastbootuptime /format:list"
+        },
+        {
+          "title": "프로세스의 실행 명령줄 확인",
+          "command": "wmic process where \"name='{{NAME}}.exe'\" get processid,commandline"
+        }
+      ],
+      "cautions": [
+        "Windows 10 21H1 부터 사용 중단되었고, Windows 11 24H2 등 최신 버전에서는 기본으로 설치되어 있지 않을 수 있습니다(선택적 기능). Get-CimInstance 로 대체하세요."
+      ],
+      "platformNotes": {
+        "windows": "최신 Windows 에서 wmic 이 없으면 '설정 > 선택적 기능 > WMIC' 로 추가할 수 있으나 향후 완전히 제거될 예정입니다."
+      },
+      "help": "wmic /?",
+      "keywords": [
+        "WMI",
+        "wmic",
+        "시리얼 번호",
+        "하드웨어 정보",
+        "명령줄 확인",
+        "deprecated"
+      ],
+      "related": [
+        "get-ciminstance",
+        "systeminfo"
+      ]
+    },
+    {
+      "id": "vmstat",
+      "name": "vmstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CPU·메모리·스왑·I/O 대기 추이 (주기 출력)",
+      "description": "실행 대기 프로세스(r), I/O 대기 프로세스(b), 메모리·스왑 입출력(si/so), 블록 I/O, 인터럽트, CPU 사용 비율(us/sy/id/wa/st)을 지정한 간격으로 출력합니다. 병목이 CPU·메모리·디스크 중 어디인지 빠르게 판단할 때 씁니다.",
+      "syntax": [
+        "vmstat [OPTION] [{{INTERVAL}} [{{COUNT}}]]"
+      ],
+      "options": [
+        {
+          "flag": "{{INTERVAL}} {{COUNT}}",
+          "desc": "간격(초)과 횟수 (첫 줄은 부팅 후 평균)"
+        },
+        {
+          "flag": "-S M",
+          "desc": "메모리 단위를 MB 로"
+        },
+        {
+          "flag": "-w",
+          "desc": "넓은 출력 (큰 숫자 정렬)"
+        },
+        {
+          "flag": "-t",
+          "desc": "각 줄에 시각 추가"
+        },
+        {
+          "flag": "-a",
+          "desc": "active/inactive 메모리 표시"
+        },
+        {
+          "flag": "-s",
+          "desc": "메모리·이벤트 누적 통계 표"
+        },
+        {
+          "flag": "-d",
+          "desc": "디스크별 통계"
+        }
+      ],
+      "examples": [
+        {
+          "title": "1초 간격 10회 (시각 포함)",
+          "command": "vmstat -t -w 1 10"
+        },
+        {
+          "title": "스왑 발생 여부 확인",
+          "command": "vmstat -S M 2 5",
+          "note": "si/so 가 지속적으로 0 이 아니면 메모리 부족"
+        }
+      ],
+      "cautions": [
+        "첫 번째 줄은 부팅 이후 평균값이므로 현재 상태 판단에서 제외하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "procps-ng",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "procps",
+          "preinstalled": true
+        }
+      },
+      "help": "man vmstat",
+      "keywords": [
+        "성능 통계",
+        "스왑 발생",
+        "I/O 대기",
+        "vmstat",
+        "CPU 사용률",
+        "병목"
+      ],
+      "related": [
+        "iostat",
+        "mpstat",
+        "sar",
+        "free",
+        "top"
+      ]
+    },
+    {
+      "id": "iostat",
+      "name": "iostat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "디스크별 I/O 처리량·지연·사용률",
+      "description": "디스크(장치)별 초당 읽기·쓰기 횟수(r/s, w/s)와 처리량, 평균 대기 시간(r_await, w_await), 큐 길이, 사용률(%util)과 CPU iowait 을 출력합니다. 스토리지 지연이나 특정 디스크 포화를 확인할 때 사용합니다.",
+      "syntax": [
+        "iostat [-x] [-z] [-m] [-d] [{{DEVICE}}] [{{INTERVAL}} [{{COUNT}}]]"
+      ],
+      "options": [
+        {
+          "flag": "-x",
+          "desc": "확장 통계 (await, aqu-sz, %util 등)"
+        },
+        {
+          "flag": "-z",
+          "desc": "I/O 가 없는 장치 생략"
+        },
+        {
+          "flag": "-m / -k",
+          "desc": "MB / KB 단위"
+        },
+        {
+          "flag": "-d",
+          "desc": "디스크 통계만 (CPU 제외)"
+        },
+        {
+          "flag": "-c",
+          "desc": "CPU 통계만"
+        },
+        {
+          "flag": "-N",
+          "desc": "device-mapper(LVM) 이름 표시"
+        },
+        {
+          "flag": "-p {{DEVICE}}",
+          "desc": "지정 디스크와 파티션 통계"
+        },
+        {
+          "flag": "-t",
+          "desc": "각 보고서에 시각 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "1초 간격 디스크 확장 통계",
+          "command": "iostat -xz 1"
+        },
+        {
+          "title": "LVM 이름으로 5초 간격 3회 (MB 단위)",
+          "command": "iostat -xmdN -t 5 3"
+        }
+      ],
+      "cautions": [
+        "첫 보고서는 부팅 이후 누적값입니다.",
+        "SSD·RAID·SAN 장치는 병렬 처리하므로 %util 100% 가 반드시 포화를 뜻하지 않습니다. await 와 함께 판단하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "dnf install -y sysstat"
+        },
+        "debian": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "apt install sysstat"
+        }
+      },
+      "help": "man iostat",
+      "keywords": [
+        "디스크 I/O",
+        "디스크 지연",
+        "await",
+        "iostat",
+        "%util",
+        "스토리지 성능",
+        "sysstat"
+      ],
+      "related": [
+        "vmstat",
+        "sar",
+        "mpstat",
+        "lsblk"
+      ]
+    },
+    {
+      "id": "mpstat",
+      "name": "mpstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CPU 코어별 사용률 통계",
+      "description": "CPU 전체 또는 코어별 사용률을 usr, sys, iowait, irq, soft, steal, idle 로 나누어 출력합니다. 특정 코어만 100% 인 단일 스레드 병목이나 인터럽트(soft) 쏠림을 확인할 때 사용합니다.",
+      "syntax": [
+        "mpstat [-P {{CPU}} | ALL] [{{INTERVAL}} [{{COUNT}}]]"
+      ],
+      "options": [
+        {
+          "flag": "-P ALL",
+          "desc": "모든 코어별 통계"
+        },
+        {
+          "flag": "-P {{CPU}}",
+          "desc": "특정 코어만 (0부터)"
+        },
+        {
+          "flag": "-u",
+          "desc": "CPU 사용률 (기본)"
+        },
+        {
+          "flag": "-I SUM|CPU|ALL",
+          "desc": "인터럽트 통계"
+        },
+        {
+          "flag": "{{INTERVAL}} {{COUNT}}",
+          "desc": "간격(초)과 횟수"
+        }
+      ],
+      "examples": [
+        {
+          "title": "코어별 사용률 1초 간격 5회",
+          "command": "mpstat -P ALL 1 5"
+        },
+        {
+          "title": "VM 의 CPU steal 확인",
+          "command": "mpstat 1 10",
+          "note": "%steal 이 높으면 호스트 CPU 경합"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "dnf install -y sysstat"
+        },
+        "debian": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "apt install sysstat"
+        }
+      },
+      "help": "man mpstat",
+      "keywords": [
+        "코어별 CPU",
+        "CPU 사용률",
+        "steal",
+        "mpstat",
+        "인터럽트",
+        "sysstat"
+      ],
+      "related": [
+        "vmstat",
+        "iostat",
+        "sar",
+        "top",
+        "lscpu"
+      ]
+    },
+    {
+      "id": "sar",
+      "name": "sar",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "과거 시점 CPU·메모리·디스크·네트워크 성능 이력",
+      "description": "sysstat 수집기가 주기적으로(기본 10분) 저장한 성능 이력을 조회합니다. 'X시에 느렸다'는 장애의 사후 분석에 필수이며, 실시간 수집(sar 1 5)도 가능합니다. 이력은 날짜별 파일(saDD)로 보관됩니다.",
+      "syntax": [
+        "sar [-u | -r | -b | -d | -n DEV | -q] [-f {{SA_FILE}}] [-s {{START_TIME}}] [-e {{END_TIME}}]",
+        "sar {{OPTION}} {{INTERVAL}} {{COUNT}}"
+      ],
+      "options": [
+        {
+          "flag": "-u",
+          "desc": "CPU 사용률 (기본)"
+        },
+        {
+          "flag": "-r",
+          "desc": "메모리 사용량"
+        },
+        {
+          "flag": "-S / -W",
+          "desc": "스왑 사용량 / 스왑 입출력"
+        },
+        {
+          "flag": "-q",
+          "desc": "실행 큐·load average"
+        },
+        {
+          "flag": "-b / -d",
+          "desc": "전체 I/O / 디스크별 I/O (-p 로 장치 이름)"
+        },
+        {
+          "flag": "-n DEV / -n EDEV",
+          "desc": "NIC 별 트래픽 / 오류"
+        },
+        {
+          "flag": "-f {{SA_FILE}}",
+          "desc": "지정 날짜 이력 파일 조회"
+        },
+        {
+          "flag": "-s {{START}} -e {{END}}",
+          "desc": "조회 시간 범위 (HH:MM:SS)"
+        },
+        {
+          "flag": "-A",
+          "desc": "모든 통계"
+        }
+      ],
+      "examples": [
+        {
+          "title": "오늘 CPU 이력",
+          "command": "sar -u"
+        },
+        {
+          "title": "특정 날짜 14~15시 메모리 이력",
+          "command": "sar -r -f /var/log/sa/sa{{DD}} -s 14:00:00 -e 15:00:00",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "특정 날짜 14~15시 메모리 이력",
+          "command": "sar -r -f /var/log/sysstat/sa{{DD}} -s 14:00:00 -e 15:00:00",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "NIC 트래픽 실시간 1초 간격",
+          "command": "sar -n DEV 1 5"
+        },
+        {
+          "title": "디스크별 I/O 이력 (장치 이름 표시)",
+          "command": "sar -d -p"
+        }
+      ],
+      "cautions": [
+        "수집이 활성화되어 있지 않으면 이력이 없습니다. 설치 직후 수집을 켜 두세요.",
+        "이력 파일 보관 기간이 짧으면(기본 약 7~28일) 오래된 장애는 분석할 수 없습니다. /etc/sysconfig/sysstat 또는 /etc/sysstat/sysstat 의 HISTORY 값을 조정하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "dnf install -y sysstat && systemctl enable --now sysstat"
+        },
+        "debian": {
+          "package": "sysstat",
+          "preinstalled": false,
+          "note": "apt install sysstat 후 /etc/default/sysstat 에서 ENABLED=\"true\" (또는 dpkg-reconfigure sysstat), systemctl enable --now sysstat"
+        }
+      },
+      "platformNotes": {
+        "rhel": "이력 파일 경로는 /var/log/sa/saDD 입니다.",
+        "debian": "이력 파일 경로는 /var/log/sysstat/saDD 이며, 설치 후 수집이 기본 비활성일 수 있습니다."
+      },
+      "help": "man sar",
+      "keywords": [
+        "성능 이력",
+        "과거 CPU",
+        "장애 분석",
+        "sar",
+        "sysstat",
+        "사후 분석",
+        "트래픽 이력"
+      ],
+      "related": [
+        "iostat",
+        "mpstat",
+        "vmstat",
+        "free"
+      ]
+    },
+    {
+      "id": "typeperf",
+      "name": "typeperf",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "성능 카운터를 명령줄로 수집·CSV 저장 (CMD)",
+      "description": "Windows 성능 카운터(CPU, 메모리, 디스크, 네트워크 등)를 지정 간격으로 콘솔에 출력하거나 CSV 파일로 저장합니다. GUI 없이 서버 성능을 짧게 수집할 때 유용합니다.",
+      "syntax": [
+        "typeperf \"{{COUNTER_PATH}}\" [-si {{SEC}}] [-sc {{COUNT}}] [-o {{FILE}}.csv]",
+        "typeperf -q [{{OBJECT}}]"
+      ],
+      "options": [
+        {
+          "flag": "\"{{COUNTER_PATH}}\"",
+          "desc": "카운터 경로 (여러 개 지정 가능)"
+        },
+        {
+          "flag": "-si {{SEC}}",
+          "desc": "수집 간격 (초)"
+        },
+        {
+          "flag": "-sc {{COUNT}}",
+          "desc": "수집 횟수"
+        },
+        {
+          "flag": "-o {{FILE}}.csv",
+          "desc": "결과 파일 저장"
+        },
+        {
+          "flag": "-f CSV|TSV|BIN",
+          "desc": "출력 파일 형식"
+        },
+        {
+          "flag": "-cf {{FILE}}.txt",
+          "desc": "카운터 목록을 파일에서 읽기"
+        },
+        {
+          "flag": "-q [{{OBJECT}}]",
+          "desc": "사용 가능한 카운터 목록 (-qx 는 인스턴스 포함)"
+        },
+        {
+          "flag": "-s {{COMPUTER}}",
+          "desc": "원격 컴퓨터"
+        }
+      ],
+      "examples": [
+        {
+          "title": "CPU 사용률 5초 간격 12회",
+          "command": "typeperf \"\\Processor(_Total)\\% Processor Time\" -si 5 -sc 12"
+        },
+        {
+          "title": "CPU·메모리·디스크 큐를 CSV 로 저장",
+          "command": "typeperf \"\\Processor(_Total)\\% Processor Time\" \"\\Memory\\Available MBytes\" \"\\PhysicalDisk(_Total)\\Current Disk Queue Length\" -si 10 -sc 360 -o C:\\temp\\perf.csv"
+        },
+        {
+          "title": "사용 가능한 카운터 이름 확인",
+          "command": "typeperf -q Processor"
+        }
+      ],
+      "cautions": [
+        "한글 Windows 에서는 카운터 이름이 현지화되어 영문 경로가 실패할 수 있습니다. typeperf -q 로 실제 이름을 확인하세요."
+      ],
+      "help": "typeperf /?",
+      "keywords": [
+        "성능 카운터",
+        "성능 수집",
+        "CPU 사용률",
+        "typeperf",
+        "performance counter",
+        "CSV"
+      ],
+      "related": [
+        "get-counter",
+        "perfmon"
+      ]
+    },
+    {
+      "id": "get-counter",
+      "name": "Get-Counter",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "성능 카운터 실시간 조회 (CPU·메모리·디스크)",
+      "description": "Windows 성능 카운터를 PowerShell 개체로 조회합니다. 현재 CPU 사용률, 사용 가능 메모리, 디스크 큐, 네트워크 처리량 등을 지정 간격으로 수집하고 Export-Counter 로 .blg/.csv 저장도 가능합니다.",
+      "syntax": [
+        "Get-Counter [-Counter {{COUNTER_PATH}}] [-SampleInterval {{SEC}}] [-MaxSamples {{COUNT}}]",
+        "Get-Counter -ListSet {{OBJECT}}"
+      ],
+      "options": [
+        {
+          "flag": "-Counter {{COUNTER_PATH}}",
+          "desc": "카운터 경로 (배열로 여러 개)"
+        },
+        {
+          "flag": "-SampleInterval {{SEC}}",
+          "desc": "수집 간격 (기본 1초)"
+        },
+        {
+          "flag": "-MaxSamples {{COUNT}}",
+          "desc": "수집 횟수"
+        },
+        {
+          "flag": "-Continuous",
+          "desc": "Ctrl+C 까지 계속 수집"
+        },
+        {
+          "flag": "-ListSet {{OBJECT}}",
+          "desc": "카운터 집합과 경로 목록 (와일드카드 가능)"
+        },
+        {
+          "flag": "-ComputerName {{COMPUTER}}",
+          "desc": "원격 컴퓨터"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 CPU 사용률 5회",
+          "command": "Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 2 -MaxSamples 5"
+        },
+        {
+          "title": "사용 가능 메모리(MB)",
+          "command": "(Get-Counter '\\Memory\\Available MBytes').CounterSamples.CookedValue"
+        },
+        {
+          "title": "CPU 사용률 상위 프로세스",
+          "command": "(Get-Counter '\\Process(*)\\% Processor Time').CounterSamples | Where-Object InstanceName -notin '_total','idle' | Sort-Object CookedValue -Descending | Select-Object -First 10 InstanceName, CookedValue",
+          "note": "값은 코어 수 기준 합산 (코어 수로 나누면 전체 대비 %)"
+        },
+        {
+          "title": "카운터 이름 찾기",
+          "command": "Get-Counter -ListSet *memory* | Select-Object -ExpandProperty Paths"
+        }
+      ],
+      "cautions": [
+        "한글 Windows 에서는 카운터 경로가 현지화되어 영문 경로가 실패할 수 있습니다. -ListSet 으로 실제 이름을 확인하세요.",
+        "PowerShell 7 에서는 Windows 에서만 동작합니다."
+      ],
+      "help": "Get-Help Get-Counter -Full",
+      "keywords": [
+        "성능 카운터",
+        "CPU 사용률",
+        "메모리 사용량",
+        "Get-Counter",
+        "performance counter",
+        "실시간 성능"
+      ],
+      "related": [
+        "typeperf",
+        "perfmon",
+        "get-process",
+        "get-ciminstance"
+      ]
+    },
+    {
+      "id": "dmesg",
+      "name": "dmesg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.kernel-log",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "커널 메시지 확인 (OOM·디스크·NIC 오류)",
+      "description": "커널 링 버퍼의 메시지를 출력합니다. OOM Killer 로 종료된 프로세스, 디스크 I/O 오류, 파일시스템 오류, NIC 링크 다운, 하드웨어 오류(MCE), 장치 인식 등 커널 수준 문제를 확인할 때 가장 먼저 봅니다. 재부팅하면 버퍼가 초기화되므로 이전 부팅 기록은 journalctl -k -b -1 로 봅니다.",
+      "syntax": [
+        "dmesg [-T] [-l {{LEVEL}}] [-w]"
+      ],
+      "options": [
+        {
+          "flag": "-T",
+          "desc": "사람이 읽을 수 있는 시각 표시"
+        },
+        {
+          "flag": "-H",
+          "desc": "페이지·색상 적용 사람 친화적 출력"
+        },
+        {
+          "flag": "-w",
+          "desc": "새 메시지 실시간 대기 (tail -f 처럼)"
+        },
+        {
+          "flag": "-l err,warn",
+          "desc": "로그 레벨 필터 (emerg, alert, crit, err, warn, notice, info, debug)"
+        },
+        {
+          "flag": "-x",
+          "desc": "facility·level 표시"
+        },
+        {
+          "flag": "-k",
+          "desc": "커널 메시지만"
+        },
+        {
+          "flag": "-c / -C",
+          "desc": "출력 후 버퍼 삭제 / 버퍼 삭제 (root)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "OOM Killer 발생 확인",
+          "command": "dmesg -T | grep -i -E 'out of memory|oom-kill|killed process'"
+        },
+        {
+          "title": "오류·경고만 보기",
+          "command": "dmesg -T -l err,warn"
+        },
+        {
+          "title": "디스크·파일시스템 오류 확인",
+          "command": "dmesg -T | grep -i -E 'i/o error|xfs|ext4-fs error|blk_update_request|scsi'"
+        },
+        {
+          "title": "NIC 링크 상태 변화 확인",
+          "command": "dmesg -T | grep -i -E 'link is (up|down)'"
+        },
+        {
+          "title": "이전 부팅의 커널 메시지",
+          "command": "journalctl -k -b -1"
+        }
+      ],
+      "cautions": [
+        "-T 시각은 부팅 시각 기준 계산값이라 절전·VM 일시정지 후에는 실제 시각과 어긋날 수 있습니다.",
+        "dmesg -c 는 버퍼를 지워 다른 사람이 이후 분석할 수 없게 되므로 장애 중에는 사용하지 마세요."
+      ],
+      "platformNotes": {
+        "rhel": "기본 설정(kernel.dmesg_restrict=0)에서는 일반 사용자도 조회할 수 있습니다.",
+        "debian": "kernel.dmesg_restrict=1 이 기본이라 일반 사용자는 sudo dmesg 로 실행해야 합니다."
+      },
+      "help": "man dmesg",
+      "keywords": [
+        "커널 로그",
+        "OOM",
+        "Out of memory",
+        "디스크 오류",
+        "dmesg",
+        "kernel message",
+        "링크 다운"
+      ],
+      "related": [
+        "journalctl",
+        "get-winevent",
+        "free",
+        "lsblk"
+      ]
+    }
+  ]
+}

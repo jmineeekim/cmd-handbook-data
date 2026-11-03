@@ -1,0 +1,1471 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "security",
+  "commands": [
+    {
+      "id": "w",
+      "name": "w",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.sessions",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "현재 접속자와 각자 실행 중인 작업 확인",
+      "description": "현재 로그인한 사용자, 접속 터미널(TTY), 접속 출발지, 로그인 시각, 유휴 시간, 실행 중인 명령을 보여 줍니다. 첫 줄에는 uptime 과 같은 가동 시간·부하 정보가 나옵니다.",
+      "syntax": [
+        "w [{{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-h",
+          "desc": "헤더(첫 줄 가동 시간·부하) 생략"
+        },
+        {
+          "flag": "-s",
+          "desc": "짧은 형식 (LOGIN@, JCPU, PCPU 생략)"
+        },
+        {
+          "flag": "-f",
+          "desc": "FROM(접속 출발지) 열 표시 전환"
+        },
+        {
+          "flag": "-u",
+          "desc": "현재 프로세스·CPU 시간 계산 시 사용자 이름 무시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 접속자 확인",
+          "command": "w",
+          "output": " 10:12:01 up 12 days,  3:04,  2 users,  load average: 0.10, 0.08, 0.05\nUSER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT\nadmin    pts/0    10.0.0.15        09:58    0.00s  0.05s  0.00s w"
+        },
+        {
+          "title": "특정 사용자 세션만",
+          "command": "w {{USER}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man w",
+      "keywords": [
+        "접속자",
+        "로그인 사용자",
+        "현재 세션",
+        "w",
+        "who",
+        "idle"
+      ],
+      "related": [
+        "who",
+        "last",
+        "uptime"
+      ]
+    },
+    {
+      "id": "who",
+      "name": "who",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.sessions",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "로그인 사용자·마지막 부팅 시각 확인",
+      "description": "현재 로그인한 사용자와 터미널, 로그인 시각, 접속 출발지를 보여 줍니다. -b 로 마지막 부팅 시각을, who am i 로 현재 터미널의 원래 로그인 사용자를 확인할 수 있습니다.",
+      "syntax": [
+        "who [{{OPTION}}]",
+        "who am i"
+      ],
+      "options": [
+        {
+          "flag": "-b",
+          "desc": "마지막 시스템 부팅 시각"
+        },
+        {
+          "flag": "-r",
+          "desc": "현재 런레벨(타깃)"
+        },
+        {
+          "flag": "-H",
+          "desc": "열 제목 표시"
+        },
+        {
+          "flag": "-u",
+          "desc": "유휴 시간과 PID 표시"
+        },
+        {
+          "flag": "-q",
+          "desc": "로그인 이름과 사용자 수만"
+        },
+        {
+          "flag": "-a",
+          "desc": "모든 정보 (-b -d -l -p -r -t -T -u)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 로그인 사용자",
+          "command": "who -H"
+        },
+        {
+          "title": "마지막 부팅 시각",
+          "command": "who -b",
+          "output": "         system boot  2026-10-22 03:14"
+        },
+        {
+          "title": "sudo 이후에도 원래 로그인 계정 확인",
+          "command": "who am i"
+        }
+      ],
+      "cautions": [],
+      "help": "man who",
+      "keywords": [
+        "로그인 사용자",
+        "부팅 시각",
+        "접속자",
+        "who",
+        "who am i",
+        "boot time"
+      ],
+      "related": [
+        "w",
+        "last",
+        "whoami",
+        "uptime"
+      ]
+    },
+    {
+      "id": "quser",
+      "name": "quser",
+      "aliases": [
+        "query user"
+      ],
+      "kind": "command",
+      "shell": "cmd",
+      "category": "security",
+      "task": "security.sessions",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "로그온한 사용자·RDP 세션 목록 확인",
+      "description": "로컬 또는 원격 서버에 로그온한 사용자의 세션 이름, 세션 ID, 상태(활성·연결 끊김), 유휴 시간, 로그온 시각을 보여 줍니다. 연결이 끊긴 RDP 세션을 찾아 logoff 로 정리할 때 사용합니다.",
+      "syntax": [
+        "quser [{{USER}}] [/server:{{HOST}}]",
+        "query user [/server:{{HOST}}]"
+      ],
+      "options": [
+        {
+          "flag": "/server:{{HOST}}",
+          "desc": "원격 서버의 세션 조회"
+        },
+        {
+          "flag": "{{USER}}",
+          "desc": "특정 사용자만 조회"
+        },
+        {
+          "flag": "query session",
+          "desc": "세션 전체(콘솔·서비스 포함) 목록"
+        },
+        {
+          "flag": "logoff {{SESSION_ID}}",
+          "desc": "세션 강제 로그오프"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 로그온 사용자",
+          "command": "quser",
+          "output": " USERNAME     SESSIONNAME   ID  STATE   IDLE TIME  LOGON TIME\n>admin        rdp-tcp#3      2  Active          .  2026-11-03 09:10\n user01                      3  Disc        2:15  2026-11-02 18:02"
+        },
+        {
+          "title": "원격 서버 세션 확인 후 끊긴 세션 정리",
+          "command": "quser /server:{{HOST}}\nlogoff {{SESSION_ID}} /server:{{HOST}}"
+        }
+      ],
+      "cautions": [
+        "logoff 는 해당 세션에서 저장하지 않은 작업을 모두 종료합니다."
+      ],
+      "platformNotes": {
+        "windows": "Windows Home 에디션에는 없습니다. 원격 조회는 대상 서버에서 RPC·원격 데스크톱 관련 권한이 필요합니다."
+      },
+      "help": "quser /?",
+      "keywords": [
+        "접속자",
+        "RDP 세션",
+        "로그온 사용자",
+        "quser",
+        "query user",
+        "logoff",
+        "원격 데스크톱"
+      ],
+      "related": [
+        "get-winevent",
+        "win-shutdown"
+      ]
+    },
+    {
+      "id": "last",
+      "name": "last",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.login-history",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "로그인·재부팅 이력 조회 (wtmp)",
+      "description": "/var/log/wtmp 를 읽어 사용자 로그인·로그아웃, 시스템 재부팅·종료 이력을 최근 순으로 보여 줍니다. 장애 발생 시각 전후로 누가 접속했는지, 언제 재부팅됐는지 확인할 때 사용합니다.",
+      "syntax": [
+        "last [-n {{COUNT}}] [{{USER}}]",
+        "last reboot"
+      ],
+      "options": [
+        {
+          "flag": "-n {{COUNT}}",
+          "desc": "최근 N 개만 표시"
+        },
+        {
+          "flag": "-x",
+          "desc": "시스템 종료·런레벨 변경 기록도 표시"
+        },
+        {
+          "flag": "-F",
+          "desc": "로그인·로그아웃 날짜와 시간을 전체 형식으로"
+        },
+        {
+          "flag": "-i",
+          "desc": "출발지를 IP 주소로 표시"
+        },
+        {
+          "flag": "-s {{TIME}} / -t {{TIME}}",
+          "desc": "지정 시각 이후 / 이전 기록 (예: -s yesterday, -s '2026-11-01 09:00')"
+        },
+        {
+          "flag": "-w",
+          "desc": "사용자·도메인 이름을 잘리지 않게 전체 표시"
+        },
+        {
+          "flag": "-f {{FILE}}",
+          "desc": "다른 wtmp 파일 읽기 (예: 순환된 /var/log/wtmp.1)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "최근 20건 로그인 이력",
+          "command": "last -n 20 -F -i"
+        },
+        {
+          "title": "재부팅·종료 이력",
+          "command": "last -x reboot shutdown | head",
+          "output": "reboot   system boot  5.14.0-427.el9.x86_64 Tue Oct 22 03:14   still running"
+        },
+        {
+          "title": "특정 기간 접속자",
+          "command": "last -s '2026-11-01 00:00' -t '2026-11-02 00:00'"
+        }
+      ],
+      "cautions": [
+        "wtmp 는 logrotate 로 순환되므로 오래된 기록은 /var/log/wtmp.1 등에 있거나 삭제되었을 수 있습니다."
+      ],
+      "help": "man last",
+      "keywords": [
+        "로그인 이력",
+        "접속 기록",
+        "재부팅 이력",
+        "last",
+        "wtmp",
+        "reboot"
+      ],
+      "related": [
+        "lastb",
+        "lastlog",
+        "w",
+        "who",
+        "journalctl"
+      ]
+    },
+    {
+      "id": "lastb",
+      "name": "lastb",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.login-history",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "로그인 실패 이력 조회 (btmp)",
+      "description": "/var/log/btmp 에 기록된 로그인 실패 시도를 보여 줍니다. 무차별 대입(brute force) 공격 출발지나 계정 잠금 원인을 확인할 때 사용하며, root 권한이 필요합니다.",
+      "syntax": [
+        "lastb [-n {{COUNT}}] [{{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-n {{COUNT}}",
+          "desc": "최근 N 개만 표시"
+        },
+        {
+          "flag": "-i",
+          "desc": "출발지를 IP 주소로 표시"
+        },
+        {
+          "flag": "-F",
+          "desc": "날짜·시간 전체 형식"
+        },
+        {
+          "flag": "-s {{TIME}} / -t {{TIME}}",
+          "desc": "기간 지정"
+        },
+        {
+          "flag": "-w",
+          "desc": "이름 전체 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "최근 로그인 실패 20건",
+          "command": "lastb -n 20 -i"
+        },
+        {
+          "title": "실패 시도가 많은 출발지 IP 순위",
+          "command": "lastb -i | awk '{print $3}' | sort | uniq -c | sort -rn | head"
+        },
+        {
+          "title": "SSH 실패 로그로 교차 확인",
+          "command": "journalctl -u sshd --since today | grep 'Failed password'",
+          "platforms": [
+            "rhel"
+          ],
+          "note": "Ubuntu 는 -u ssh"
+        }
+      ],
+      "cautions": [
+        "btmp 에는 사용자가 실수로 아이디 칸에 입력한 비밀번호가 남을 수 있으므로 출력을 외부로 공유할 때 주의하세요."
+      ],
+      "help": "man lastb",
+      "keywords": [
+        "로그인 실패",
+        "실패 이력",
+        "무차별 대입",
+        "brute force",
+        "lastb",
+        "btmp"
+      ],
+      "related": [
+        "last",
+        "lastlog",
+        "journalctl"
+      ]
+    },
+    {
+      "id": "lastlog",
+      "name": "lastlog",
+      "aliases": [
+        "lastlog2"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.login-history",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "계정별 마지막 로그인 시각 조회",
+      "description": "모든 계정(또는 지정 계정)의 마지막 로그인 시각과 출발지를 보여 줍니다. 오랫동안 사용하지 않은 계정을 찾는 보안 점검에 유용합니다.",
+      "syntax": [
+        "lastlog [-u {{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-u {{USER}}",
+          "desc": "특정 사용자만 표시"
+        },
+        {
+          "flag": "-b {{DAYS}}",
+          "desc": "N 일 이전에 마지막으로 로그인한 계정만 (장기 미사용)"
+        },
+        {
+          "flag": "-t {{DAYS}}",
+          "desc": "최근 N 일 이내에 로그인한 계정만"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로그인한 적 있는 계정만 보기",
+          "command": "lastlog | grep -v 'Never logged in'"
+        },
+        {
+          "title": "90일 넘게 로그인하지 않은 계정",
+          "command": "lastlog -b 90"
+        }
+      ],
+      "cautions": [],
+      "platformNotes": {
+        "debian": "Debian 13 등 최신 배포판 일부는 lastlog 대신 util-linux 의 lastlog2 를 사용합니다. 기준 버전(Ubuntu 22.04/24.04, Debian 12)에는 lastlog 가 있습니다."
+      },
+      "help": "man lastlog",
+      "keywords": [
+        "마지막 로그인",
+        "미사용 계정",
+        "계정 점검",
+        "lastlog",
+        "lastlog2"
+      ],
+      "related": [
+        "last",
+        "lastb"
+      ]
+    },
+    {
+      "id": "getenforce",
+      "name": "getenforce",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "SELinux 현재 모드 확인",
+      "description": "SELinux 의 현재 동작 모드를 Enforcing, Permissive, Disabled 중 하나로 출력합니다. 서비스가 이유 없이 권한 거부될 때 가장 먼저 확인합니다.",
+      "syntax": [
+        "getenforce"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "SELinux 모드 확인",
+          "command": "getenforce",
+          "output": "Enforcing"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "libselinux-utils",
+          "preinstalled": true
+        }
+      },
+      "help": "man getenforce",
+      "keywords": [
+        "SELinux 확인",
+        "SELinux 모드",
+        "getenforce",
+        "Enforcing",
+        "Permissive"
+      ],
+      "related": [
+        "setenforce",
+        "sestatus"
+      ]
+    },
+    {
+      "id": "setenforce",
+      "name": "setenforce",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SELinux Enforcing↔Permissive 임시 전환",
+      "description": "SELinux 를 Enforcing(1) 과 Permissive(0) 사이에서 즉시 전환합니다. 재부팅하면 /etc/selinux/config 의 설정으로 돌아갑니다. 문제가 SELinux 때문인지 잠깐 확인하는 용도로만 쓰고, 원인은 컨텍스트·boolean 으로 해결합니다.",
+      "syntax": [
+        "setenforce 0|1"
+      ],
+      "options": [
+        {
+          "flag": "0 (Permissive)",
+          "desc": "차단하지 않고 위반만 기록"
+        },
+        {
+          "flag": "1 (Enforcing)",
+          "desc": "정책 위반을 차단"
+        }
+      ],
+      "examples": [
+        {
+          "title": "SELinux 원인 여부 잠깐 확인 후 되돌리기",
+          "command": "setenforce 0\n# 서비스 재시도\nsetenforce 1\nausearch -m AVC -ts recent",
+          "note": "ausearch 로 거부(AVC) 로그 확인 후 restorecon·semanage 로 해결"
+        },
+        {
+          "title": "영구 설정 확인",
+          "command": "grep ^SELINUX= /etc/selinux/config"
+        }
+      ],
+      "cautions": [
+        "운영 서버에서 setenforce 0 상태로 방치하면 보안 통제가 꺼진 것과 같습니다. 확인이 끝나면 즉시 1 로 되돌리세요.",
+        "Disabled 상태에서는 setenforce 로 켤 수 없습니다. config 수정 후 재부팅(전체 relabel)이 필요합니다.",
+        "SELINUX=disabled 로 끄는 것은 권장되지 않습니다. 다시 켤 때 전체 파일 relabel 로 부팅이 오래 걸립니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "libselinux-utils",
+          "preinstalled": true
+        }
+      },
+      "help": "man setenforce",
+      "keywords": [
+        "SELinux 끄기",
+        "SELinux 전환",
+        "Permissive",
+        "setenforce",
+        "SELinux"
+      ],
+      "related": [
+        "getenforce",
+        "sestatus",
+        "semanage",
+        "restorecon"
+      ]
+    },
+    {
+      "id": "sestatus",
+      "name": "sestatus",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "SELinux 상태·정책·설정 모드 상세 확인",
+      "description": "SELinux 활성 여부, 현재 모드, config 파일에 설정된 모드, 로드된 정책 이름(targeted 등)을 함께 보여 줍니다. -b 로 boolean 값 목록도 볼 수 있습니다.",
+      "syntax": [
+        "sestatus [-v] [-b]"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "/etc/sestatus.conf 에 지정된 파일·프로세스의 컨텍스트도 표시"
+        },
+        {
+          "flag": "-b",
+          "desc": "boolean 현재 값 목록 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "SELinux 상태 확인",
+          "command": "sestatus",
+          "output": "SELinux status:                 enabled\nLoaded policy name:             targeted\nCurrent mode:                   enforcing\nMode from config file:          enforcing"
+        },
+        {
+          "title": "특정 boolean 값 찾기",
+          "command": "sestatus -b | grep httpd"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "rhel": {
+          "package": "policycoreutils",
+          "preinstalled": true
+        }
+      },
+      "help": "man sestatus",
+      "keywords": [
+        "SELinux 상태",
+        "SELinux 정책",
+        "boolean",
+        "sestatus",
+        "targeted"
+      ],
+      "related": [
+        "getenforce",
+        "setenforce",
+        "semanage"
+      ]
+    },
+    {
+      "id": "semanage",
+      "name": "semanage",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SELinux 포트·파일 컨텍스트·boolean 영구 설정",
+      "description": "SELinux 정책의 포트 레이블, 파일 컨텍스트 규칙, boolean 등을 영구적으로 추가·변경·삭제합니다. 서비스를 비표준 포트나 비표준 경로로 옮길 때 setenforce 0 대신 이 명령으로 정책을 맞춥니다.",
+      "syntax": [
+        "semanage port -a -t {{TYPE}} -p tcp {{PORT}}",
+        "semanage fcontext -a -t {{TYPE}} '{{PATH}}(/.*)?'",
+        "semanage boolean -m --on {{BOOLEAN}}"
+      ],
+      "options": [
+        {
+          "flag": "port -l",
+          "desc": "포트 레이블 목록 (예: http_port_t 에 허용된 포트)"
+        },
+        {
+          "flag": "port -a -t {{TYPE}} -p tcp {{PORT}}",
+          "desc": "포트에 SELinux 타입 추가 (-m 수정, -d 삭제)"
+        },
+        {
+          "flag": "fcontext -l",
+          "desc": "파일 컨텍스트 규칙 목록"
+        },
+        {
+          "flag": "fcontext -a -t {{TYPE}} '{{REGEX}}'",
+          "desc": "경로 패턴에 컨텍스트 규칙 추가 (적용은 restorecon)"
+        },
+        {
+          "flag": "boolean -l",
+          "desc": "boolean 목록과 현재·기본 값"
+        },
+        {
+          "flag": "boolean -m --on {{BOOLEAN}}",
+          "desc": "boolean 영구 활성화 (--off 비활성화)"
+        },
+        {
+          "flag": "-C",
+          "desc": "(-l 과 함께) 로컬에서 추가·변경한 항목만 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "웹 서버를 8080 포트로 띄울 때",
+          "command": "semanage port -l | grep http_port_t\nsemanage port -a -t http_port_t -p tcp 8080"
+        },
+        {
+          "title": "웹 루트를 /web 으로 옮길 때 컨텍스트 지정",
+          "command": "semanage fcontext -a -t httpd_sys_content_t '/web(/.*)?'\nrestorecon -Rv /web"
+        },
+        {
+          "title": "httpd 가 외부 네트워크(DB 등)에 접속 허용",
+          "command": "semanage boolean -m --on httpd_can_network_connect",
+          "note": "setsebool -P httpd_can_network_connect on 과 같은 효과"
+        },
+        {
+          "title": "로컬에서 바꾼 설정만 보기",
+          "command": "semanage port -l -C\nsemanage fcontext -l -C"
+        }
+      ],
+      "cautions": [
+        "fcontext 규칙만 추가하고 restorecon 을 실행하지 않으면 기존 파일에는 적용되지 않습니다.",
+        "이미 다른 타입에 정의된 포트는 -a 대신 -m 으로 수정해야 합니다."
+      ],
+      "install": {
+        "rhel": {
+          "package": "policycoreutils-python-utils",
+          "preinstalled": false,
+          "note": "minimal 설치에는 없음 → dnf install policycoreutils-python-utils"
+        }
+      },
+      "help": "man semanage, man semanage-port, man semanage-fcontext",
+      "keywords": [
+        "SELinux 포트",
+        "SELinux 컨텍스트",
+        "boolean",
+        "semanage",
+        "fcontext",
+        "http_port_t"
+      ],
+      "related": [
+        "restorecon",
+        "sestatus",
+        "setenforce",
+        "firewall-cmd"
+      ]
+    },
+    {
+      "id": "restorecon",
+      "name": "restorecon",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "파일 SELinux 컨텍스트를 정책 기본값으로 복원",
+      "description": "파일·디렉토리의 SELinux 컨텍스트를 정책(및 semanage fcontext 규칙)에 정의된 기본값으로 되돌립니다. mv 로 옮긴 파일은 원래 컨텍스트를 유지하므로, 웹 루트 등에 파일을 옮긴 뒤 권한 거부가 나면 이 명령으로 해결합니다.",
+      "syntax": [
+        "restorecon [-R] [-v] {{PATH}}"
+      ],
+      "options": [
+        {
+          "flag": "-R",
+          "desc": "하위 디렉토리까지 재귀 적용"
+        },
+        {
+          "flag": "-v",
+          "desc": "변경된 파일 표시"
+        },
+        {
+          "flag": "-n",
+          "desc": "실제로 바꾸지 않음 (-v 와 함께 미리 보기)"
+        },
+        {
+          "flag": "-F",
+          "desc": "사용자·역할 부분까지 강제로 재설정"
+        },
+        {
+          "flag": "-i",
+          "desc": "존재하지 않는 파일은 무시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "옮긴 파일 컨텍스트 복원",
+          "command": "ls -Z {{PATH}}\nrestorecon -Rv {{PATH}}"
+        },
+        {
+          "title": "바뀔 내용 미리 보기",
+          "command": "restorecon -Rnv /var/www/html"
+        },
+        {
+          "title": "다음 부팅 때 전체 파일시스템 relabel",
+          "command": "touch /.autorelabel\nreboot",
+          "note": "Disabled → Enforcing 전환 시 등. 부팅이 오래 걸림"
+        }
+      ],
+      "cautions": [
+        "chcon 으로 직접 바꾼 컨텍스트는 restorecon 실행 시 정책 기본값으로 덮어써집니다. 영구 적용은 semanage fcontext 로 하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "policycoreutils",
+          "preinstalled": true
+        }
+      },
+      "help": "man restorecon",
+      "keywords": [
+        "SELinux 컨텍스트 복원",
+        "권한 거부",
+        "restorecon",
+        "ls -Z",
+        "relabel",
+        "SELinux"
+      ],
+      "related": [
+        "semanage",
+        "getenforce",
+        "ls",
+        "mv"
+      ]
+    },
+    {
+      "id": "aa-status",
+      "name": "aa-status",
+      "aliases": [
+        "apparmor_status"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.mac",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "AppArmor 상태·프로파일 모드 확인",
+      "description": "AppArmor 활성 여부와 로드된 프로파일, 각 프로파일이 enforce 또는 complain 모드인지, 어떤 프로세스에 적용 중인지 보여 줍니다. Ubuntu 에서 서비스가 비표준 경로 접근 시 거부될 때 확인합니다.",
+      "syntax": [
+        "aa-status"
+      ],
+      "options": [
+        {
+          "flag": "--enabled",
+          "desc": "AppArmor 활성 여부를 종료 코드로만 반환 (스크립트용)"
+        },
+        {
+          "flag": "--profiled",
+          "desc": "로드된 프로파일 수만 출력"
+        },
+        {
+          "flag": "--enforced",
+          "desc": "enforce 모드 프로파일 수만 출력"
+        },
+        {
+          "flag": "--complaining",
+          "desc": "complain 모드 프로파일 수만 출력"
+        },
+        {
+          "flag": "--json",
+          "desc": "JSON 형식 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "AppArmor 상태 확인",
+          "command": "aa-status"
+        },
+        {
+          "title": "프로파일을 complain(기록만) 모드로 전환",
+          "command": "aa-complain /etc/apparmor.d/{{PROFILE}}\n# 확인 후 다시 enforce\naa-enforce /etc/apparmor.d/{{PROFILE}}",
+          "note": "aa-complain·aa-enforce 는 apparmor-utils 패키지"
+        },
+        {
+          "title": "AppArmor 거부 로그 확인",
+          "command": "journalctl -k | grep -i 'apparmor=\"DENIED\"'"
+        }
+      ],
+      "cautions": [
+        "프로파일을 complain 으로 바꾼 채 두지 말고, 필요한 경로를 프로파일(또는 /etc/apparmor.d/local/)에 추가한 뒤 enforce 로 되돌리세요."
+      ],
+      "install": {
+        "debian": {
+          "package": "apparmor",
+          "preinstalled": true,
+          "note": "aa-complain, aa-enforce, aa-logprof 는 apparmor-utils 별도 설치"
+        }
+      },
+      "help": "man aa-status",
+      "keywords": [
+        "AppArmor 상태",
+        "프로파일",
+        "aa-status",
+        "apparmor",
+        "complain",
+        "enforce"
+      ],
+      "related": [
+        "journalctl",
+        "systemctl"
+      ]
+    },
+    {
+      "id": "openssl",
+      "name": "openssl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.certificate",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "인증서 내용·만료일 확인, CSR 생성, 형식 변환",
+      "description": "인증서 파일이나 원격 서버의 인증서를 조회하고, 만료일·체인을 확인하며, 개인키·CSR 생성과 PEM·PFX 형식 변환을 합니다. 하위 명령(x509, s_client, req, pkcs12 등)으로 기능을 나눠 사용합니다.",
+      "syntax": [
+        "openssl x509 -in {{FILE}} -noout -text",
+        "openssl s_client -connect {{HOST}}:{{PORT}} -servername {{HOST}}"
+      ],
+      "options": [
+        {
+          "flag": "x509 -noout -text",
+          "desc": "인증서 전체 내용 (주체, 발급자, SAN, 유효기간)"
+        },
+        {
+          "flag": "x509 -noout -enddate / -dates",
+          "desc": "만료일 / 시작·만료일만"
+        },
+        {
+          "flag": "x509 -noout -subject -issuer",
+          "desc": "주체·발급자만"
+        },
+        {
+          "flag": "x509 -checkend {{SECONDS}}",
+          "desc": "지정 초 안에 만료되면 종료 코드 1 (모니터링용)"
+        },
+        {
+          "flag": "s_client -connect {{HOST}}:{{PORT}}",
+          "desc": "원격 서버에 TLS 접속해 인증서·체인 확인"
+        },
+        {
+          "flag": "s_client -servername {{HOST}}",
+          "desc": "SNI 지정 (한 IP 에 여러 인증서가 있을 때 필수)"
+        },
+        {
+          "flag": "s_client -showcerts",
+          "desc": "서버가 보내는 체인 전체 출력"
+        },
+        {
+          "flag": "req -new -newkey rsa:2048 -nodes",
+          "desc": "새 개인키와 CSR 생성"
+        },
+        {
+          "flag": "pkcs12",
+          "desc": "PFX(P12) ↔ PEM 변환"
+        },
+        {
+          "flag": "verify -CAfile {{FILE}}",
+          "desc": "인증서가 CA 로 검증되는지 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "원격 서버 인증서 만료일 확인",
+          "command": "echo | openssl s_client -connect {{HOST}}:443 -servername {{HOST}} 2>/dev/null | openssl x509 -noout -subject -issuer -dates",
+          "output": "subject=CN = www.example.com\nissuer=C = US, O = Let's Encrypt, CN = R11\nnotBefore=Sep  1 00:00:00 2026 GMT\nnotAfter=Nov 30 23:59:59 2026 GMT"
+        },
+        {
+          "title": "인증서 파일 만료일·30일 내 만료 여부",
+          "command": "openssl x509 -in {{FILE}} -noout -enddate\nopenssl x509 -in {{FILE}} -noout -checkend 2592000 && echo OK || echo '30일 내 만료'"
+        },
+        {
+          "title": "개인키 + CSR 생성 (SAN 포함)",
+          "command": "openssl req -new -newkey rsa:2048 -nodes -keyout {{DOMAIN}}.key -out {{DOMAIN}}.csr -subj \"/CN={{DOMAIN}}\" -addext \"subjectAltName=DNS:{{DOMAIN}}\"",
+          "note": "-addext 는 OpenSSL 1.1.1 이상"
+        },
+        {
+          "title": "PFX → PEM 변환 (인증서·키 분리)",
+          "command": "openssl pkcs12 -in {{FILE}}.pfx -clcerts -nokeys -out cert.pem\nopenssl pkcs12 -in {{FILE}}.pfx -nocerts -nodes -out key.pem"
+        },
+        {
+          "title": "인증서와 개인키 짝 확인",
+          "command": "openssl x509 -noout -pubkey -in cert.pem | openssl sha256\nopenssl pkey -pubout -in key.pem | openssl sha256",
+          "note": "두 해시가 같으면 짝이 맞음"
+        }
+      ],
+      "cautions": [
+        "-nodes 로 만든 개인키는 암호화되지 않으므로 권한을 600 으로 제한하세요.",
+        "s_client 에서 -servername 을 빼면 기본 인증서가 보여 실제와 다른 결과가 나올 수 있습니다."
+      ],
+      "platformNotes": {
+        "rhel": "RHEL 9 는 OpenSSL 3.0 기반이며 SHA-1 서명 등 구형 알고리즘이 기본 정책에서 거부될 수 있습니다 (update-crypto-policies 참고)."
+      },
+      "help": "man openssl, man openssl-x509, man openssl-s_client",
+      "keywords": [
+        "인증서 확인",
+        "만료일",
+        "SSL",
+        "TLS",
+        "CSR 생성",
+        "openssl",
+        "x509",
+        "s_client",
+        "pfx 변환"
+      ],
+      "related": [
+        "update-ca-trust",
+        "update-ca-certificates",
+        "curl",
+        "sha256sum"
+      ]
+    },
+    {
+      "id": "update-ca-trust",
+      "name": "update-ca-trust",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.certificate",
+      "platforms": [
+        "rhel"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "사설 CA 인증서를 시스템 신뢰 저장소에 등록",
+      "description": "/etc/pki/ca-trust/source/anchors/ 에 넣은 CA 인증서를 시스템 전체 신뢰 저장소(curl, dnf, Python 등이 사용)에 반영합니다. 사내 프록시나 사설 CA 로 인한 인증서 오류를 해결할 때 사용합니다.",
+      "syntax": [
+        "update-ca-trust [extract]"
+      ],
+      "options": [
+        {
+          "flag": "extract",
+          "desc": "source 디렉토리의 인증서로 통합 신뢰 저장소 재생성 (인자 생략 시 기본 동작)"
+        },
+        {
+          "flag": "trust list",
+          "desc": "(별도 명령) 신뢰하는 인증서 목록 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사설 CA 등록",
+          "command": "cp {{FILE}}.crt /etc/pki/ca-trust/source/anchors/\nupdate-ca-trust\ntrust list | grep -i '{{CA_NAME}}'"
+        },
+        {
+          "title": "등록 후 HTTPS 접속 확인",
+          "command": "curl -sI https://{{HOST}}"
+        }
+      ],
+      "cautions": [
+        "인증서는 PEM 또는 DER 형식이어야 합니다. 신뢰할 수 있는 CA 만 등록하세요 (중간자 공격 위험)."
+      ],
+      "install": {
+        "rhel": {
+          "package": "ca-certificates",
+          "preinstalled": true
+        }
+      },
+      "help": "man update-ca-trust",
+      "keywords": [
+        "CA 등록",
+        "사설 인증서",
+        "신뢰 저장소",
+        "update-ca-trust",
+        "ca-trust",
+        "anchors"
+      ],
+      "related": [
+        "openssl",
+        "curl"
+      ]
+    },
+    {
+      "id": "update-ca-certificates",
+      "name": "update-ca-certificates",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.certificate",
+      "platforms": [
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "사설 CA 인증서를 시스템 신뢰 목록에 등록",
+      "description": "/usr/local/share/ca-certificates/ 에 넣은 CA 인증서를 /etc/ssl/certs 에 반영해 시스템 전체에서 신뢰하게 합니다. Ubuntu·Debian 에서 사내 프록시·사설 CA 인증서 오류를 해결할 때 사용합니다.",
+      "syntax": [
+        "update-ca-certificates [--fresh]"
+      ],
+      "options": [
+        {
+          "flag": "--fresh",
+          "desc": "기존 심볼릭 링크를 지우고 처음부터 다시 생성"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사설 CA 등록",
+          "command": "cp {{FILE}}.crt /usr/local/share/ca-certificates/\nupdate-ca-certificates",
+          "output": "1 added, 0 removed; done."
+        },
+        {
+          "title": "등록한 CA 제거",
+          "command": "rm /usr/local/share/ca-certificates/{{FILE}}.crt\nupdate-ca-certificates --fresh"
+        }
+      ],
+      "cautions": [
+        "파일 확장자가 .crt 이고 PEM 형식이어야 인식됩니다 (.pem 확장자는 무시됨)."
+      ],
+      "install": {
+        "debian": {
+          "package": "ca-certificates",
+          "preinstalled": true
+        }
+      },
+      "help": "man update-ca-certificates",
+      "keywords": [
+        "CA 등록",
+        "사설 인증서",
+        "신뢰 저장소",
+        "update-ca-certificates",
+        "ca-certificates"
+      ],
+      "related": [
+        "openssl",
+        "curl"
+      ]
+    },
+    {
+      "id": "certutil",
+      "name": "certutil",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "security",
+      "task": "security.certificate",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "인증서 저장소 조회·등록·검증, 파일 해시",
+      "description": "Windows 인증서 저장소의 인증서를 조회·추가·삭제하고, 인증서 파일 내용과 체인·CRL 을 검증합니다. -hashfile 로 파일 해시를 계산하는 용도로도 자주 씁니다.",
+      "syntax": [
+        "certutil -store {{STORE}}",
+        "certutil -addstore {{STORE}} {{FILE}}",
+        "certutil -hashfile {{FILE}} SHA256"
+      ],
+      "options": [
+        {
+          "flag": "-store {{STORE}}",
+          "desc": "로컬 컴퓨터 저장소 조회 (My=개인, Root=신뢰 루트, CA=중간)"
+        },
+        {
+          "flag": "-user",
+          "desc": "로컬 컴퓨터 대신 현재 사용자 저장소 대상"
+        },
+        {
+          "flag": "-addstore {{STORE}} {{FILE}}",
+          "desc": "인증서를 저장소에 추가"
+        },
+        {
+          "flag": "-delstore {{STORE}} {{SERIAL}}",
+          "desc": "저장소에서 인증서 삭제"
+        },
+        {
+          "flag": "-dump {{FILE}}",
+          "desc": "인증서·PFX 파일 내용 출력"
+        },
+        {
+          "flag": "-verify -urlfetch {{FILE}}",
+          "desc": "체인과 CRL/OCSP 해지 여부 검증"
+        },
+        {
+          "flag": "-importpfx {{FILE}}",
+          "desc": "PFX 를 개인 저장소로 가져오기"
+        },
+        {
+          "flag": "-hashfile {{FILE}} {{ALGORITHM}}",
+          "desc": "파일 해시 계산 (MD5, SHA1, SHA256, SHA512)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사설 루트 CA 를 신뢰 루트에 등록",
+          "command": "certutil -addstore Root {{FILE}}.cer"
+        },
+        {
+          "title": "개인 저장소 인증서 목록·만료일",
+          "command": "certutil -store My"
+        },
+        {
+          "title": "인증서 체인·해지 확인",
+          "command": "certutil -verify -urlfetch {{FILE}}.cer"
+        },
+        {
+          "title": "다운로드 파일 SHA256 확인",
+          "command": "certutil -hashfile {{FILE}} SHA256"
+        }
+      ],
+      "cautions": [
+        "Root 저장소에 신뢰할 수 없는 인증서를 추가하면 중간자 공격에 노출됩니다.",
+        "-delstore 는 확인 없이 삭제합니다. 일련번호를 정확히 지정하세요."
+      ],
+      "help": "certutil -?, certutil -{{VERB}} -?",
+      "keywords": [
+        "인증서 저장소",
+        "인증서 등록",
+        "루트 인증서",
+        "certutil",
+        "hashfile",
+        "PFX",
+        "해시"
+      ],
+      "related": [
+        "certlm-msc",
+        "get-filehash",
+        "openssl"
+      ]
+    },
+    {
+      "id": "certlm-msc",
+      "name": "certlm.msc",
+      "aliases": [
+        "certmgr.msc"
+      ],
+      "kind": "gui",
+      "category": "security",
+      "task": "security.certificate",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로컬 컴퓨터 인증서 저장소 관리 GUI",
+      "description": "로컬 컴퓨터 인증서 저장소(IIS·RDP·서비스가 사용)를 관리하는 MMC 콘솔입니다. 인증서 가져오기·내보내기, 개인키 권한 관리, 만료일 확인을 할 수 있습니다. 현재 사용자 저장소는 certmgr.msc 로 엽니다.",
+      "syntax": [
+        "certlm.msc"
+      ],
+      "options": [
+        {
+          "flag": "개인 → 인증서",
+          "desc": "서버 인증서(IIS·RDP 등) 위치"
+        },
+        {
+          "flag": "신뢰할 수 있는 루트 인증 기관",
+          "desc": "루트 CA 목록"
+        },
+        {
+          "flag": "우클릭 → 모든 작업 → 가져오기",
+          "desc": "CER·PFX 가져오기"
+        },
+        {
+          "flag": "우클릭 → 모든 작업 → 개인 키 관리",
+          "desc": "서비스 계정에 개인키 읽기 권한 부여"
+        },
+        {
+          "flag": "우클릭 → 모든 작업 → 내보내기",
+          "desc": "PFX(개인키 포함) 또는 CER 로 내보내기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "로컬 컴퓨터 인증서 관리 열기",
+          "command": "certlm.msc"
+        },
+        {
+          "title": "현재 사용자 인증서 관리 열기",
+          "command": "certmgr.msc"
+        }
+      ],
+      "cautions": [
+        "개인키 포함 PFX 를 내보낼 때는 강한 비밀번호를 지정하고 안전하게 보관하세요."
+      ],
+      "keywords": [
+        "인증서 관리",
+        "인증서 가져오기",
+        "개인키",
+        "certlm",
+        "certmgr",
+        "MMC"
+      ],
+      "related": [
+        "certutil"
+      ]
+    },
+    {
+      "id": "sha256sum",
+      "name": "sha256sum",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.hash",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 SHA-256 해시 계산·검증",
+      "description": "파일의 SHA-256 해시를 계산하거나, 해시 목록 파일과 비교해 무결성을 검증합니다. ISO·패치 파일 다운로드 후 배포처가 제공한 값과 비교할 때 사용합니다.",
+      "syntax": [
+        "sha256sum {{FILE}} [...]",
+        "sha256sum -c {{CHECKSUM_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "해시 목록 파일을 읽어 각 파일 검증"
+        },
+        {
+          "flag": "--quiet",
+          "desc": "(-c) OK 줄은 출력하지 않음"
+        },
+        {
+          "flag": "--status",
+          "desc": "(-c) 출력 없이 종료 코드로만 결과"
+        },
+        {
+          "flag": "--ignore-missing",
+          "desc": "(-c) 목록에 있지만 없는 파일은 무시"
+        },
+        {
+          "flag": "-b",
+          "desc": "바이너리 모드로 읽기"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 해시 계산",
+          "command": "sha256sum {{FILE}}"
+        },
+        {
+          "title": "제공된 해시값과 직접 비교",
+          "command": "echo '{{HASH}}  {{FILE}}' | sha256sum -c",
+          "output": "rhel-9.4-x86_64-dvd.iso: OK",
+          "note": "해시와 파일명 사이 공백 2칸"
+        },
+        {
+          "title": "해시 목록 만들고 나중에 검증 (전송 전후 비교)",
+          "command": "sha256sum *.tar.gz > SHA256SUMS\nsha256sum -c SHA256SUMS"
+        }
+      ],
+      "cautions": [],
+      "help": "man sha256sum",
+      "keywords": [
+        "해시",
+        "체크섬",
+        "무결성 검증",
+        "sha256sum",
+        "SHA256",
+        "checksum"
+      ],
+      "related": [
+        "md5sum",
+        "openssl"
+      ]
+    },
+    {
+      "id": "md5sum",
+      "name": "md5sum",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.hash",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 MD5 해시 계산·검증",
+      "description": "파일의 MD5 해시를 계산하거나 목록 파일로 검증합니다. 전송 오류 확인용으로는 빠르고 충분하지만, 충돌 공격이 가능하므로 보안 목적의 무결성 검증에는 SHA-256 을 사용합니다.",
+      "syntax": [
+        "md5sum {{FILE}} [...]",
+        "md5sum -c {{CHECKSUM_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "해시 목록 파일로 검증"
+        },
+        {
+          "flag": "--quiet",
+          "desc": "(-c) 실패만 출력"
+        },
+        {
+          "flag": "--status",
+          "desc": "(-c) 종료 코드로만 결과"
+        },
+        {
+          "flag": "-b",
+          "desc": "바이너리 모드"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 MD5 확인",
+          "command": "md5sum {{FILE}}"
+        },
+        {
+          "title": "두 서버 간 파일 동일 여부 비교",
+          "command": "md5sum {{FILE}}\nssh {{HOST}} md5sum {{FILE}}"
+        }
+      ],
+      "cautions": [
+        "MD5 는 보안상 취약합니다. 변조 검증에는 sha256sum 을 쓰세요."
+      ],
+      "help": "man md5sum",
+      "keywords": [
+        "해시",
+        "체크섬",
+        "MD5",
+        "md5sum",
+        "파일 비교",
+        "checksum"
+      ],
+      "related": [
+        "sha256sum"
+      ]
+    },
+    {
+      "id": "get-filehash",
+      "name": "Get-FileHash",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "security",
+      "task": "security.hash",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PowerShell 로 파일 해시 계산 (기본 SHA256)",
+      "description": "파일의 해시를 계산합니다. 기본 알고리즘은 SHA256 이며 SHA1, SHA384, SHA512, MD5 를 선택할 수 있습니다. 결과 객체의 Hash 속성을 비교해 무결성을 확인합니다.",
+      "syntax": [
+        "Get-FileHash -Path {{FILE}} [-Algorithm {{ALGORITHM}}]"
+      ],
+      "options": [
+        {
+          "flag": "-Path {{FILE}}",
+          "desc": "대상 파일 (와일드카드 가능)"
+        },
+        {
+          "flag": "-LiteralPath {{FILE}}",
+          "desc": "와일드카드 해석 없이 경로 그대로 사용 ([ ] 포함 파일명)"
+        },
+        {
+          "flag": "-Algorithm {{ALGORITHM}}",
+          "desc": "SHA256(기본), SHA1, SHA384, SHA512, MD5"
+        },
+        {
+          "flag": "-InputStream",
+          "desc": "파일 대신 스트림 입력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일 SHA256 확인",
+          "command": "Get-FileHash {{FILE}}"
+        },
+        {
+          "title": "제공된 해시와 비교",
+          "command": "(Get-FileHash {{FILE}} -Algorithm SHA256).Hash -eq '{{HASH}}'",
+          "note": "-eq 는 대소문자를 구분하지 않음"
+        },
+        {
+          "title": "폴더 내 파일 해시 목록 저장",
+          "command": "Get-ChildItem {{PATH}} -File | Get-FileHash | Export-Csv hashes.csv -NoTypeInformation"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Get-FileHash -Full",
+      "keywords": [
+        "해시",
+        "체크섬",
+        "무결성",
+        "Get-FileHash",
+        "SHA256",
+        "MD5"
+      ],
+      "related": [
+        "certutil"
+      ]
+    }
+  ]
+}

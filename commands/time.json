@@ -1,0 +1,868 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "time",
+  "commands": [
+    {
+      "id": "date",
+      "name": "date",
+      "kind": "command",
+      "shell": "sh",
+      "category": "time",
+      "task": "time.date",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "현재 날짜·시간 출력, 형식 지정, 날짜 계산",
+      "description": "시스템의 현재 날짜와 시간을 출력합니다. +형식 지정으로 파일 이름용 타임스탬프를 만들거나, -d 로 특정 날짜·상대 날짜를 계산하고 epoch 시간을 변환할 수 있습니다. 시간 설정(-s)도 가능하지만 NTP 동기화 중이면 곧 덮어써집니다.",
+      "syntax": [
+        "date [+{{FORMAT}}]",
+        "date -d '{{DATE_STRING}}' [+{{FORMAT}}]"
+      ],
+      "options": [
+        {
+          "flag": "+{{FORMAT}}",
+          "desc": "출력 형식 (%Y 연, %m 월, %d 일, %H 시, %M 분, %S 초, %s epoch)"
+        },
+        {
+          "flag": "-d '{{DATE_STRING}}'",
+          "desc": "지정한 날짜 표시·계산 (예: 'yesterday', '7 days ago', '2025-01-01 09:00')"
+        },
+        {
+          "flag": "-u",
+          "desc": "UTC 기준으로 출력"
+        },
+        {
+          "flag": "-I[seconds]",
+          "desc": "ISO 8601 형식 출력"
+        },
+        {
+          "flag": "-R",
+          "desc": "RFC 5322(메일 헤더) 형식 출력"
+        },
+        {
+          "flag": "-s '{{DATE_STRING}}'",
+          "desc": "시스템 시간 설정 (root 필요)"
+        },
+        {
+          "flag": "-r {{FILE}}",
+          "desc": "파일의 마지막 수정 시간 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 시간 확인",
+          "command": "date",
+          "output": "Tue Nov  3 14:05:12 KST 2026"
+        },
+        {
+          "title": "파일 이름용 타임스탬프",
+          "command": "cp {{FILE}} {{FILE}}.$(date +%Y%m%d_%H%M%S)"
+        },
+        {
+          "title": "epoch 시간을 날짜로 변환",
+          "command": "date -d @1700000000",
+          "note": "반대로 현재 epoch 는 date +%s"
+        },
+        {
+          "title": "어제 날짜 구하기 (로그 파일명 등)",
+          "command": "date -d 'yesterday' +%Y-%m-%d"
+        }
+      ],
+      "cautions": [
+        "date -s 로 바꾼 시간은 chronyd·timesyncd 동기화 중이면 다시 맞춰지고, 하드웨어 시계(RTC)에는 자동 반영되지 않을 수 있습니다. 수동 설정은 timedatectl set-time 을 권장합니다."
+      ],
+      "help": "man date, date --help",
+      "keywords": [
+        "시간 확인",
+        "날짜 확인",
+        "현재 시간",
+        "타임스탬프",
+        "epoch 변환",
+        "date"
+      ],
+      "related": [
+        "timedatectl",
+        "hwclock",
+        "chronyc"
+      ]
+    },
+    {
+      "id": "win-date",
+      "name": "date / time",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "time",
+      "task": "time.date",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CMD 에서 현재 날짜·시간 출력 또는 변경",
+      "description": "CMD 내장 명령으로 현재 날짜(date)와 시간(time)을 출력하거나 변경합니다. /t 를 붙이면 변경 프롬프트 없이 값만 출력하며, 배치 파일에서는 %date%, %time% 환경 변수로 값을 쓸 수 있습니다.",
+      "syntax": [
+        "date /t",
+        "time /t",
+        "date [{{DATE}}]",
+        "time [{{TIME}}]"
+      ],
+      "options": [
+        {
+          "flag": "date /t",
+          "desc": "현재 날짜만 출력"
+        },
+        {
+          "flag": "time /t",
+          "desc": "현재 시간(시:분)만 출력"
+        },
+        {
+          "flag": "date / time",
+          "desc": "인자 없이 실행하면 현재 값 출력 후 새 값 입력 대기 (Enter 로 유지)"
+        },
+        {
+          "flag": "%date% %time%",
+          "desc": "배치 파일에서 쓰는 현재 날짜·시간 변수 (초·1/100초 포함)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "날짜·시간 확인",
+          "command": "date /t\ntime /t",
+          "output": "2026-11-03 (화)\n오후 02:05"
+        },
+        {
+          "title": "초까지 확인",
+          "command": "echo %date% %time%"
+        }
+      ],
+      "cautions": [
+        "출력 형식이 지역 설정(로캘)에 따라 다르므로 %date% 를 잘라 쓰는 배치 스크립트는 다른 서버에서 깨질 수 있습니다. PowerShell 의 Get-Date -Format 이 안전합니다.",
+        "시간을 변경하려면 관리자 권한이 필요하며, 도메인 컴퓨터는 w32time 동기화로 다시 맞춰집니다."
+      ],
+      "help": "date /?, time /?",
+      "keywords": [
+        "시간 확인",
+        "날짜 확인",
+        "현재 시간",
+        "date",
+        "time",
+        "%date%"
+      ],
+      "related": [
+        "get-date",
+        "w32tm",
+        "tzutil"
+      ]
+    },
+    {
+      "id": "get-date",
+      "name": "Get-Date",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "time",
+      "task": "time.date",
+      "platforms": [
+        "windows"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "PowerShell 현재 날짜·시간 출력·형식 지정·날짜 계산",
+      "description": "현재 날짜와 시간을 DateTime 객체로 반환합니다. -Format 으로 원하는 문자열 형식을 만들고, AddDays() 같은 메서드로 날짜를 계산할 수 있어 로그 파일 이름이나 기간 필터에 자주 씁니다. 시간 변경은 Set-Date 를 사용합니다.",
+      "syntax": [
+        "Get-Date [-Format {{FORMAT}}]",
+        "(Get-Date).AddDays({{N}})"
+      ],
+      "options": [
+        {
+          "flag": "-Format {{FORMAT}}",
+          "desc": ".NET 형식 문자열 (예: 'yyyy-MM-dd HH:mm:ss', 'yyyyMMdd')"
+        },
+        {
+          "flag": "-UFormat {{FORMAT}}",
+          "desc": "Unix 스타일 형식 (예: '%Y%m%d', '%s' epoch)"
+        },
+        {
+          "flag": "-Date {{DATE}}",
+          "desc": "지정한 날짜 문자열을 DateTime 으로 변환"
+        },
+        {
+          "flag": "-DisplayHint Date|Time",
+          "desc": "날짜만 / 시간만 표시"
+        },
+        {
+          "flag": "-AsUTC",
+          "desc": "UTC 로 반환 (PowerShell 7.1 이상)"
+        },
+        {
+          "flag": ".ToUniversalTime()",
+          "desc": "UTC 로 변환하는 메서드 (5.1 에서도 사용 가능)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "형식 지정 출력",
+          "command": "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'",
+          "output": "2026-11-03 14:05:12"
+        },
+        {
+          "title": "7일 이전 날짜 계산",
+          "command": "(Get-Date).AddDays(-7)"
+        },
+        {
+          "title": "날짜 붙인 로그 파일명",
+          "command": "\"backup_$(Get-Date -Format yyyyMMdd).zip\""
+        },
+        {
+          "title": "epoch 시간 구하기",
+          "command": "Get-Date -UFormat %s"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Get-Date -Full",
+      "keywords": [
+        "시간 확인",
+        "날짜 확인",
+        "날짜 계산",
+        "형식 지정",
+        "Get-Date",
+        "PowerShell 날짜"
+      ],
+      "related": [
+        "win-date",
+        "set-timezone",
+        "w32tm"
+      ]
+    },
+    {
+      "id": "timedatectl",
+      "name": "timedatectl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "time",
+      "task": "time.timezone",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "타임존 설정·NTP 동기화 켜기·시간 상태 확인",
+      "description": "systemd 의 시간 관리 도구로 현재 시간, 타임존, RTC(하드웨어 시계), NTP 동기화 여부를 한 번에 보여주고 변경합니다. 서버 구축 시 타임존을 Asia/Seoul 로 맞추고 NTP 동기화를 켜는 표준 방법입니다.",
+      "syntax": [
+        "timedatectl [status]",
+        "timedatectl set-timezone {{TIMEZONE}}",
+        "timedatectl set-ntp true|false"
+      ],
+      "options": [
+        {
+          "flag": "status",
+          "desc": "현재 시간·타임존·NTP 동기화 상태 (기본 동작)"
+        },
+        {
+          "flag": "list-timezones",
+          "desc": "설정 가능한 타임존 목록"
+        },
+        {
+          "flag": "set-timezone {{TIMEZONE}}",
+          "desc": "타임존 변경 (예: Asia/Seoul)"
+        },
+        {
+          "flag": "set-ntp true|false",
+          "desc": "NTP 동기화 서비스 켜기·끄기"
+        },
+        {
+          "flag": "set-time '{{DATETIME}}'",
+          "desc": "시간 수동 설정 (NTP 를 먼저 꺼야 함)"
+        },
+        {
+          "flag": "set-local-rtc 0|1",
+          "desc": "하드웨어 시계를 UTC(0, 권장) 또는 로컬 시간(1)으로"
+        },
+        {
+          "flag": "timesync-status",
+          "desc": "systemd-timesyncd 동기화 상세 (Ubuntu 기본 환경)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "타임존을 서울로 설정",
+          "command": "timedatectl set-timezone Asia/Seoul\ntimedatectl"
+        },
+        {
+          "title": "상태 확인",
+          "command": "timedatectl",
+          "output": "               Local time: Tue 2026-11-03 14:05:12 KST\n           Universal time: Tue 2026-11-03 05:05:12 UTC\n                 RTC time: Tue 2026-11-03 05:05:12\n                Time zone: Asia/Seoul (KST, +0900)\nSystem clock synchronized: yes\n              NTP service: active\n          RTC in local TZ: no"
+        },
+        {
+          "title": "NTP 없이 시간 수동 설정",
+          "command": "timedatectl set-ntp false\ntimedatectl set-time '2026-11-03 14:00:00'"
+        },
+        {
+          "title": "타임존 검색",
+          "command": "timedatectl list-timezones | grep -i seoul"
+        }
+      ],
+      "cautions": [
+        "타임존 변경은 이미 실행 중인 일부 프로세스(DB, Java 앱 등)에 재시작 전까지 반영되지 않을 수 있습니다.",
+        "System clock synchronized: no 이면 NTP 서버 연결 상태를 chronyc sources 등으로 확인하세요."
+      ],
+      "platformNotes": {
+        "rhel": "set-ntp true 는 chronyd 를 활성화합니다.",
+        "debian": "Ubuntu 22.04/24.04 는 기본으로 systemd-timesyncd 를 사용하며 set-ntp true 는 이를 활성화합니다. 동기화 상세는 timedatectl timesync-status 로 확인합니다."
+      },
+      "help": "man timedatectl",
+      "keywords": [
+        "타임존 설정",
+        "시간대 변경",
+        "Asia/Seoul",
+        "NTP 켜기",
+        "시간 상태",
+        "timedatectl",
+        "timezone"
+      ],
+      "related": [
+        "chronyc",
+        "etc-chrony-conf",
+        "date",
+        "hwclock"
+      ]
+    },
+    {
+      "id": "tzutil",
+      "name": "tzutil",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "time",
+      "task": "time.timezone",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Windows 표준 시간대 확인·변경",
+      "description": "Windows 의 표준 시간대(타임존)를 확인·변경하는 CMD 도구입니다. Windows 는 'Korea Standard Time' 처럼 Windows 고유 시간대 ID 를 사용합니다.",
+      "syntax": [
+        "tzutil /g",
+        "tzutil /s \"{{TIMEZONE_ID}}\"",
+        "tzutil /l"
+      ],
+      "options": [
+        {
+          "flag": "/g",
+          "desc": "현재 시간대 ID 확인"
+        },
+        {
+          "flag": "/s \"{{TIMEZONE_ID}}\"",
+          "desc": "시간대 변경 (예: \"Korea Standard Time\")"
+        },
+        {
+          "flag": "/s \"{{TIMEZONE_ID}}_dstoff\"",
+          "desc": "일광 절약 시간 조정을 끄고 설정"
+        },
+        {
+          "flag": "/l",
+          "desc": "설정 가능한 시간대 ID 목록"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 시간대 확인",
+          "command": "tzutil /g",
+          "output": "Korea Standard Time"
+        },
+        {
+          "title": "한국 표준시로 변경",
+          "command": "tzutil /s \"Korea Standard Time\""
+        },
+        {
+          "title": "시간대 ID 검색",
+          "command": "tzutil /l | findstr /i korea"
+        }
+      ],
+      "cautions": [
+        "시간대 ID 는 대소문자·띄어쓰기까지 정확해야 합니다."
+      ],
+      "help": "tzutil /?",
+      "keywords": [
+        "시간대 변경",
+        "타임존 설정",
+        "표준 시간대",
+        "Korea Standard Time",
+        "tzutil"
+      ],
+      "related": [
+        "set-timezone",
+        "w32tm"
+      ]
+    },
+    {
+      "id": "set-timezone",
+      "name": "Set-TimeZone",
+      "kind": "command",
+      "shell": "powershell",
+      "category": "time",
+      "task": "time.timezone",
+      "platforms": [
+        "windows"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "PowerShell 로 Windows 시간대 변경 (Get-TimeZone 확인)",
+      "description": "Windows 의 표준 시간대를 변경합니다. 현재 시간대와 설정 가능한 목록은 Get-TimeZone 으로 확인합니다. PowerShell 5.1 이상에서 사용할 수 있습니다.",
+      "syntax": [
+        "Set-TimeZone -Id \"{{TIMEZONE_ID}}\"",
+        "Get-TimeZone [-ListAvailable]"
+      ],
+      "options": [
+        {
+          "flag": "-Id \"{{TIMEZONE_ID}}\"",
+          "desc": "시간대 ID 로 설정 (예: \"Korea Standard Time\")"
+        },
+        {
+          "flag": "-Name \"{{NAME}}\"",
+          "desc": "표시 이름(StandardName)으로 설정"
+        },
+        {
+          "flag": "-PassThru",
+          "desc": "변경된 시간대 정보 출력"
+        },
+        {
+          "flag": "Get-TimeZone -ListAvailable",
+          "desc": "설정 가능한 시간대 목록"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 시간대 확인",
+          "command": "Get-TimeZone"
+        },
+        {
+          "title": "한국 표준시로 변경",
+          "command": "Set-TimeZone -Id \"Korea Standard Time\" -PassThru"
+        },
+        {
+          "title": "UTC+09:00 시간대 찾기",
+          "command": "Get-TimeZone -ListAvailable | Where-Object BaseUtcOffset -eq '09:00:00'"
+        }
+      ],
+      "cautions": [],
+      "help": "Get-Help Set-TimeZone -Full",
+      "keywords": [
+        "시간대 변경",
+        "타임존 설정",
+        "Set-TimeZone",
+        "Get-TimeZone",
+        "Korea Standard Time"
+      ],
+      "related": [
+        "tzutil",
+        "get-date",
+        "w32tm"
+      ]
+    },
+    {
+      "id": "chronyc",
+      "name": "chronyc",
+      "kind": "command",
+      "shell": "sh",
+      "category": "time",
+      "task": "time.sync-status",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "chrony NTP 동기화 상태·시간 소스 확인",
+      "description": "chronyd 의 상태를 조회하고 제어하는 클라이언트입니다. 어떤 NTP 서버와 동기화 중인지(sources), 현재 시간 오차와 동기화 상태(tracking)를 확인하며, 시간 차이가 클 때 즉시 맞추기(makestep)도 할 수 있습니다.",
+      "syntax": [
+        "chronyc tracking",
+        "chronyc sources [-v]"
+      ],
+      "options": [
+        {
+          "flag": "tracking",
+          "desc": "현재 동기화 상태: 기준 서버, 시간 오차(System time), stratum, Leap status"
+        },
+        {
+          "flag": "sources [-v]",
+          "desc": "NTP 소스 목록과 상태 (-v 는 기호 설명 포함)"
+        },
+        {
+          "flag": "sourcestats",
+          "desc": "소스별 오프셋·편차 통계"
+        },
+        {
+          "flag": "activity",
+          "desc": "온라인·오프라인 소스 수"
+        },
+        {
+          "flag": "makestep",
+          "desc": "점진 보정 대신 시간을 즉시 맞춤 (root)"
+        },
+        {
+          "flag": "clients",
+          "desc": "이 서버를 NTP 서버로 쓰는 클라이언트 목록 (root)"
+        },
+        {
+          "flag": "-n",
+          "desc": "IP 를 호스트명으로 변환하지 않음 (DNS 문제 시 빠름)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "동기화 상태 확인",
+          "command": "chronyc tracking",
+          "output": "Reference ID    : C0A80101 (ntp.example.local)\nStratum         : 3\nSystem time     : 0.000012345 seconds fast of NTP time\nLeap status     : Normal",
+          "note": "Leap status 가 Not synchronised 이면 동기화 안 됨"
+        },
+        {
+          "title": "NTP 소스 확인",
+          "command": "chronyc sources -v",
+          "output": "MS Name/IP address         Stratum Poll Reach LastRx Last sample\n===============================================================================\n^* 192.168.1.1                   2   6   377    35   +120us[ +150us] +/-   20ms",
+          "note": "^* 현재 동기화 중, ^+ 후보, ^? 연결 불가. Reach 377 이면 최근 8회 모두 응답"
+        },
+        {
+          "title": "시간 차이가 클 때 즉시 맞추기",
+          "command": "chronyc makestep"
+        }
+      ],
+      "cautions": [
+        "makestep 은 시간을 순간적으로 점프시키므로 DB·트랜잭션 서비스 운영 중에는 주의하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "chrony",
+          "preinstalled": true,
+          "note": "RHEL 8·9 기본 NTP 서비스(chronyd)"
+        },
+        "debian": {
+          "package": "chrony",
+          "preinstalled": false,
+          "note": "Ubuntu 22.04/24.04 는 systemd-timesyncd 가 기본이라 미설치. apt install chrony 시 timesyncd 는 제거됨. Ubuntu 25.10 부터는 chrony 가 기본"
+        }
+      },
+      "platformNotes": {
+        "rhel": "서비스명은 chronyd 입니다.",
+        "debian": "서비스명은 chrony 입니다. chrony 가 없는 기본 Ubuntu 는 timedatectl timesync-status 로 동기화 상태를 확인합니다."
+      },
+      "help": "man chronyc",
+      "keywords": [
+        "시간 동기화",
+        "NTP 상태",
+        "동기화 확인",
+        "시간 오차",
+        "chrony",
+        "chronyc",
+        "ntp"
+      ],
+      "related": [
+        "etc-chrony-conf",
+        "timedatectl",
+        "systemctl"
+      ]
+    },
+    {
+      "id": "etc-chrony-conf",
+      "name": "/etc/chrony.conf",
+      "kind": "file",
+      "category": "time",
+      "task": "time.sync-status",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "chrony NTP 서버·동기화 정책 설정 파일",
+      "description": "chronyd 가 사용할 NTP 서버, 큰 시간 차이 보정 방식, NTP 서버 역할(다른 서버에 시간 제공) 등을 설정합니다. 폐쇄망에서는 기본 공용 pool 을 지우고 사내 NTP 서버를 지정해야 합니다. 경로가 배포판마다 다릅니다.",
+      "syntax": [
+        "/etc/chrony.conf",
+        "/etc/chrony/chrony.conf"
+      ],
+      "options": [
+        {
+          "flag": "server {{NTP_SERVER}} iburst",
+          "desc": "NTP 서버 지정 (iburst: 시작 시 빠른 동기화)"
+        },
+        {
+          "flag": "pool {{NTP_POOL}} iburst",
+          "desc": "여러 주소를 가진 NTP 풀 지정"
+        },
+        {
+          "flag": "makestep 1.0 3",
+          "desc": "시작 후 3회까지 1초 이상 차이는 즉시 맞춤"
+        },
+        {
+          "flag": "rtcsync",
+          "desc": "하드웨어 시계(RTC)를 주기적으로 동기화"
+        },
+        {
+          "flag": "driftfile {{FILE}}",
+          "desc": "시계 오차율 저장 파일"
+        },
+        {
+          "flag": "allow {{CIDR}}",
+          "desc": "이 대역의 클라이언트에 NTP 서비스 제공 (NTP 서버 역할)"
+        },
+        {
+          "flag": "local stratum 10",
+          "desc": "외부 동기화가 안 돼도 로컬 시계로 시간 제공 (폐쇄망 NTP 서버)"
+        },
+        {
+          "flag": "sourcedir {{DIR}}",
+          "desc": "추가 소스 파일(*.sources) 디렉토리"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사내 NTP 서버로 변경 후 반영 (RHEL)",
+          "command": "sed -i 's/^pool /#pool /' /etc/chrony.conf\necho 'server {{NTP_SERVER}} iburst' >> /etc/chrony.conf\nsystemctl restart chronyd\nchronyc sources",
+          "platforms": [
+            "rhel"
+          ]
+        },
+        {
+          "title": "사내 NTP 서버로 변경 후 반영 (Ubuntu)",
+          "command": "sed -i 's/^pool /#pool /' /etc/chrony/chrony.conf\necho 'server {{NTP_SERVER}} iburst' >> /etc/chrony/chrony.conf\nsystemctl restart chrony\nchronyc sources",
+          "platforms": [
+            "debian"
+          ]
+        },
+        {
+          "title": "폐쇄망 NTP 서버로 동작시키기 (RHEL)",
+          "command": "cat >> /etc/chrony.conf <<'EOF'\nallow {{CIDR}}\nlocal stratum 10\nEOF\nsystemctl restart chronyd\nfirewall-cmd --permanent --add-service=ntp\nfirewall-cmd --reload",
+          "platforms": [
+            "rhel"
+          ]
+        }
+      ],
+      "cautions": [
+        "NTP 는 UDP 123 포트를 사용합니다. 방화벽에서 막혀 있으면 동기화되지 않습니다.",
+        "기본 pool 줄을 남겨 두면 폐쇄망에서 응답 없는 소스가 계속 남습니다."
+      ],
+      "platformNotes": {
+        "rhel": "경로는 /etc/chrony.conf, 서비스명은 chronyd 입니다.",
+        "debian": "경로는 /etc/chrony/chrony.conf, 서비스명은 chrony 입니다. Ubuntu 는 /etc/chrony/sources.d/*.sources 에 소스를 따로 둘 수 있습니다. 기본 Ubuntu 22.04/24.04 처럼 systemd-timesyncd 를 쓰면 /etc/systemd/timesyncd.conf 의 NTP= 를 설정합니다."
+      },
+      "help": "man chrony.conf",
+      "keywords": [
+        "NTP 설정",
+        "시간 서버 설정",
+        "chrony 설정",
+        "chrony.conf",
+        "NTP 서버",
+        "폐쇄망 시간 동기화"
+      ],
+      "related": [
+        "chronyc",
+        "timedatectl",
+        "firewall-cmd",
+        "systemctl"
+      ]
+    },
+    {
+      "id": "w32tm",
+      "name": "w32tm",
+      "kind": "command",
+      "shell": "cmd",
+      "category": "time",
+      "task": "time.sync-status",
+      "platforms": [
+        "windows"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Windows 시간 동기화(W32Time) 상태 확인·NTP 설정",
+      "description": "Windows Time 서비스(W32Time)의 동기화 상태와 시간 원본을 확인하고, NTP 서버 지정·즉시 동기화를 수행합니다. 도메인 컴퓨터는 기본적으로 도메인 계층(DC)에서 시간을 받으므로, 외부 NTP 설정은 보통 PDC 에뮬레이터 DC 에서만 합니다.",
+      "syntax": [
+        "w32tm /query /status",
+        "w32tm /config /manualpeerlist:\"{{NTP_SERVER}}\" /syncfromflags:manual /update",
+        "w32tm /resync"
+      ],
+      "options": [
+        {
+          "flag": "/query /status",
+          "desc": "동기화 상태, 마지막 동기화 시간, 원본, stratum"
+        },
+        {
+          "flag": "/query /source",
+          "desc": "현재 시간 원본"
+        },
+        {
+          "flag": "/query /peers",
+          "desc": "설정된 NTP 피어와 상태"
+        },
+        {
+          "flag": "/query /configuration",
+          "desc": "W32Time 설정 값"
+        },
+        {
+          "flag": "/config /manualpeerlist:\"{{NTP_SERVER}},0x8\"",
+          "desc": "NTP 서버 지정 (여러 개는 공백으로 구분, 0x8 = 클라이언트 모드)"
+        },
+        {
+          "flag": "/config /syncfromflags:manual|domhier",
+          "desc": "수동 피어 목록 / 도메인 계층에서 동기화"
+        },
+        {
+          "flag": "/config /reliable:yes",
+          "desc": "신뢰할 수 있는 시간 원본으로 알림 (PDC 에뮬레이터용)"
+        },
+        {
+          "flag": "/config ... /update",
+          "desc": "변경한 설정을 서비스에 알림"
+        },
+        {
+          "flag": "/resync [/force]",
+          "desc": "즉시 다시 동기화"
+        },
+        {
+          "flag": "/stripchart /computer:{{NTP_SERVER}} /samples:5 /dataonly",
+          "desc": "대상 서버와의 시간 차이 측정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "동기화 상태·원본 확인",
+          "command": "w32tm /query /status\nw32tm /query /source",
+          "note": "원본이 'Local CMOS Clock' 또는 'Free-running System Clock' 이면 NTP 동기화가 안 되는 상태"
+        },
+        {
+          "title": "워크그룹 서버에 NTP 서버 지정",
+          "command": "w32tm /config /manualpeerlist:\"{{NTP_SERVER}},0x8\" /syncfromflags:manual /update\nnet stop w32time && net start w32time\nw32tm /resync"
+        },
+        {
+          "title": "NTP 서버와의 시간 차이 측정",
+          "command": "w32tm /stripchart /computer:{{NTP_SERVER}} /samples:5 /dataonly"
+        },
+        {
+          "title": "도메인 멤버를 도메인 계층 동기화로 복구",
+          "command": "w32tm /config /syncfromflags:domhier /update\nw32tm /resync"
+        }
+      ],
+      "cautions": [
+        "도메인 멤버 서버에 manualpeerlist 를 설정하면 DC 와 시간이 어긋나 Kerberos 인증(허용 오차 기본 5분)이 실패할 수 있습니다.",
+        "NTP 는 UDP 123 포트를 사용합니다."
+      ],
+      "help": "w32tm /?",
+      "keywords": [
+        "시간 동기화",
+        "NTP 설정",
+        "동기화 상태",
+        "Windows Time",
+        "w32tm",
+        "W32Time",
+        "시간 서버"
+      ],
+      "related": [
+        "tzutil",
+        "get-date",
+        "win-date"
+      ]
+    },
+    {
+      "id": "hwclock",
+      "name": "hwclock",
+      "kind": "command",
+      "shell": "sh",
+      "category": "time",
+      "task": "time.hwclock",
+      "platforms": [
+        "rhel",
+        "debian"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "하드웨어 시계(RTC/BIOS 시간) 확인·동기화",
+      "description": "메인보드의 하드웨어 시계(RTC)를 읽거나 시스템 시간과 서로 맞춥니다. 재부팅 후 시간이 틀어지는 문제를 확인할 때, 또는 NTP 없이 시간을 수동 설정한 뒤 RTC 에 저장할 때 사용합니다.",
+      "syntax": [
+        "hwclock [-r]",
+        "hwclock -w | -s"
+      ],
+      "options": [
+        {
+          "flag": "-r, --show",
+          "desc": "하드웨어 시계 시간 출력 (기본 동작)"
+        },
+        {
+          "flag": "-w, --systohc",
+          "desc": "시스템 시간 → 하드웨어 시계로 저장"
+        },
+        {
+          "flag": "-s, --hctosys",
+          "desc": "하드웨어 시계 → 시스템 시간으로 설정"
+        },
+        {
+          "flag": "-u, --utc",
+          "desc": "하드웨어 시계를 UTC 로 간주 (Linux 권장)"
+        },
+        {
+          "flag": "-l, --localtime",
+          "desc": "하드웨어 시계를 로컬 시간으로 간주 (Windows 듀얼부팅 등)"
+        },
+        {
+          "flag": "--verbose",
+          "desc": "상세 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "하드웨어 시계와 시스템 시간 비교",
+          "command": "hwclock -r\ndate"
+        },
+        {
+          "title": "수동으로 맞춘 시스템 시간을 RTC 에 저장",
+          "command": "hwclock -w"
+        },
+        {
+          "title": "RTC 가 UTC 기준인지 확인",
+          "command": "timedatectl | grep 'RTC in local TZ'"
+        }
+      ],
+      "cautions": [
+        "-s 는 시스템 시간을 RTC 값으로 덮어쓰므로 RTC 가 틀려 있으면 시스템 시간도 틀어집니다.",
+        "가상 머신은 하이퍼바이저가 RTC 를 제공하므로 VM 도구·하이퍼바이저 시간 동기화 설정도 확인하세요."
+      ],
+      "install": {
+        "rhel": {
+          "package": "util-linux",
+          "preinstalled": true
+        },
+        "debian": {
+          "package": "util-linux-extra",
+          "preinstalled": true,
+          "note": "Ubuntu 22.04 이후 util-linux 에서 분리됨. 컨테이너·최소 이미지에는 없을 수 있음"
+        }
+      },
+      "help": "man hwclock",
+      "keywords": [
+        "하드웨어 시계",
+        "BIOS 시간",
+        "RTC",
+        "CMOS 시간",
+        "hwclock",
+        "재부팅 후 시간 틀어짐"
+      ],
+      "related": [
+        "timedatectl",
+        "date",
+        "chronyc"
+      ]
+    }
+  ]
+}
