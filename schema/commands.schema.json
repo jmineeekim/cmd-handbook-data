@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cmd-handbook-data/schema/commands.schema.json",
+  "title": "Command category file",
+  "description": "commands/<category>.json 한 파일 = 한 카테고리의 명령어 목록",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "category", "commands"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "category": { "type": "string", "pattern": "^[a-z]+$" },
+    "commands": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/command" } }
+  },
+  "$defs": {
+    "platform": { "enum": ["rhel", "debian", "windows"] },
+    "placeholderText": {
+      "type": "string",
+      "description": "바꿔 쓸 값은 {{UPPER_SNAKE}} 로 표기한다. 예: {{IP}}, {{PORT}}, {{SERVICE}}"
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preinstalled"],
+      "properties": {
+        "package": { "type": "string", "description": "패키지명 또는 Windows 기능명" },
+        "preinstalled": { "type": "boolean", "description": "최소 설치(minimal/server) 기준 기본 설치 여부" },
+        "note": { "type": "string" }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "category", "task", "platforms", "level", "risk", "requiresAdmin", "summary", "description", "syntax", "options", "examples", "cautions", "keywords", "related"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "전체 데이터에서 유일. Windows 전용 동명 명령은 win- 접두어" },
+        "name": { "type": "string", "minLength": 1, "description": "화면에 표시할 이름 (예: firewall-cmd, Get-Process, /etc/fstab, services.msc)" },
+        "aliases": { "type": "array", "items": { "type": "string" }, "description": "다른 이름·축약형 (예: gci, ls → Get-ChildItem)" },
+        "kind": { "enum": ["command", "file", "gui"], "description": "command=명령어, file=설정·로그 파일 경로, gui=GUI 관리도구(.msc 등)" },
+        "shell": { "enum": ["sh", "cmd", "powershell"], "description": "kind=command 일 때 필수" },
+        "category": { "type": "string" },
+        "task": { "type": "string", "pattern": "^[a-z]+\\.[a-z0-9-]+$", "description": "meta/categories.json 의 task id" },
+        "platforms": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/platform" } },
+        "level": { "enum": ["basic", "frequent", "critical"] },
+        "risk": { "enum": ["safe", "caution", "destructive"] },
+        "requiresAdmin": { "type": "boolean", "description": "root/sudo 또는 Windows 관리자 권한이 필요한 주요 사용법이 있으면 true" },
+        "summary": { "type": "string", "minLength": 4, "maxLength": 60, "description": "목록에 보이는 한 줄 설명" },
+        "description": { "type": "string", "minLength": 10, "description": "상세 화면 첫 문단. 2~4문장" },
+        "syntax": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/placeholderText" } },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["flag", "desc"],
+            "properties": {
+              "flag": { "$ref": "#/$defs/placeholderText" },
+              "desc": { "type": "string" }
+            }
+          }
+        },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "command"],
+            "properties": {
+              "title": { "type": "string", "description": "무엇을 하는 예시인지 (한 줄)" },
+              "command": { "$ref": "#/$defs/placeholderText", "description": "여러 줄이면 \\n 으로 구분. 줄마다 하나의 실행 명령" },
+              "output": { "type": "string", "description": "출력 예시 (선택)" },
+              "note": { "type": "string" },
+              "platforms": { "type": "array", "items": { "$ref": "#/$defs/platform" }, "description": "이 예시가 특정 플랫폼에만 해당할 때" }
+            }
+          }
+        },
+        "cautions": { "type": "array", "items": { "type": "string" } },
+        "install": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rhel": { "$ref": "#/$defs/install" },
+            "debian": { "$ref": "#/$defs/install" },
+            "windows": { "$ref": "#/$defs/install" }
+          }
+        },
+        "platformNotes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rhel": { "type": "string" },
+            "debian": { "type": "string" },
+            "windows": { "type": "string" }
+          }
+        },
+        "help": { "type": "string", "description": "내장 도움말 보는 법 (예: man ss, Get-Help Get-Process -Full, taskkill /?)" },
+        "keywords": { "type": "array", "minItems": 2, "items": { "type": "string" }, "description": "검색어 (한글 기능명, 영문 키워드)" },
+        "related": { "type": "array", "items": { "type": "string" }, "description": "관련 명령어 id. 같은 task 의 다른 OS 명령은 앱이 자동으로 묶으므로 넣지 않아도 됨" }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "command" } } }, "then": { "required": ["shell"] } }
+      ]
+    }
+  }
+}

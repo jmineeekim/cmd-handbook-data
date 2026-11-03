@@ -1,0 +1,49 @@
+{
+  "id": "firewall-cmd",
+  "name": "firewall-cmd",
+  "kind": "command",
+  "shell": "sh",
+  "category": "network",
+  "task": "network.firewall",
+  "platforms": ["rhel"],
+  "level": "frequent",
+  "risk": "caution",
+  "requiresAdmin": true,
+  "summary": "firewalld 방화벽 규칙(포트·서비스·존) 관리",
+  "description": "firewalld 방화벽의 포트·서비스·존 규칙을 조회하고 추가·삭제합니다. RHEL 7 이후 RHEL 계열의 기본 방화벽 도구이며, 내부적으로 nftables(RHEL 8+) 규칙을 관리합니다.",
+  "syntax": [
+    "firewall-cmd [--permanent] [--zone={{ZONE}}] {{OPTION}}"
+  ],
+  "options": [
+    { "flag": "--state", "desc": "firewalld 실행 여부 확인" },
+    { "flag": "--get-active-zones", "desc": "활성 존과 연결된 인터페이스 확인" },
+    { "flag": "--list-all", "desc": "현재(또는 지정한) 존의 전체 규칙 조회" },
+    { "flag": "--add-port={{PORT}}/tcp", "desc": "포트 허용 (--remove-port 로 삭제)" },
+    { "flag": "--add-service={{SERVICE}}", "desc": "서비스 이름으로 허용 (예: http, https, ssh)" },
+    { "flag": "--permanent", "desc": "런타임이 아닌 설정 파일에 영구 저장" },
+    { "flag": "--reload", "desc": "영구 설정을 런타임에 반영" }
+  ],
+  "examples": [
+    { "title": "현재 존의 방화벽 규칙 전체 확인", "command": "firewall-cmd --list-all" },
+    { "title": "포트 영구 허용 후 반영", "command": "firewall-cmd --permanent --add-port={{PORT}}/tcp\nfirewall-cmd --reload" },
+    {
+      "title": "특정 대역에서만 SSH 허용 (rich rule)",
+      "command": "firewall-cmd --permanent --add-rich-rule='rule family=\"ipv4\" source address=\"{{CIDR}}\" service name=\"ssh\" accept'\nfirewall-cmd --reload",
+      "note": "rich rule 은 출발지·포트·서비스 조건을 함께 지정할 때 사용"
+    }
+  ],
+  "cautions": [
+    "--permanent 로 추가한 규칙은 --reload 해야 반영됩니다.",
+    "--permanent 없이 추가하면 즉시 반영되지만 재시작하면 사라집니다.",
+    "원격 접속 중 ssh 서비스를 제거하면 접속이 끊길 수 있습니다."
+  ],
+  "install": {
+    "rhel": { "package": "firewalld", "preinstalled": true, "note": "minimal 설치에서도 기본 포함. 비활성 상태면 systemctl enable --now firewalld" }
+  },
+  "platformNotes": {
+    "rhel": "RHEL 7 은 iptables 백엔드, RHEL 8 이상은 nftables 백엔드를 사용합니다."
+  },
+  "help": "man firewall-cmd",
+  "keywords": ["방화벽", "포트 허용", "포트 열기", "firewalld", "firewall", "존"],
+  "related": ["iptables", "nft", "ss", "systemctl"]
+}
