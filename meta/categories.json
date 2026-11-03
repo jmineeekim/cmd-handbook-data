@@ -1,0 +1,203 @@
+{
+  "categories": [
+    {
+      "id": "files", "order": 1, "name": "파일·디렉토리", "icon": "folder",
+      "description": "파일과 디렉토리를 조회, 복사, 이동, 삭제, 링크하는 명령어",
+      "tasks": [
+        { "id": "files.list-nav", "name": "목록·이동·경로" },
+        { "id": "files.copy-move-delete", "name": "복사·이동·삭제" },
+        { "id": "files.mkdir", "name": "디렉토리 생성·삭제" },
+        { "id": "files.create", "name": "빈 파일 생성" },
+        { "id": "files.link", "name": "링크 생성" },
+        { "id": "files.info", "name": "파일 상세 정보" },
+        { "id": "files.tree", "name": "트리 출력" },
+        { "id": "files.bulk-copy", "name": "대용량 복사" }
+      ]
+    },
+    {
+      "id": "content", "order": 2, "name": "파일 내용 조회·편집", "icon": "description",
+      "description": "파일 내용 출력, 실시간 로그 확인, 편집, 비교",
+      "tasks": [
+        { "id": "content.view", "name": "내용 출력" },
+        { "id": "content.head-tail", "name": "앞뒤 일부·실시간 로그" },
+        { "id": "content.editor", "name": "편집기" },
+        { "id": "content.count", "name": "줄 수 세기" },
+        { "id": "content.compare", "name": "파일 비교" }
+      ]
+    },
+    {
+      "id": "text", "order": 3, "name": "검색·텍스트 처리", "icon": "search",
+      "description": "문자열·파일 검색과 텍스트 가공, 파이프 활용",
+      "tasks": [
+        { "id": "text.search-string", "name": "문자열 검색" },
+        { "id": "text.search-file", "name": "파일 검색" },
+        { "id": "text.locate-binary", "name": "실행 파일 위치" },
+        { "id": "text.transform", "name": "텍스트 가공" },
+        { "id": "text.pipe", "name": "파이프 활용" }
+      ]
+    },
+    {
+      "id": "users", "order": 4, "name": "사용자·권한", "icon": "manage_accounts",
+      "description": "계정, 권한 상승, 파일 권한, ACL, 인증·그룹 정책",
+      "tasks": [
+        { "id": "users.whoami", "name": "현재 사용자" },
+        { "id": "users.elevate", "name": "권한 상승" },
+        { "id": "users.permission", "name": "권한·소유자 변경" },
+        { "id": "users.account", "name": "계정 관리" },
+        { "id": "users.umask", "name": "기본 권한" },
+        { "id": "users.sudoers", "name": "sudo 설정" },
+        { "id": "users.password-policy", "name": "비밀번호 정책" },
+        { "id": "users.acl", "name": "ACL" },
+        { "id": "users.pam", "name": "인증(PAM) 설정" },
+        { "id": "users.gpo", "name": "그룹 정책" }
+      ]
+    },
+    {
+      "id": "process", "order": 5, "name": "프로세스", "icon": "memory",
+      "description": "프로세스 조회, 모니터링, 종료, 추적, 덤프",
+      "tasks": [
+        { "id": "process.list", "name": "프로세스 조회" },
+        { "id": "process.monitor", "name": "실시간 모니터링" },
+        { "id": "process.kill", "name": "프로세스 종료" },
+        { "id": "process.search", "name": "이름으로 검색" },
+        { "id": "process.background", "name": "백그라운드 실행" },
+        { "id": "process.priority", "name": "우선순위 조정" },
+        { "id": "process.open-files", "name": "열린 파일·포트 사용 프로세스" },
+        { "id": "process.trace", "name": "시스템 콜 추적" },
+        { "id": "process.dump", "name": "프로세스 덤프" }
+      ]
+    },
+    {
+      "id": "system", "order": 6, "name": "시스템 정보·자원", "icon": "monitor_heart",
+      "description": "OS·하드웨어 정보와 CPU·메모리·디스크 자원 확인",
+      "tasks": [
+        { "id": "system.os-version", "name": "OS·커널 버전" },
+        { "id": "system.hostname", "name": "호스트명" },
+        { "id": "system.uptime", "name": "가동 시간·부하" },
+        { "id": "system.memory", "name": "메모리" },
+        { "id": "system.disk-usage", "name": "디스크 용량" },
+        { "id": "system.hardware", "name": "하드웨어 정보" },
+        { "id": "system.perf-stats", "name": "성능 통계" },
+        { "id": "system.kernel-log", "name": "커널 메시지" }
+      ]
+    },
+    {
+      "id": "service", "order": 7, "name": "서비스·로그·스케줄링", "icon": "receipt_long",
+      "description": "서비스 관리, 로그 조회, 예약 작업, 감사 로그",
+      "tasks": [
+        { "id": "service.manage", "name": "서비스 관리" },
+        { "id": "service.logs", "name": "로그 조회" },
+        { "id": "service.schedule", "name": "예약 작업" },
+        { "id": "service.logrotate", "name": "로그 순환" },
+        { "id": "service.audit", "name": "감사 로그" }
+      ]
+    },
+    {
+      "id": "network", "order": 8, "name": "네트워크", "icon": "lan",
+      "description": "IP·포트·DNS 확인, 네트워크 설정, 방화벽, 패킷 분석",
+      "tasks": [
+        { "id": "network.ip", "name": "IP·라우팅 확인" },
+        { "id": "network.legacy", "name": "구형 명령어(net-tools)" },
+        { "id": "network.ping", "name": "연결 확인" },
+        { "id": "network.ports", "name": "포트·세션" },
+        { "id": "network.http", "name": "HTTP 요청" },
+        { "id": "network.trace", "name": "경로 추적" },
+        { "id": "network.dns", "name": "DNS 조회" },
+        { "id": "network.port-test", "name": "포트 연결 테스트" },
+        { "id": "network.config", "name": "네트워크 설정" },
+        { "id": "network.firewall", "name": "방화벽" },
+        { "id": "network.capture", "name": "패킷 캡처" },
+        { "id": "network.nic", "name": "NIC 상태" },
+        { "id": "network.arp-route", "name": "ARP·정적 라우팅" },
+        { "id": "network.bonding", "name": "본딩·티밍" }
+      ]
+    },
+    {
+      "id": "remote", "order": 9, "name": "원격 접속·파일 전송", "icon": "terminal",
+      "description": "SSH·RDP 접속, 파일 전송·동기화, 터널링, 원격 관리",
+      "tasks": [
+        { "id": "remote.connect", "name": "원격 접속" },
+        { "id": "remote.transfer", "name": "파일 전송" },
+        { "id": "remote.sync", "name": "동기화" },
+        { "id": "remote.keys", "name": "SSH 키" },
+        { "id": "remote.tunnel", "name": "터널링(포트 포워딩)" },
+        { "id": "remote.manage", "name": "원격 관리" }
+      ]
+    },
+    {
+      "id": "archive", "order": 10, "name": "압축·아카이브", "icon": "archive",
+      "description": "tar, gzip, zip 등 묶기·압축·해제",
+      "tasks": [
+        { "id": "archive.tar-gz", "name": "tar·gz" },
+        { "id": "archive.zip", "name": "zip" },
+        { "id": "archive.high", "name": "고압축(xz·bzip2)" }
+      ]
+    },
+    {
+      "id": "package", "order": 11, "name": "패키지·업데이트", "icon": "inventory_2",
+      "description": "패키지 설치·조회, 저장소, 시스템 업데이트, 폐쇄망 설치",
+      "tasks": [
+        { "id": "package.install", "name": "패키지 설치·삭제" },
+        { "id": "package.single", "name": "단일 패키지·설치 목록" },
+        { "id": "package.repo", "name": "저장소 관리" },
+        { "id": "package.update", "name": "시스템 업데이트" },
+        { "id": "package.subscription", "name": "구독·모듈·기능" },
+        { "id": "package.upgrade", "name": "OS 메이저 업그레이드" },
+        { "id": "package.offline", "name": "폐쇄망 로컬 저장소" }
+      ]
+    },
+    {
+      "id": "disk", "order": 12, "name": "디스크·파일시스템", "icon": "storage",
+      "description": "마운트, 파티션, 포맷, LVM, 용량 확장, 스왑, NFS·CIFS",
+      "tasks": [
+        { "id": "disk.mount", "name": "마운트" },
+        { "id": "disk.fs-info", "name": "UUID·파일시스템 확인" },
+        { "id": "disk.partition", "name": "파티션" },
+        { "id": "disk.format", "name": "포맷" },
+        { "id": "disk.repair", "name": "점검·복구" },
+        { "id": "disk.lvm", "name": "LVM 구성·조회" },
+        { "id": "disk.extend", "name": "용량 확장" },
+        { "id": "disk.swap", "name": "스왑" },
+        { "id": "disk.network-fs", "name": "NFS·CIFS 마운트" }
+      ]
+    },
+    {
+      "id": "security", "order": 13, "name": "보안·접속 이력·인증서", "icon": "shield",
+      "description": "접속자·로그인 이력, SELinux·AppArmor, 인증서, 파일 해시",
+      "tasks": [
+        { "id": "security.sessions", "name": "현재 접속자" },
+        { "id": "security.login-history", "name": "로그인 이력" },
+        { "id": "security.mac", "name": "강제 접근 제어(SELinux·AppArmor)" },
+        { "id": "security.certificate", "name": "인증서" },
+        { "id": "security.hash", "name": "파일 해시" }
+      ]
+    },
+    {
+      "id": "time", "order": 14, "name": "시간 동기화", "icon": "schedule",
+      "description": "시간·타임존 설정과 NTP 동기화 상태 확인",
+      "tasks": [
+        { "id": "time.date", "name": "시간 확인" },
+        { "id": "time.timezone", "name": "타임존·NTP 설정" },
+        { "id": "time.sync-status", "name": "동기화 상태" },
+        { "id": "time.hwclock", "name": "하드웨어 시계" }
+      ]
+    },
+    {
+      "id": "shell", "order": 15, "name": "셸 환경·커널·진단", "icon": "settings",
+      "description": "도움말, 환경 변수, 세션 유지, 커널 파라미터, 부트로더, 진단 정보 수집",
+      "tasks": [
+        { "id": "shell.help", "name": "도움말" },
+        { "id": "shell.history-alias", "name": "명령 이력·별칭" },
+        { "id": "shell.env", "name": "환경 변수" },
+        { "id": "shell.watch", "name": "반복 실행" },
+        { "id": "shell.session", "name": "세션 유지" },
+        { "id": "shell.power", "name": "재부팅·종료" },
+        { "id": "shell.ulimit", "name": "자원 제한" },
+        { "id": "shell.kernel-tuning", "name": "커널 파라미터·튜닝" },
+        { "id": "shell.boot", "name": "부트로더·initramfs" },
+        { "id": "shell.diag", "name": "벤더 지원용 진단 수집" },
+        { "id": "shell.repair", "name": "시스템 파일 복구" }
+      ]
+    }
+  ]
+}
