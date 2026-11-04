@@ -523,16 +523,18 @@
       "level": "basic",
       "risk": "caution",
       "requiresAdmin": false,
-      "summary": "SSH 기반 대화형 파일 전송 (SFTP)",
-      "description": "SSH 위에서 동작하는 대화형 파일 전송 클라이언트입니다. FTP 처럼 ls, cd, get, put 명령으로 원격 파일을 탐색하며 주고받을 수 있고, -b 배치 파일로 자동화도 가능합니다.",
+      "summary": "SSH 기반 대화형 파일 전송 (업로드·다운로드·원격 파일 관리)",
+      "description": "SSH(22번 포트)로 서버에 접속해 파일을 주고받는 도구입니다. 접속하면 sftp> 프롬프트가 나오고, 그 안에서 get(다운로드)·put(업로드) 같은 명령으로 작업합니다. 서버 쪽 명령(ls, cd)과 내 PC 쪽 명령(lls, lcd)이 따로 있다는 점이 핵심입니다. 접속 방법과 인증은 ssh 와 같습니다.",
       "syntax": [
         "sftp [-P {{PORT}}] [-i {{KEY_FILE}}] {{USER}}@{{HOST}}",
+        "sftp {{USER}}@{{HOST}}:{{REMOTE_DIR}}",
+        "sftp {{USER}}@{{HOST}}:{{REMOTE_FILE}} {{LOCAL_PATH}}",
         "sftp -b {{BATCH_FILE}} {{USER}}@{{HOST}}"
       ],
       "options": [
         {
           "flag": "-P {{PORT}}",
-          "desc": "SSH 포트 지정 (대문자 P)"
+          "desc": "SSH 포트 지정 (대문자 P. ssh 는 소문자 -p)"
         },
         {
           "flag": "-i {{KEY_FILE}}",
@@ -544,11 +546,23 @@
         },
         {
           "flag": "-r",
-          "desc": "get/put 시 디렉토리 재귀 전송"
+          "desc": "이후 get/put 을 디렉토리째 재귀 전송"
+        },
+        {
+          "flag": "-p",
+          "desc": "파일 권한·수정 시간을 유지해서 전송"
+        },
+        {
+          "flag": "-a",
+          "desc": "중단된 전송을 이어서 받기"
+        },
+        {
+          "flag": "-C",
+          "desc": "압축 전송 (느린 회선에서 텍스트 파일에 유리)"
         },
         {
           "flag": "-J {{USER}}@{{JUMP_HOST}}",
-          "desc": "점프 호스트 경유"
+          "desc": "점프 호스트(배스천) 경유 접속"
         },
         {
           "flag": "-l {{KBITS}}",
@@ -556,51 +570,293 @@
         },
         {
           "flag": "-o {{OPTION}}={{VALUE}}",
-          "desc": "ssh 설정 옵션 전달"
+          "desc": "ssh 설정 옵션 전달 (예: -o StrictHostKeyChecking=no)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "파일 전송",
+          "type": "interactive",
+          "prompt": "sftp>",
+          "note": "get 은 서버 → 내 PC, put 은 내 PC → 서버. 받을 위치를 생략하면 현재 디렉토리(get 은 lpwd, put 은 pwd)에 같은 이름으로 저장됩니다.",
+          "items": [
+            {
+              "cmd": "get {{REMOTE_FILE}} [{{LOCAL_PATH}}]",
+              "desc": "다운로드 (서버 → 내 PC)",
+              "side": "download"
+            },
+            {
+              "cmd": "get *.log",
+              "desc": "와일드카드로 여러 파일 한 번에 다운로드 (mget 도 같음)",
+              "side": "download"
+            },
+            {
+              "cmd": "get -r {{REMOTE_DIR}}",
+              "desc": "디렉토리째 다운로드",
+              "side": "download"
+            },
+            {
+              "cmd": "put {{LOCAL_FILE}} [{{REMOTE_PATH}}]",
+              "desc": "업로드 (내 PC → 서버)",
+              "side": "upload"
+            },
+            {
+              "cmd": "put *.tar.gz",
+              "desc": "와일드카드로 여러 파일 업로드 (mput 도 같음)",
+              "side": "upload"
+            },
+            {
+              "cmd": "put -r {{LOCAL_DIR}}",
+              "desc": "디렉토리째 업로드",
+              "side": "upload"
+            },
+            {
+              "cmd": "reget {{REMOTE_FILE}}",
+              "desc": "끊긴 다운로드 이어받기 (get -a 와 같음)",
+              "side": "download"
+            },
+            {
+              "cmd": "reput {{LOCAL_FILE}}",
+              "desc": "끊긴 업로드 이어올리기 (put -a 와 같음)",
+              "side": "upload"
+            },
+            {
+              "cmd": "get -p / put -p",
+              "desc": "권한·수정 시간을 유지해서 전송",
+              "side": "both"
+            },
+            {
+              "cmd": "progress",
+              "desc": "전송 진행률 표시 켜기/끄기",
+              "side": "both"
+            }
+          ]
+        },
+        {
+          "title": "위치 이동·목록",
+          "type": "interactive",
+          "prompt": "sftp>",
+          "columns": [
+            "서버 쪽",
+            "내 PC 쪽"
+          ],
+          "note": "같은 일을 하는 명령이 서버 쪽과 내 PC 쪽에 하나씩 있습니다. 내 PC 쪽 명령은 앞에 l(local)이 붙습니다.",
+          "items": [
+            {
+              "desc": "현재 디렉토리 확인",
+              "left": "pwd",
+              "right": "lpwd",
+              "note": "get 으로 받은 파일은 lpwd 위치에 저장"
+            },
+            {
+              "desc": "디렉토리 이동",
+              "left": "cd {{REMOTE_DIR}}",
+              "right": "lcd {{LOCAL_DIR}}"
+            },
+            {
+              "desc": "파일 목록 (-l 상세, -h 크기 읽기 쉽게, -t 시간순)",
+              "left": "ls -lh",
+              "right": "lls -lh"
+            },
+            {
+              "desc": "디렉토리 만들기",
+              "left": "mkdir {{REMOTE_DIR}}",
+              "right": "lmkdir {{LOCAL_DIR}}"
+            }
+          ]
+        },
+        {
+          "title": "서버 파일 관리",
+          "type": "interactive",
+          "prompt": "sftp>",
+          "items": [
+            {
+              "cmd": "rename {{OLD_NAME}} {{NEW_NAME}}",
+              "desc": "서버 파일 이름 변경·이동",
+              "side": "remote"
+            },
+            {
+              "cmd": "rm {{REMOTE_FILE}}",
+              "desc": "서버 파일 삭제 (확인 없이 바로 삭제)",
+              "side": "remote"
+            },
+            {
+              "cmd": "rmdir {{REMOTE_DIR}}",
+              "desc": "서버의 빈 디렉토리 삭제",
+              "side": "remote"
+            },
+            {
+              "cmd": "chmod {{MODE}} {{REMOTE_FILE}}",
+              "desc": "서버 파일 권한 변경 (숫자 형식만, 예: 644)",
+              "side": "remote"
+            },
+            {
+              "cmd": "ln -s {{TARGET}} {{LINK_NAME}}",
+              "desc": "서버에 심볼릭 링크 생성",
+              "side": "remote"
+            },
+            {
+              "cmd": "df -h",
+              "desc": "서버의 남은 디스크 용량 (업로드 전 확인)",
+              "side": "remote"
+            }
+          ]
+        },
+        {
+          "title": "기타",
+          "type": "interactive",
+          "prompt": "sftp>",
+          "items": [
+            {
+              "cmd": "!{{LOCAL_COMMAND}}",
+              "desc": "sftp 를 나가지 않고 내 PC에서 명령 실행 (예: !ls -l)",
+              "side": "local"
+            },
+            {
+              "cmd": "!",
+              "desc": "내 PC 셸로 잠시 나가기 (exit 로 복귀)",
+              "side": "local"
+            },
+            {
+              "cmd": "help (또는 ?)",
+              "desc": "사용할 수 있는 명령 목록",
+              "side": "both"
+            },
+            {
+              "cmd": "bye (또는 exit, quit)",
+              "desc": "접속 종료",
+              "side": "both"
+            }
+          ]
         }
       ],
       "examples": [
         {
-          "title": "대화형으로 접속해 파일 주고받기",
-          "command": "sftp {{USER}}@{{HOST}}\nsftp> ls -l\nsftp> cd /var/log\nsftp> get messages\nsftp> lcd /tmp\nsftp> put {{FILE}}\nsftp> bye",
-          "note": "lcd·lls 는 로컬 쪽 명령. get -r / put -r 로 디렉토리 전송"
+          "title": "서버 로그 여러 개를 내 PC로 받기",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "sftp {{USER}}@{{HOST}}",
+              "desc": "서버에 접속"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "cd /var/log/{{APP}}",
+              "desc": "서버에서 받을 파일이 있는 곳으로 이동"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "ls -lht",
+              "desc": "최근 파일부터 크기와 함께 확인"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "lcd /tmp/logs",
+              "desc": "내 PC에서 저장할 위치로 이동 (lpwd 로 확인)"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "get *.log",
+              "desc": "로그 파일 전부 다운로드"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "bye",
+              "desc": "종료"
+            }
+          ]
         },
         {
-          "title": "배치로 파일 업로드 (표준입력)",
-          "command": "echo \"put {{FILE}} /upload/\" | sftp -b - {{USER}}@{{HOST}}"
+          "title": "배포 폴더를 서버에 통째로 올리기",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "sftp {{USER}}@{{HOST}}:/opt/{{APP}}",
+              "desc": "접속하면서 서버 디렉토리로 바로 이동"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "df -h .",
+              "desc": "서버 남은 용량 확인"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "lcd ~/build",
+              "desc": "내 PC에서 올릴 폴더가 있는 곳으로 이동"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "put -r {{LOCAL_DIR}}",
+              "desc": "폴더째 업로드"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "ls -l {{LOCAL_DIR}}",
+              "desc": "올라간 결과 확인"
+            }
+          ]
+        },
+        {
+          "title": "큰 파일 전송이 끊겼을 때 이어받기",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "sftp {{USER}}@{{HOST}}",
+              "desc": "다시 접속"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "lcd {{LOCAL_DIR}}",
+              "desc": "받다 만 파일이 있는 내 PC 위치로 이동"
+            },
+            {
+              "prompt": "sftp>",
+              "cmd": "reget {{REMOTE_FILE}}",
+              "desc": "받은 부분 다음부터 이어서 다운로드 (업로드는 reput)"
+            }
+          ]
+        },
+        {
+          "title": "접속하지 않고 파일 하나만 바로 받기",
+          "command": "sftp {{USER}}@{{HOST}}:{{REMOTE_FILE}} .",
+          "note": "다운로드가 끝나면 바로 종료됩니다. 업로드를 한 줄로 할 때는 scp 가 편합니다."
+        },
+        {
+          "title": "배치 파일로 업로드 자동화",
+          "command": "cat > upload.txt <<'EOF'\ncd /upload\nput {{FILE}}\n-rm old_{{FILE}}\nEOF\nsftp -b upload.txt {{USER}}@{{HOST}}",
+          "note": "배치 모드에서는 명령이 하나라도 실패하면 중단됩니다. 실패해도 계속하려면 명령 앞에 - 를 붙입니다."
         }
       ],
       "cautions": [
-        "-b 배치 모드에서는 비밀번호 입력이 안 되므로 키 인증이 필요합니다.",
-        "put/get 은 같은 이름 파일을 확인 없이 덮어씁니다."
+        "get·put 은 같은 이름의 파일이 있으면 확인 없이 덮어씁니다.",
+        "get 으로 받은 파일은 lpwd 위치에 저장됩니다. 저장 위치를 모르겠으면 먼저 lpwd 로 확인하세요.",
+        "파일 이름에 공백이 있으면 \"my file.txt\" 처럼 따옴표로 감싸야 합니다.",
+        "-b 배치 모드에서는 비밀번호를 입력할 수 없으므로 SSH 키 인증이 필요합니다."
       ],
-      "install": {
-        "rhel": {
-          "package": "openssh-clients",
-          "preinstalled": true
-        },
-        "debian": {
-          "package": "openssh-client",
-          "preinstalled": true
-        }
-      },
       "platformNotes": {
-        "debian": "Windows 내장 OpenSSH 에도 같은 sftp 가 있습니다."
+        "rhel": "openssh-clients 패키지에 포함되어 있습니다.",
+        "debian": "openssh-client 패키지에 포함되어 있습니다. Windows 10/11·Server 2019 이상도 OpenSSH 클라이언트에 sftp 가 들어 있어 명령이 같습니다 (lcd 에는 C:\\경로 사용)."
       },
-      "help": "man sftp (접속 후 help 또는 ?)",
+      "help": "man sftp · 접속 후 help",
       "keywords": [
         "파일 전송",
-        "SFTP",
-        "대화형 전송",
         "업로드",
         "다운로드",
-        "sftp",
-        "FTP 대체"
+        "get",
+        "put",
+        "mget",
+        "mput",
+        "lcd",
+        "이어받기",
+        "reget",
+        "SFTP",
+        "SSH 파일 전송"
       ],
       "related": [
         "scp",
         "rsync",
-        "ssh"
+        "ssh",
+        "ssh-keygen"
       ]
     },
     {
