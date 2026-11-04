@@ -48,7 +48,8 @@ RHEL·Rocky, Ubuntu·Debian, Windows 명령어의 사용법을 JSON 으로 관�
 | `description` | ✔ | 상세 화면 첫 문단 |
 | `syntax` | ✔ | 문법 (여러 형태 가능) |
 | `options` | ✔ | `{flag, desc}` 목록 |
-| `examples` | ✔ | `{title, command, output?, note?, platforms?}` 목록. 여러 줄은 `\n` |
+| `examples` | ✔ | `{title, command \| steps, output?, note?, platforms?}` 목록. 여러 줄은 `\n`. `steps` 는 `{prompt?, cmd, desc}` 단계 목록 (작업 흐름형 예시) |
+| `commandGroups` |  | 실행 플래그가 아닌 사용법 묶음. `{title, type, prompt?, note?, columns?, items}`. type: `interactive` 대화형 내부 명령, `subcommand` 서브 명령, `keys` 단축키, `directive` 설정 항목, `action` GUI 작업. 항목은 `{cmd, desc, side?, note?}`, `columns` 를 주면 비교형 `{desc, left, right}` |
 | `cautions` | ✔ | 주의사항 목록 |
 | `install` |  | 플랫폼별 `{package, preinstalled, note}`. 최소 설치 기준 기본 설치 여부 |
 | `platformNotes` |  | 플랫폼별 차이 설명 |
