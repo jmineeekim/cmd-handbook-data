@@ -5,15 +5,38 @@
   "description": "commands/<category>.json 한 파일 = 한 카테고리의 명령어 목록",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "category", "commands"],
+  "required": [
+    "schemaVersion",
+    "category",
+    "commands"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
-    "category": { "type": "string", "pattern": "^[a-z]+$" },
-    "commands": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/command" } }
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "category": {
+      "type": "string",
+      "pattern": "^[a-z]+$"
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/command"
+      }
+    }
   },
   "$defs": {
-    "platform": { "enum": ["rhel", "debian", "windows"] },
+    "platform": {
+      "enum": [
+        "rhel",
+        "debian",
+        "windows"
+      ]
+    },
     "placeholderText": {
       "type": "string",
       "description": "바꿔 쓸 값은 {{UPPER_SNAKE}} 로 표기한다. 예: {{IP}}, {{PORT}}, {{SERVICE}}"
@@ -21,41 +44,147 @@
     "install": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["preinstalled"],
+      "required": [
+        "preinstalled"
+      ],
       "properties": {
-        "package": { "type": "string", "description": "패키지명 또는 Windows 기능명" },
-        "preinstalled": { "type": "boolean", "description": "최소 설치(minimal/server) 기준 기본 설치 여부" },
-        "note": { "type": "string" }
+        "package": {
+          "type": "string",
+          "description": "패키지명 또는 Windows 기능명"
+        },
+        "preinstalled": {
+          "type": "boolean",
+          "description": "최소 설치(minimal/server) 기준 기본 설치 여부"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "command": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "kind", "category", "task", "platforms", "level", "risk", "requiresAdmin", "summary", "description", "syntax", "options", "examples", "cautions", "keywords", "related"],
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "category",
+        "task",
+        "platforms",
+        "level",
+        "risk",
+        "requiresAdmin",
+        "summary",
+        "description",
+        "syntax",
+        "options",
+        "examples",
+        "cautions",
+        "keywords",
+        "related"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "전체 데이터에서 유일. Windows 전용 동명 명령은 win- 접두어" },
-        "name": { "type": "string", "minLength": 1, "description": "화면에 표시할 이름 (예: firewall-cmd, Get-Process, /etc/fstab, services.msc)" },
-        "aliases": { "type": "array", "items": { "type": "string" }, "description": "다른 이름·축약형 (예: gci, ls → Get-ChildItem)" },
-        "kind": { "enum": ["command", "file", "gui"], "description": "command=명령어, file=설정·로그 파일 경로, gui=GUI 관리도구(.msc 등)" },
-        "shell": { "enum": ["sh", "cmd", "powershell"], "description": "kind=command 일 때 필수" },
-        "category": { "type": "string" },
-        "task": { "type": "string", "pattern": "^[a-z]+\\.[a-z0-9-]+$", "description": "meta/categories.json 의 task id" },
-        "platforms": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/platform" } },
-        "level": { "enum": ["basic", "frequent", "critical"] },
-        "risk": { "enum": ["safe", "caution", "destructive"] },
-        "requiresAdmin": { "type": "boolean", "description": "root/sudo 또는 Windows 관리자 권한이 필요한 주요 사용법이 있으면 true" },
-        "summary": { "type": "string", "minLength": 4, "maxLength": 60, "description": "목록에 보이는 한 줄 설명" },
-        "description": { "type": "string", "minLength": 10, "description": "상세 화면 첫 문단. 2~4문장" },
-        "syntax": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/placeholderText" } },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "전체 데이터에서 유일. Windows 전용 동명 명령은 win- 접두어"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "화면에 표시할 이름 (예: firewall-cmd, Get-Process, /etc/fstab, services.msc)"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "다른 이름·축약형 (예: gci, ls → Get-ChildItem)"
+        },
+        "kind": {
+          "enum": [
+            "command",
+            "file",
+            "gui"
+          ],
+          "description": "command=명령어, file=설정·로그 파일 경로, gui=GUI 관리도구(.msc 등)"
+        },
+        "shell": {
+          "enum": [
+            "sh",
+            "cmd",
+            "powershell"
+          ],
+          "description": "kind=command 일 때 필수"
+        },
+        "category": {
+          "type": "string"
+        },
+        "task": {
+          "type": "string",
+          "pattern": "^[a-z]+\\.[a-z0-9-]+$",
+          "description": "meta/categories.json 의 task id"
+        },
+        "platforms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/platform"
+          }
+        },
+        "level": {
+          "enum": [
+            "basic",
+            "frequent",
+            "critical"
+          ]
+        },
+        "risk": {
+          "enum": [
+            "safe",
+            "caution",
+            "destructive"
+          ]
+        },
+        "requiresAdmin": {
+          "type": "boolean",
+          "description": "root/sudo 또는 Windows 관리자 권한이 필요한 주요 사용법이 있으면 true"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 60,
+          "description": "목록에 보이는 한 줄 설명"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "description": "상세 화면 첫 문단. 2~4문장"
+        },
+        "syntax": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/placeholderText"
+          }
+        },
         "options": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["flag", "desc"],
+            "required": [
+              "flag",
+              "desc"
+            ],
             "properties": {
-              "flag": { "$ref": "#/$defs/placeholderText" },
-              "desc": { "type": "string" }
+              "flag": {
+                "$ref": "#/$defs/placeholderText"
+              },
+              "desc": {
+                "type": "string"
+              }
             }
           }
         },
@@ -65,41 +194,243 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["title", "command"],
+            "required": [
+              "title"
+            ],
             "properties": {
-              "title": { "type": "string", "description": "무엇을 하는 예시인지 (한 줄)" },
-              "command": { "$ref": "#/$defs/placeholderText", "description": "여러 줄이면 \\n 으로 구분. 줄마다 하나의 실행 명령" },
-              "output": { "type": "string", "description": "출력 예시 (선택)" },
-              "note": { "type": "string" },
-              "platforms": { "type": "array", "items": { "$ref": "#/$defs/platform" }, "description": "이 예시가 특정 플랫폼에만 해당할 때" }
-            }
+              "title": {
+                "type": "string",
+                "description": "무엇을 하는 예시인지 (한 줄)"
+              },
+              "command": {
+                "$ref": "#/$defs/placeholderText",
+                "description": "여러 줄이면 \\n 으로 구분. 줄마다 하나의 실행 명령"
+              },
+              "output": {
+                "type": "string",
+                "description": "출력 예시 (선택)"
+              },
+              "note": {
+                "type": "string"
+              },
+              "platforms": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/platform"
+                },
+                "description": "이 예시가 특정 플랫폼에만 해당할 때"
+              },
+              "steps": {
+                "type": "array",
+                "minItems": 2,
+                "description": "여러 단계로 진행하는 작업 흐름. 단계마다 명령과 설명",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "cmd",
+                    "desc"
+                  ],
+                  "properties": {
+                    "cmd": {
+                      "$ref": "#/$defs/placeholderText"
+                    },
+                    "desc": {
+                      "type": "string"
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "description": "이 단계를 입력하는 곳 (예: sftp>, $)"
+                    }
+                  }
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "command"
+                ]
+              },
+              {
+                "required": [
+                  "steps"
+                ]
+              }
+            ]
           }
         },
-        "cautions": { "type": "array", "items": { "type": "string" } },
+        "cautions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "install": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "rhel": { "$ref": "#/$defs/install" },
-            "debian": { "$ref": "#/$defs/install" },
-            "windows": { "$ref": "#/$defs/install" }
+            "rhel": {
+              "$ref": "#/$defs/install"
+            },
+            "debian": {
+              "$ref": "#/$defs/install"
+            },
+            "windows": {
+              "$ref": "#/$defs/install"
+            }
           }
         },
         "platformNotes": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "rhel": { "type": "string" },
-            "debian": { "type": "string" },
-            "windows": { "type": "string" }
+            "rhel": {
+              "type": "string"
+            },
+            "debian": {
+              "type": "string"
+            },
+            "windows": {
+              "type": "string"
+            }
           }
         },
-        "help": { "type": "string", "description": "내장 도움말 보는 법 (예: man ss, Get-Help Get-Process -Full, taskkill /?)" },
-        "keywords": { "type": "array", "minItems": 2, "items": { "type": "string" }, "description": "검색어 (한글 기능명, 영문 키워드)" },
-        "related": { "type": "array", "items": { "type": "string" }, "description": "관련 명령어 id. 같은 task 의 다른 OS 명령은 앱이 자동으로 묶으므로 넣지 않아도 됨" }
+        "help": {
+          "type": "string",
+          "description": "내장 도움말 보는 법 (예: man ss, Get-Help Get-Process -Full, taskkill /?)"
+        },
+        "keywords": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string"
+          },
+          "description": "검색어 (한글 기능명, 영문 키워드)"
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "관련 명령어 id. 같은 task 의 다른 OS 명령은 앱이 자동으로 묶으므로 넣지 않아도 됨"
+        },
+        "commandGroups": {
+          "type": "array",
+          "description": "실행 플래그(options)가 아닌 사용법 묶음: 대화형 내부 명령, 서브 명령, 단축키, 설정 항목, GUI 작업",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "type",
+              "items"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "interactive",
+                  "subcommand",
+                  "keys",
+                  "directive",
+                  "action"
+                ]
+              },
+              "prompt": {
+                "type": "string",
+                "description": "interactive 일 때 프롬프트 표시 (예: sftp>)"
+              },
+              "note": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/groupItem"
+                }
+              },
+              "columns": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "string"
+                },
+                "description": "비교형 묶음의 두 칸 제목 (예: 서버 쪽, 내 PC 쪽). 지정하면 항목은 left/right 를 사용"
+              }
+            }
+          }
+        }
       },
       "allOf": [
-        { "if": { "properties": { "kind": { "const": "command" } } }, "then": { "required": ["shell"] } }
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "command"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "shell"
+            ]
+          }
+        }
+      ]
+    },
+    "groupItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "desc"
+      ],
+      "properties": {
+        "cmd": {
+          "$ref": "#/$defs/placeholderText",
+          "description": "명령·키·설정 항목 (플레이스홀더 허용)"
+        },
+        "desc": {
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "remote",
+            "local",
+            "both",
+            "download",
+            "upload"
+          ],
+          "description": "remote=서버 쪽, local=내 PC 쪽, both=공통, download=서버→내 PC, upload=내 PC→서버"
+        },
+        "note": {
+          "type": "string"
+        },
+        "left": {
+          "$ref": "#/$defs/placeholderText",
+          "description": "비교형(columns 가 있는 묶음)에서 왼쪽 칸 명령"
+        },
+        "right": {
+          "$ref": "#/$defs/placeholderText",
+          "description": "비교형에서 오른쪽 칸 명령"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "cmd"
+          ]
+        },
+        {
+          "required": [
+            "left",
+            "right"
+          ]
+        }
       ]
     }
   }
