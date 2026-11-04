@@ -41,7 +41,15 @@ def text_fields(cmd):
     for o in cmd.get("options", []):
         yield "options.flag", o["flag"]
     for e in cmd.get("examples", []):
-        yield "examples.command", e["command"]
+        if "command" in e:
+            yield "examples.command", e["command"]
+        for s in e.get("steps", []):
+            yield "examples.steps", s["cmd"]
+    for g in cmd.get("commandGroups", []):
+        for it in g["items"]:
+            for k in ("cmd", "left", "right"):
+                if k in it:
+                    yield "commandGroups", it[k]
 
 
 def main(argv):
