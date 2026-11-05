@@ -83,7 +83,7 @@ def main(argv):
                 loc = "/".join(str(x) for x in err.path)
                 errors.append(f"{rel}: schema [{loc}] {err.message[:200]}")
         cat = data.get("category")
-        if cat != fp.stem:
+        if cat != fp.stem.split(".")[0]:
             errors.append(f"{rel}: category '{cat}' 가 파일명과 다름")
         if cat not in cat_ids:
             errors.append(f"{rel}: 알 수 없는 category '{cat}'")
@@ -109,10 +109,15 @@ def main(argv):
                     warns.append(f"{where}: shell=sh 인데 windows 포함 (Windows 에서도 같은 문법인지 확인)")
             elif shell is not None:
                 warns.append(f"{where}: kind={kind} 인데 shell 지정됨")
-            for key in ("install", "platformNotes"):
+            for key in ("install", "platformNotes", "versions"):
                 extra = set(c.get(key, {}) or {}) - plats
                 if extra:
                     errors.append(f"{where}: {key} 에 platforms 밖의 키 {sorted(extra)}")
+            for g in c.get("commandGroups", []):
+                for it in g["items"]:
+                    extra = set(it.get("platforms", []) or []) - plats
+                    if extra:
+                        errors.append(f"{where}: commandGroups 항목 platforms 밖의 값 {sorted(extra)}")
             for i, e in enumerate(c.get("examples", [])):
                 extra = set(e.get("platforms", []) or []) - plats
                 if extra:
