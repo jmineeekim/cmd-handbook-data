@@ -1,0 +1,1782 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "disk",
+  "commands": [
+    {
+      "id": "hpux-pvcreate",
+      "name": "pvcreate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "디스크를 LVM 물리 볼륨(PV)으로 초기화 (raw 장치 사용)",
+      "description": "새 디스크를 HP-UX LVM 에서 쓸 수 있도록 PV 헤더를 기록합니다. Linux 와 달리 문자(raw) 장치 파일 /dev/rdisk/diskN (레거시 /dev/rdsk/cXtYdZ)을 인자로 줍니다. 이후 vgcreate·vgextend 에는 블록 장치 /dev/disk/diskN 을 씁니다.",
+      "syntax": [
+        "pvcreate /dev/rdisk/{{DISK}}",
+        "pvcreate -f /dev/rdisk/{{DISK}}",
+        "pvcreate -B /dev/rdisk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "기존 LVM·파일시스템 정보가 있어도 강제로 초기화 (기존 데이터 파괴)"
+        },
+        {
+          "flag": "-B",
+          "desc": "부트 가능한 PV 로 만듦 (루트 미러용. Itanium 은 idisk 로 파티션을 먼저 만들고 /dev/rdisk/{{DISK}}_p2 에 적용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크가 비어 있는지 확인한 뒤 PV 생성",
+          "command": "ioscan -fnNC disk\ndiskinfo /dev/rdisk/{{DISK}}\nstrings /etc/lvmtab /etc/lvmtab_p | grep {{DISK}}\npvcreate /dev/rdisk/{{DISK}}",
+          "note": "lvmtab(1.0)·lvmtab_p(2.x)에 이미 있는 디스크면 다른 VG 가 쓰는 중입니다. 클러스터·공유 스토리지에서는 다른 노드 VG 소속인지도 확인하세요."
+        }
+      ],
+      "cautions": [
+        "다른 서버(클러스터 노드)의 VG 에 속한 공유 LUN 에 pvcreate -f 를 하면 그 VG 가 깨집니다. 스토리지 담당자와 LUN ID·WWID(scsimgr get_info)를 반드시 대조하세요.",
+        "블록 장치(/dev/disk/…)가 아닌 문자 장치(/dev/rdisk/…)를 지정합니다."
+      ],
+      "platformNotes": {
+        "hpux": "11i v3 는 영구(agile) DSF /dev/disk/diskN 을 권장합니다. 레거시 /dev/dsk/cXtYdZ 와의 대응은 ioscan -m dsf 로 확인합니다."
+      },
+      "help": "man pvcreate",
+      "keywords": [
+        "PV 생성",
+        "디스크 초기화",
+        "물리 볼륨",
+        "pvcreate",
+        "rdisk",
+        "HP-UX LVM"
+      ],
+      "related": [
+        "hpux-vgextend",
+        "hpux-vgcreate",
+        "hpux-ioscan",
+        "hpux-insf",
+        "hpux-pvdisplay"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-pvdisplay",
+      "name": "pvdisplay",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "PV 상태·소속 VG·PE 사용량 확인",
+      "description": "물리 볼륨의 소속 VG, PE 크기, 전체·여유 PE, 상태(available/unavailable)를 보여 줍니다. -v 를 주면 이 PV 위에 어떤 LV 의 PE 가 놓여 있는지까지 나옵니다. 디스크 교체·VG 축소 전에 확인용으로 씁니다.",
+      "syntax": [
+        "pvdisplay /dev/disk/{{DISK}}",
+        "pvdisplay -v /dev/disk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "PE 단위 배치와 이 PV 를 쓰는 LV 목록까지 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "PV 의 소속 VG 와 여유 PE 확인",
+          "command": "pvdisplay /dev/disk/{{DISK}}"
+        },
+        {
+          "title": "이 디스크에 어떤 LV 가 올라가 있는지 확인",
+          "command": "pvdisplay -v /dev/disk/{{DISK}} | more"
+        }
+      ],
+      "cautions": [
+        "레거시 장치명과 영구 장치명이 섞여 있는 VG 는 vgdisplay -v 의 PV Name 에 나온 이름을 그대로 써야 결과가 나옵니다."
+      ],
+      "help": "man pvdisplay",
+      "keywords": [
+        "PV 확인",
+        "물리 볼륨",
+        "pvdisplay",
+        "Free PE",
+        "디스크 소속 VG"
+      ],
+      "related": [
+        "hpux-vgdisplay",
+        "hpux-lvdisplay",
+        "hpux-pvcreate",
+        "hpux-vgreduce"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgcreate",
+      "name": "vgcreate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "볼륨 그룹(VG) 생성 (1.0 은 group 파일 필요)",
+      "description": "PV 를 묶어 새 VG 를 만듭니다. VG 버전 1.0 은 전통적으로 /dev/{{VG}} 디렉토리와 group 장치 파일(major 64)을 mknod 로 먼저 만들어야 하고, 최대 PV·LV·PE 수가 생성 때 고정됩니다. 11i v3 의 버전 2.x(-V 2.0 이상)는 -S 로 최대 VG 크기를 지정하며 group 파일을 자동으로 만듭니다.",
+      "syntax": [
+        "vgcreate [-s {{PE_SIZE_MB}}] [-e {{MAX_PE}}] [-p {{MAX_PV}}] /dev/{{VG}} /dev/disk/{{DISK}}",
+        "vgcreate -V 2.0 -s {{PE_SIZE_MB}} -S {{MAX_VG_SIZE}} /dev/{{VG}} /dev/disk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-s {{PE_SIZE_MB}}",
+          "desc": "PE 크기(MB). 기본 4MB. 나중에 바꿀 수 없음"
+        },
+        {
+          "flag": "-e {{MAX_PE}}",
+          "desc": "PV 당 최대 PE 수 (1.0 전용, 큰 디스크를 나중에 추가할 계획이면 넉넉하게)"
+        },
+        {
+          "flag": "-p {{MAX_PV}}",
+          "desc": "VG 최대 PV 수 (1.0 전용)"
+        },
+        {
+          "flag": "-l {{MAX_LV}}",
+          "desc": "VG 최대 LV 수 (1.0 전용)"
+        },
+        {
+          "flag": "-V {{VERSION}}",
+          "desc": "VG 버전 (1.0, 2.0, 2.1, 2.2 … 사용 가능한 값은 OS 업데이트 수준에 따라 다름)"
+        },
+        {
+          "flag": "-S {{MAX_VG_SIZE}}",
+          "desc": "최대 VG 크기 (2.x 필수, 예: 2t, 500g)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "버전 1.0 VG 생성 (group 파일 직접 생성)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ls -l /dev/*/group",
+              "desc": "기존 VG 의 minor 번호(0x010000 등) 확인 — 겹치지 않는 번호 선택"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mkdir /dev/{{VG}}",
+              "desc": "VG 디렉토리 생성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mknod /dev/{{VG}}/group c 64 0x{{NN}}0000",
+              "desc": "group 장치 파일 생성 (major 64, NN 은 VG 마다 고유)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgcreate -s 32 -e 65535 /dev/{{VG}} /dev/disk/{{DISK}}",
+              "desc": "PE 32MB 로 VG 생성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgdisplay -v /dev/{{VG}}",
+              "desc": "결과 확인"
+            }
+          ]
+        },
+        {
+          "title": "버전 2.x VG 생성",
+          "command": "vgcreate -V 2.0 -s 32 -S 4t /dev/{{VG}} /dev/disk/{{DISK}}\nvgdisplay /dev/{{VG}}",
+          "version": "HP-UX 11i v3 0803 이상"
+        }
+      ],
+      "cautions": [
+        "1.0 VG 의 -e·-p 값은 나중에 늘리기 어렵습니다(11i v3 최신 업데이트의 vgmodify 로 일부 가능). 확장 계획을 고려해 정하세요.",
+        "Serviceguard 공유 VG 는 모든 노드에서 같은 VG 이름·minor 번호를 쓰는 것이 관례입니다.",
+        "생성 후 vgcfgbackup 이 자동으로 /etc/lvmconf/{{VG}}.conf 에 저장되는지 확인하세요."
+      ],
+      "help": "man vgcreate · man lvm",
+      "keywords": [
+        "VG 생성",
+        "볼륨 그룹",
+        "vgcreate",
+        "mknod group",
+        "VG 버전 2.0",
+        "PE 크기"
+      ],
+      "related": [
+        "hpux-pvcreate",
+        "hpux-vgextend",
+        "hpux-vgdisplay",
+        "hpux-lvcreate",
+        "hpux-vgcfgbackup"
+      ],
+      "review": {
+        "status": "ai-draft",
+        "note": "최근 11i v3 업데이트에서 1.0 VG 의 group 파일 자동 생성 여부는 현장 확인 필요"
+      }
+    },
+    {
+      "id": "hpux-vgextend",
+      "name": "vgextend",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 에 새 PV(디스크) 추가",
+      "description": "pvcreate 로 초기화한 디스크를 기존 VG 에 추가해 여유 PE 를 늘립니다. 블록 장치 /dev/disk/diskN 을 지정합니다. 1.0 VG 는 생성 때 정한 최대 PV 수(Max PV)를 넘을 수 없습니다.",
+      "syntax": [
+        "vgextend /dev/{{VG}} /dev/disk/{{DISK}}"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "새 디스크 추가 → PV 생성 → VG 확장",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ioscan -fnNC disk",
+              "desc": "새 LUN 이 CLAIMED 로 보이는지 확인 (안 보이면 스토리지 매핑 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "insf -e -C disk",
+              "desc": "새 디스크의 장치 파일 생성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ioscan -m dsf",
+              "desc": "영구 DSF(/dev/rdisk/diskN)와 레거시 장치명 대응 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "diskinfo /dev/rdisk/{{DISK}}",
+              "desc": "용량으로 요청한 LUN 이 맞는지 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "pvcreate /dev/rdisk/{{DISK}}",
+              "desc": "PV 초기화 (raw 장치)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgextend /dev/{{VG}} /dev/disk/{{DISK}}",
+              "desc": "VG 에 추가 (블록 장치)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgdisplay -v /dev/{{VG}} | grep -E 'Free PE|PV Name'",
+              "desc": "여유 PE 증가와 PV 목록 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "Serviceguard 공유 VG 라면 다른 노드에서도 vgexport -p -s -m 맵 파일로 VG 정보를 갱신(vgimport)해야 페일오버 때 문제가 없습니다.",
+        "1.0 VG 에서 'Max PV' 에 도달했거나 새 디스크가 'Max PE per PV' 보다 크면 추가가 실패하거나 일부만 쓰입니다."
+      ],
+      "help": "man vgextend",
+      "keywords": [
+        "VG 확장",
+        "디스크 추가",
+        "vgextend",
+        "PV 추가",
+        "HP-UX LVM"
+      ],
+      "related": [
+        "hpux-pvcreate",
+        "hpux-ioscan",
+        "hpux-insf",
+        "hpux-vgdisplay",
+        "hpux-lvextend",
+        "hpux-vgexport"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgreduce",
+      "name": "vgreduce",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 에서 PV(디스크) 제거",
+      "description": "VG 에서 디스크를 빼냅니다. 제거할 PV 에 할당된 PE 가 하나도 없어야 합니다(pvdisplay 의 Allocated PE 0). LV 가 남아 있다면 pvmove 로 다른 PV 로 옮기거나 미러를 줄인 뒤 실행합니다.",
+      "syntax": [
+        "vgreduce /dev/{{VG}} /dev/disk/{{DISK}}"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "디스크를 비운 뒤 VG 에서 제거",
+          "command": "pvdisplay -v /dev/disk/{{DISK}} | more\npvmove /dev/disk/{{DISK}} /dev/disk/{{TARGET_DISK}}\nvgreduce /dev/{{VG}} /dev/disk/{{DISK}}\nvgdisplay -v /dev/{{VG}}",
+          "note": "pvmove 는 오래 걸리고 I/O 부하가 큽니다. 업무 시간 외에 하세요."
+        }
+      ],
+      "cautions": [
+        "VG 의 마지막 PV 는 vgreduce 로 뺄 수 없습니다(VG 삭제는 vgremove).",
+        "제거 후 스토리지에서 LUN 을 회수하기 전에 rmsf 로 장치 파일을 정리하세요."
+      ],
+      "help": "man vgreduce",
+      "keywords": [
+        "VG 축소",
+        "디스크 제거",
+        "vgreduce",
+        "pvmove",
+        "PV 제거"
+      ],
+      "related": [
+        "hpux-pvdisplay",
+        "hpux-vgdisplay",
+        "hpux-rmsf",
+        "hpux-lvreduce"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgdisplay",
+      "name": "vgdisplay",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "VG 정보·여유 PE 확인 (확장 전 필수)",
+      "description": "VG 의 상태, PE 크기, 전체·할당·여유 PE, 소속 LV·PV 를 보여 줍니다. 여유 용량(MB)은 'Free PE × PE Size' 로 계산합니다. 인자를 생략하면 활성화된 모든 VG 를 보여 줍니다.",
+      "syntax": [
+        "vgdisplay [-v] [/dev/{{VG}}]"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "VG 에 속한 LV 목록과 PV 목록까지 표시"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 출력 항목",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "VG Status",
+              "desc": "available 이면 활성, 아니면 vgchange -a y 필요 (클러스터 VG 는 available, exclusive 로 표시)"
+            },
+            {
+              "cmd": "PE Size (Mbytes)",
+              "desc": "PE 하나의 크기"
+            },
+            {
+              "cmd": "Total PE / Alloc PE / Free PE",
+              "desc": "전체·사용·여유 PE 수. 여유 용량 = Free PE × PE Size"
+            },
+            {
+              "cmd": "Cur PV / Act PV",
+              "desc": "등록된 PV 수와 실제 접근 가능한 PV 수. 다르면 디스크 장애·경로 문제"
+            },
+            {
+              "cmd": "Max PV / Max PE per PV",
+              "desc": "1.0 VG 의 한계값 (디스크 추가 계획 시 확인)"
+            },
+            {
+              "cmd": "VG Version",
+              "desc": "1.0 또는 2.x"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "VG 여유 공간 확인",
+          "command": "vgdisplay /dev/{{VG}} | grep -E 'PE Size|Free PE|VG Status'"
+        },
+        {
+          "title": "VG 의 LV·PV 전체 보기",
+          "command": "vgdisplay -v /dev/{{VG}} | more"
+        },
+        {
+          "title": "모든 VG 요약",
+          "command": "vgdisplay"
+        }
+      ],
+      "cautions": [
+        "Cur PV 와 Act PV 가 다르면 LV 확장 등 변경 작업을 멈추고 디스크·경로 상태(ioscan -P health)를 먼저 확인하세요."
+      ],
+      "help": "man vgdisplay",
+      "keywords": [
+        "VG 확인",
+        "여유 PE",
+        "Free PE",
+        "vgdisplay",
+        "볼륨 그룹 용량",
+        "HP-UX LVM"
+      ],
+      "related": [
+        "hpux-lvdisplay",
+        "hpux-pvdisplay",
+        "hpux-lvextend",
+        "hpux-bdf",
+        "hpux-vgextend"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgchange",
+      "name": "vgchange",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 활성화·비활성화, 클러스터 속성 설정",
+      "description": "VG 를 활성화(-a y)하거나 비활성화(-a n)합니다. Serviceguard 환경에서는 공유 VG 를 클러스터 VG 로 표시(-c y)하고, 패키지가 배타 모드(-a e)로 활성화합니다. VG 를 비활성화하려면 그 위의 파일시스템을 먼저 umount 해야 합니다.",
+      "syntax": [
+        "vgchange -a y|n /dev/{{VG}}",
+        "vgchange -a e /dev/{{VG}}",
+        "vgchange -c y|n /dev/{{VG}}"
+      ],
+      "options": [
+        {
+          "flag": "-a y",
+          "desc": "VG 활성화"
+        },
+        {
+          "flag": "-a n",
+          "desc": "VG 비활성화 (LV 를 쓰는 프로세스·마운트가 없어야 함)"
+        },
+        {
+          "flag": "-a e",
+          "desc": "배타 모드 활성화 (Serviceguard 클러스터 VG)"
+        },
+        {
+          "flag": "-a r",
+          "desc": "읽기 전용 활성화"
+        },
+        {
+          "flag": "-c y|n",
+          "desc": "클러스터 VG 표시 설정·해제 (클러스터가 실행 중이어야 함)"
+        },
+        {
+          "flag": "-q n",
+          "desc": "정족수(quorum) 무시하고 활성화 (디스크 일부 장애 시 응급용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "VG 비활성화 (마운트 해제 후)",
+          "command": "umount {{MOUNT_POINT}}\nvgchange -a n /dev/{{VG}}"
+        },
+        {
+          "title": "VG 활성화 후 마운트",
+          "command": "vgchange -a y /dev/{{VG}}\nmount {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "Serviceguard 패키지 VG 를 수동으로 vgchange -a y/e 하지 마세요. 두 노드에서 동시에 쓰면 데이터가 깨질 수 있습니다. 패키지 기동은 cmrunpkg 로 합니다.",
+        "-q n 은 미러 한쪽 디스크가 없는 상태에서 강제로 올릴 때만 쓰고 원인 해결 후 정상화하세요."
+      ],
+      "help": "man vgchange",
+      "keywords": [
+        "VG 활성화",
+        "VG 비활성화",
+        "vgchange",
+        "클러스터 VG",
+        "exclusive",
+        "quorum"
+      ],
+      "related": [
+        "hpux-vgdisplay",
+        "hpux-vgexport",
+        "hpux-vgimport",
+        "hpux-cmrunpkg",
+        "umount",
+        "mount"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgexport",
+      "name": "vgexport",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "VG 정보를 맵 파일로 내보내기·시스템에서 제거",
+      "description": "VG 를 다른 서버로 옮기거나 클러스터 다른 노드에 VG 정보를 전달할 때 씁니다. -p(미리보기)를 주면 VG 는 그대로 두고 맵 파일만 만들고, -p 없이 실행하면 이 서버의 LVM 정보(/etc/lvmtab, /dev/{{VG}})에서 VG 를 제거합니다. 디스크의 데이터 자체는 지우지 않습니다.",
+      "syntax": [
+        "vgexport -p -v -s -m {{MAP_FILE}} /dev/{{VG}}",
+        "vgexport -v -m {{MAP_FILE}} /dev/{{VG}}"
+      ],
+      "options": [
+        {
+          "flag": "-p",
+          "desc": "미리보기: VG 를 제거하지 않고 맵 파일만 생성"
+        },
+        {
+          "flag": "-m {{MAP_FILE}}",
+          "desc": "LV 이름 정보를 저장할 맵 파일"
+        },
+        {
+          "flag": "-s",
+          "desc": "VGID 를 맵 파일에 기록 (가져오는 쪽에서 vgimport -s 로 디스크 자동 검색)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "클러스터 다른 노드에 VG 정보 전달 (VG 유지)",
+          "command": "vgexport -p -v -s -m /tmp/{{VG}}.map /dev/{{VG}}\nscp /tmp/{{VG}}.map {{OTHER_NODE}}:/tmp/"
+        },
+        {
+          "title": "VG 를 이 서버에서 떼어내기 (서버 이전)",
+          "command": "umount {{MOUNT_POINT}}\nvgchange -a n /dev/{{VG}}\nvgexport -v -s -m /tmp/{{VG}}.map /dev/{{VG}}"
+        }
+      ],
+      "cautions": [
+        "-p 를 빼면 VG 가 이 서버에서 사라집니다. 클러스터 정보 갱신 목적이면 반드시 -p 를 붙이세요.",
+        "실행 전 vgcfgbackup 과 맵 파일 사본을 별도 위치에 보관하세요."
+      ],
+      "help": "man vgexport",
+      "keywords": [
+        "VG 내보내기",
+        "맵 파일",
+        "vgexport",
+        "VG 이전",
+        "클러스터 VG 동기화"
+      ],
+      "related": [
+        "hpux-vgimport",
+        "hpux-vgchange",
+        "hpux-vgcfgbackup",
+        "hpux-cmcheckconf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgimport",
+      "name": "vgimport",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "맵 파일로 VG 를 이 서버에 등록",
+      "description": "다른 서버(노드)에서 vgexport 로 만든 맵 파일을 이용해 VG 를 이 서버의 LVM 구성에 등록합니다. -s 로 VGID 가 같은 디스크를 자동으로 찾고, 11i v3 에서는 -N 으로 영구 DSF(/dev/disk/diskN)를 사용하게 할 수 있습니다.",
+      "syntax": [
+        "vgimport -v -s -N -m {{MAP_FILE}} /dev/{{VG}}",
+        "vgimport -v -m {{MAP_FILE}} /dev/{{VG}} /dev/disk/{{DISK}} ..."
+      ],
+      "options": [
+        {
+          "flag": "-s",
+          "desc": "맵 파일의 VGID 로 디스크 자동 검색"
+        },
+        {
+          "flag": "-N",
+          "desc": "영구(agile) DSF 로 등록 (11i v3)"
+        },
+        {
+          "flag": "-m {{MAP_FILE}}",
+          "desc": "LV 이름을 담은 맵 파일"
+        },
+        {
+          "flag": "-p",
+          "desc": "미리보기 (실제로 등록하지 않음)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "클러스터 대기 노드에 VG 정보 갱신",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ls -l /dev/{{VG}}/group",
+              "desc": "기존 group 파일의 minor 번호 확인 (운영 노드와 같아야 함)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgexport /dev/{{VG}}",
+              "desc": "대기 노드의 예전 VG 정보 제거 (VG 비활성 상태에서)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mkdir /dev/{{VG}}\nmknod /dev/{{VG}}/group c 64 0x{{NN}}0000",
+              "desc": "1.0 VG 면 group 파일 다시 생성 (운영 노드와 같은 minor)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgimport -v -s -N -m /tmp/{{VG}}.map /dev/{{VG}}",
+              "desc": "맵 파일로 VG 등록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "strings /etc/lvmtab | more",
+              "desc": "등록된 PV 확인 (2.x VG 는 /etc/lvmtab_p)"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "운영 노드에서 활성 중인 VG 를 대기 노드에서 vgchange -a y 로 올리지 마세요. 등록(vgimport)만 하고 활성화는 Serviceguard 가 합니다.",
+        "-s 없이 쓸 때는 PV 순서를 원래 서버와 같게 지정해야 합니다."
+      ],
+      "help": "man vgimport",
+      "keywords": [
+        "VG 가져오기",
+        "vgimport",
+        "맵 파일",
+        "VG 이전",
+        "클러스터 노드 동기화",
+        "agile DSF"
+      ],
+      "related": [
+        "hpux-vgexport",
+        "hpux-vgchange",
+        "hpux-ioscan",
+        "hpux-cmviewcl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgcfgbackup",
+      "name": "vgcfgbackup",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "VG 구성(LVM 메타데이터) 백업",
+      "description": "VG 의 LVM 메타데이터를 /etc/lvmconf/{{VG}}.conf 에 저장합니다. LVM 변경 명령(lvcreate, lvextend 등)이 끝나면 보통 자동으로 실행되지만, 큰 작업 전후로 직접 실행해 두면 디스크 교체·메타데이터 손상 때 vgcfgrestore 로 복구할 수 있습니다.",
+      "syntax": [
+        "vgcfgbackup /dev/{{VG}}",
+        "vgcfgbackup -f {{BACKUP_FILE}} /dev/{{VG}}"
+      ],
+      "options": [
+        {
+          "flag": "-f {{BACKUP_FILE}}",
+          "desc": "기본 위치 대신 지정한 파일에 저장"
+        }
+      ],
+      "examples": [
+        {
+          "title": "작업 전 VG 구성 백업",
+          "command": "vgcfgbackup /dev/{{VG}}\nls -l /etc/lvmconf/"
+        }
+      ],
+      "cautions": [
+        "/etc/lvmconf 는 vg00 위에 있으므로 Ignite 백업이나 별도 서버에도 사본을 두세요."
+      ],
+      "help": "man vgcfgbackup",
+      "keywords": [
+        "LVM 백업",
+        "VG 구성 백업",
+        "vgcfgbackup",
+        "lvmconf",
+        "메타데이터"
+      ],
+      "related": [
+        "hpux-vgcfgrestore",
+        "hpux-vgdisplay",
+        "hpux-make-tape-recovery"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vgcfgrestore",
+      "name": "vgcfgrestore",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.repair",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "백업한 LVM 메타데이터를 디스크에 복원",
+      "description": "vgcfgbackup 으로 저장한 VG 구성을 PV 에 다시 기록합니다. 미러 디스크 교체 뒤 새 디스크에 LVM 헤더를 되살릴 때 주로 씁니다. 대상은 문자(raw) 장치입니다.",
+      "syntax": [
+        "vgcfgrestore -l -n /dev/{{VG}}",
+        "vgcfgrestore -n /dev/{{VG}} /dev/rdisk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-n /dev/{{VG}}",
+          "desc": "복원할 VG (기본 백업 파일 /etc/lvmconf/{{VG}}.conf 사용)"
+        },
+        {
+          "flag": "-l",
+          "desc": "백업 파일에 기록된 PV 목록만 표시"
+        },
+        {
+          "flag": "-f {{BACKUP_FILE}}",
+          "desc": "다른 백업 파일 사용"
+        }
+      ],
+      "examples": [
+        {
+          "title": "미러 디스크 교체 후 LVM 정보 복원",
+          "command": "vgcfgrestore -l -n /dev/{{VG}}\nvgcfgrestore -n /dev/{{VG}} /dev/rdisk/{{DISK}}\nvgchange -a y /dev/{{VG}}\nvgsync /dev/{{VG}}",
+          "note": "11i v3 에서 교체 디스크의 WWID 가 바뀐 경우 scsimgr replace_wwid 또는 io_redirect_dsf 절차가 먼저 필요할 수 있습니다. HPE 디스크 교체 가이드를 따르세요."
+        }
+      ],
+      "cautions": [
+        "잘못된 디스크에 복원하면 그 디스크의 기존 LVM 정보가 덮어써집니다. 장치 이름과 WWID 를 반드시 확인하세요.",
+        "백업 파일이 최신이 아니면(LV 확장 이후 백업 안 됨) 구성이 과거 상태로 돌아갈 수 있습니다."
+      ],
+      "help": "man vgcfgrestore",
+      "keywords": [
+        "LVM 복원",
+        "디스크 교체",
+        "vgcfgrestore",
+        "lvmconf",
+        "미러 복구",
+        "vgsync"
+      ],
+      "related": [
+        "hpux-vgcfgbackup",
+        "hpux-vgchange",
+        "hpux-ioscan",
+        "hpux-scsimgr"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-lvcreate",
+      "name": "lvcreate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "논리 볼륨(LV) 생성 (-L 단위 MB)",
+      "description": "VG 안에 LV 를 만듭니다. HP-UX 에서 -L 의 단위는 MB 이고(접미사 G 없음), 생성되면 블록 장치 /dev/{{VG}}/{{LV}} 와 문자 장치 /dev/{{VG}}/r{{LV}} 가 함께 만들어집니다. 파일시스템은 newfs 로 따로 만듭니다.",
+      "syntax": [
+        "lvcreate -L {{SIZE_MB}} -n {{LV}} /dev/{{VG}}",
+        "lvcreate -l {{LE_COUNT}} -n {{LV}} /dev/{{VG}}"
+      ],
+      "options": [
+        {
+          "flag": "-L {{SIZE_MB}}",
+          "desc": "LV 크기 (MB)"
+        },
+        {
+          "flag": "-l {{LE_COUNT}}",
+          "desc": "LV 크기 (LE 개수)"
+        },
+        {
+          "flag": "-n {{LV}}",
+          "desc": "LV 이름 (생략하면 lvol1, lvol2 … 자동)"
+        },
+        {
+          "flag": "-m {{COPIES}}",
+          "desc": "미러 사본 수 (MirrorDisk/UX 필요)"
+        },
+        {
+          "flag": "-i {{STRIPES}} -I {{STRIPE_KB}}",
+          "desc": "스트라이프 개수와 크기(KB)"
+        },
+        {
+          "flag": "-C y",
+          "desc": "연속(contiguous) 할당 (덤프·스왑 장치용)"
+        },
+        {
+          "flag": "-r n",
+          "desc": "불량 블록 재배치 끔 (덤프·스왑 장치용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "10GB LV 를 만들고 VxFS 로 마운트",
+          "command": "lvcreate -L 10240 -n {{LV}} /dev/{{VG}}\nnewfs -F vxfs -o largefiles /dev/{{VG}}/r{{LV}}\nmkdir {{MOUNT_POINT}}\nmount -F vxfs -o delaylog /dev/{{VG}}/{{LV}} {{MOUNT_POINT}}\nbdf {{MOUNT_POINT}}",
+          "note": "재부팅 후에도 마운트되게 /etc/fstab 에 추가하세요."
+        },
+        {
+          "title": "미러 LV 생성 (MirrorDisk/UX)",
+          "command": "lvcreate -m 1 -L {{SIZE_MB}} -n {{LV}} /dev/{{VG}}"
+        }
+      ],
+      "cautions": [
+        "-L 은 MB 단위입니다. 10G 를 원하면 10240 을 씁니다.",
+        "newfs 는 문자 장치(/dev/{{VG}}/r{{LV}}), mount 는 블록 장치(/dev/{{VG}}/{{LV}})를 씁니다."
+      ],
+      "help": "man lvcreate",
+      "keywords": [
+        "LV 생성",
+        "논리 볼륨",
+        "lvcreate",
+        "HP-UX LVM",
+        "미러",
+        "MirrorDisk"
+      ],
+      "related": [
+        "hpux-newfs",
+        "hpux-etc-fstab",
+        "hpux-vgdisplay",
+        "hpux-lvdisplay",
+        "hpux-bdf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-lvextend",
+      "name": "lvextend",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "LV 용량 확장 (-L 은 '최종 크기' MB) · 미러 추가",
+      "description": "LV 를 늘리거나(-L/-l) 미러 사본을 추가(-m)합니다. HP-UX 의 -L 은 늘릴 양이 아니라 확장 후 전체 크기(MB)입니다. LV 만 커지므로 파일시스템은 fsadm(OnlineJFS, 마운트 상태) 또는 extendfs(umount 후)로 따로 늘려야 합니다.",
+      "syntax": [
+        "lvextend -L {{NEW_SIZE_MB}} /dev/{{VG}}/{{LV}} [/dev/disk/{{DISK}}]",
+        "lvextend -l {{NEW_LE_COUNT}} /dev/{{VG}}/{{LV}}",
+        "lvextend -m 1 /dev/{{VG}}/{{LV}} /dev/disk/{{MIRROR_DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-L {{NEW_SIZE_MB}}",
+          "desc": "확장 후 전체 크기 (MB). 현재 크기보다 커야 함"
+        },
+        {
+          "flag": "-l {{NEW_LE_COUNT}}",
+          "desc": "확장 후 전체 LE 수"
+        },
+        {
+          "flag": "-m {{COPIES}}",
+          "desc": "미러 사본 수를 늘림 (MirrorDisk/UX 필요)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "파일시스템 온라인 확장 (OnlineJFS 있음)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "bdf {{MOUNT_POINT}}",
+              "desc": "현재 사용량과 LV 장치 이름 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vgdisplay /dev/{{VG}} | grep -E 'PE Size|Free PE'",
+              "desc": "여유 용량 계산 (Free PE × PE Size MB)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lvdisplay /dev/{{VG}}/{{LV}} | grep 'LV Size'",
+              "desc": "현재 LV 크기(MB) 확인 → 새 전체 크기 결정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "swlist -l product | grep -i jfs",
+              "desc": "OnlineJFS 설치 여부 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lvextend -L {{NEW_SIZE_MB}} /dev/{{VG}}/{{LV}}",
+              "desc": "LV 를 새 전체 크기로 확장"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fsadm -F vxfs -b {{NEW_SIZE_MB}}M {{MOUNT_POINT}}",
+              "desc": "마운트 상태로 VxFS 확장"
+            },
+            {
+              "prompt": "#",
+              "cmd": "bdf {{MOUNT_POINT}}",
+              "desc": "늘어난 용량 확인"
+            }
+          ]
+        },
+        {
+          "title": "OnlineJFS 가 없을 때 (업무 중단 필요)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "lvextend -L {{NEW_SIZE_MB}} /dev/{{VG}}/{{LV}}",
+              "desc": "LV 확장 (마운트 중에도 가능)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fuser -cu {{MOUNT_POINT}}",
+              "desc": "파일시스템을 쓰는 프로세스 확인 후 업무 중지"
+            },
+            {
+              "prompt": "#",
+              "cmd": "umount {{MOUNT_POINT}}",
+              "desc": "마운트 해제"
+            },
+            {
+              "prompt": "#",
+              "cmd": "extendfs -F vxfs /dev/{{VG}}/r{{LV}}",
+              "desc": "문자 장치로 파일시스템 확장"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mount {{MOUNT_POINT}}",
+              "desc": "fstab 기준으로 다시 마운트"
+            },
+            {
+              "prompt": "#",
+              "cmd": "bdf {{MOUNT_POINT}}",
+              "desc": "확인"
+            }
+          ]
+        },
+        {
+          "title": "LV 에 미러 추가 (루트 디스크 미러 등)",
+          "command": "lvextend -m 1 /dev/vg00/lvol1 /dev/disk/{{MIRROR_DISK}}",
+          "note": "vg00 미러는 부트 디스크 준비(pvcreate -B, mkboot, lvlnboot)가 함께 필요합니다."
+        }
+      ],
+      "cautions": [
+        "Linux 습관대로 -L +10240 처럼 쓰지 마세요. HP-UX 는 '최종 크기'를 받습니다.",
+        "lvextend 만 하고 fsadm/extendfs 를 하지 않으면 bdf 용량은 그대로입니다.",
+        "/(lvol3)·/stand 등 vg00 의 일부 LV 는 연속 할당이라 확장이 제한되거나 Ignite 재구성이 필요할 수 있습니다."
+      ],
+      "help": "man lvextend",
+      "keywords": [
+        "용량 확장",
+        "LV 확장",
+        "lvextend",
+        "fsadm",
+        "OnlineJFS",
+        "파일시스템 늘리기",
+        "HP-UX"
+      ],
+      "related": [
+        "hpux-fsadm",
+        "hpux-extendfs",
+        "hpux-vgdisplay",
+        "hpux-lvdisplay",
+        "hpux-bdf",
+        "hpux-vgextend"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-lvreduce",
+      "name": "lvreduce",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "LV 축소 또는 미러 사본 제거",
+      "description": "LV 크기를 줄이거나(-L) 미러 사본을 줄입니다(-m). 크기 축소는 파일시스템을 먼저 줄이지 않으면 데이터가 손실됩니다. 실무에서는 주로 디스크 교체·이전을 위해 미러를 해제(-m 0)하는 데 씁니다.",
+      "syntax": [
+        "lvreduce -L {{NEW_SIZE_MB}} /dev/{{VG}}/{{LV}}",
+        "lvreduce -m 0 /dev/{{VG}}/{{LV}} [/dev/disk/{{DISK}}]"
+      ],
+      "options": [
+        {
+          "flag": "-L {{NEW_SIZE_MB}}",
+          "desc": "축소 후 전체 크기 (MB)"
+        },
+        {
+          "flag": "-l {{NEW_LE_COUNT}}",
+          "desc": "축소 후 전체 LE 수"
+        },
+        {
+          "flag": "-m {{COPIES}}",
+          "desc": "남길 미러 사본 수 (디스크를 지정하면 그 디스크의 사본 제거)"
+        },
+        {
+          "flag": "-f",
+          "desc": "확인 질문 없이 진행"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 디스크 쪽 미러 해제",
+          "command": "lvreduce -m 0 /dev/{{VG}}/{{LV}} /dev/disk/{{DISK}}\nlvdisplay -v /dev/{{VG}}/{{LV}} | more"
+        }
+      ],
+      "cautions": [
+        "VxFS 크기 축소는 OnlineJFS 의 fsadm -F vxfs -b 로 파일시스템을 먼저 줄인 뒤에만 lvreduce -L 을 하세요. 순서가 바뀌면 데이터가 깨집니다.",
+        "축소 전 반드시 백업(데이터·vgcfgbackup)을 받으세요."
+      ],
+      "help": "man lvreduce",
+      "keywords": [
+        "LV 축소",
+        "미러 해제",
+        "lvreduce",
+        "MirrorDisk",
+        "HP-UX LVM"
+      ],
+      "related": [
+        "hpux-lvextend",
+        "hpux-lvdisplay",
+        "hpux-fsadm",
+        "hpux-vgreduce"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-lvdisplay",
+      "name": "lvdisplay",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "LV 크기·미러·상태 확인",
+      "description": "LV 의 크기(MB), 미러 사본 수, 상태, 할당 정책을 보여 줍니다. -v 를 주면 LE 별로 어느 PV 에 놓였는지, 미러 사본이 stale 인지 확인할 수 있습니다.",
+      "syntax": [
+        "lvdisplay [-v] /dev/{{VG}}/{{LV}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "LE·PE 배치, 미러 사본별 상태(current/stale)까지 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 크기와 미러 수 확인",
+          "command": "lvdisplay /dev/{{VG}}/{{LV}} | grep -E 'LV Size|Mirror copies|LV Status'"
+        },
+        {
+          "title": "stale(동기화 안 된) 미러 찾기",
+          "command": "lvdisplay -v /dev/{{VG}}/{{LV}} | grep -i stale"
+        }
+      ],
+      "cautions": [
+        "stale 이 보이면 디스크 상태를 확인하고 vgsync 또는 lvsync 로 동기화하세요."
+      ],
+      "help": "man lvdisplay",
+      "keywords": [
+        "LV 확인",
+        "lvdisplay",
+        "LV Size",
+        "미러 상태",
+        "stale"
+      ],
+      "related": [
+        "hpux-vgdisplay",
+        "hpux-pvdisplay",
+        "hpux-lvextend"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-lvremove",
+      "name": "lvremove",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "LV 삭제 (데이터 삭제)",
+      "description": "LV 를 삭제하고 PE 를 VG 여유 공간으로 돌려줍니다. LV 위의 데이터는 복구할 수 없습니다. 마운트를 해제하고 /etc/fstab 항목도 함께 정리합니다.",
+      "syntax": [
+        "lvremove [-f] /dev/{{VG}}/{{LV}}"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "확인 질문 없이 삭제"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용하지 않는 LV 삭제",
+          "command": "fuser -cu {{MOUNT_POINT}}\numount {{MOUNT_POINT}}\nlvremove /dev/{{VG}}/{{LV}}\nvi /etc/fstab",
+          "note": "fstab 에 남은 항목은 주석 처리하거나 지웁니다."
+        }
+      ],
+      "cautions": [
+        "삭제 전 LV 이름을 bdf·/etc/fstab·DB 설정(raw 장치 사용 여부)과 대조하세요. raw LV 를 DB 가 직접 쓰는 경우 마운트가 없어 사용 중임을 놓치기 쉽습니다.",
+        "-f 는 스크립트에서 오타 한 번으로 운영 데이터를 지울 수 있으니 대화형으로 실행하세요."
+      ],
+      "help": "man lvremove",
+      "keywords": [
+        "LV 삭제",
+        "lvremove",
+        "논리 볼륨 제거",
+        "HP-UX LVM"
+      ],
+      "related": [
+        "hpux-lvdisplay",
+        "hpux-etc-fstab",
+        "hpux-vgdisplay",
+        "umount"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-fsadm",
+      "name": "fsadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VxFS 온라인 확장·조각 모음 (OnlineJFS)",
+      "description": "VxFS(JFS) 파일시스템을 마운트한 채로 크기를 바꾸거나 조각 모음을 합니다. 온라인 크기 변경과 조각 모음은 OnlineJFS(Online JFS) 라이선스 제품이 설치돼 있어야 합니다. 없으면 umount 후 extendfs 를 씁니다.",
+      "syntax": [
+        "fsadm -F vxfs -b {{NEW_SIZE}}M {{MOUNT_POINT}}",
+        "fsadm -F vxfs -D -E {{MOUNT_POINT}}",
+        "fsadm -F vxfs -d -e {{MOUNT_POINT}}"
+      ],
+      "options": [
+        {
+          "flag": "-F vxfs",
+          "desc": "파일시스템 유형 지정"
+        },
+        {
+          "flag": "-b {{NEW_SIZE}}",
+          "desc": "새 전체 크기. M·G 접미사를 쓰거나 숫자만 쓰면 섹터(1KB) 단위 — LV 크기(MB)에 M 을 붙이는 방식이 안전"
+        },
+        {
+          "flag": "-D",
+          "desc": "디렉토리 조각화 보고"
+        },
+        {
+          "flag": "-E",
+          "desc": "익스텐트 조각화 보고"
+        },
+        {
+          "flag": "-d",
+          "desc": "디렉토리 재구성(조각 모음)"
+        },
+        {
+          "flag": "-e",
+          "desc": "익스텐트 재구성(조각 모음)"
+        },
+        {
+          "flag": "-o largefiles",
+          "desc": "2GB 초과 파일 허용으로 변경"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LV 확장 후 파일시스템 온라인 확장",
+          "command": "lvextend -L {{NEW_SIZE_MB}} /dev/{{VG}}/{{LV}}\nfsadm -F vxfs -b {{NEW_SIZE_MB}}M {{MOUNT_POINT}}\nbdf {{MOUNT_POINT}}"
+        },
+        {
+          "title": "조각화 상태 확인",
+          "command": "fsadm -F vxfs -D -E {{MOUNT_POINT}}"
+        },
+        {
+          "title": "조각 모음 실행 (업무 시간 외)",
+          "command": "fsadm -F vxfs -d -e {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "OnlineJFS 가 없으면 '-b' 가 라이선스 오류로 실패합니다. swlist -l product | grep -i jfs 로 먼저 확인하세요.",
+        "파일시스템이 100% 가득 찬 상태에서는 온라인 확장이 실패할 수 있습니다. 일부 파일을 정리해 여유를 조금 만든 뒤 시도하세요.",
+        "조각 모음은 I/O 부하가 크므로 업무 시간 외에 실행하세요."
+      ],
+      "install": {
+        "hpux": {
+          "package": "OnlineJFS",
+          "preinstalled": false,
+          "note": "온라인 확장·조각 모음은 OnlineJFS(별도 라이선스, 상위 OE 에 포함). 기본 HP-UX 는 Base JFS 만 제공"
+        }
+      },
+      "help": "man fsadm_vxfs",
+      "keywords": [
+        "온라인 확장",
+        "파일시스템 확장",
+        "fsadm",
+        "OnlineJFS",
+        "VxFS",
+        "조각 모음",
+        "JFS"
+      ],
+      "related": [
+        "hpux-lvextend",
+        "hpux-extendfs",
+        "hpux-bdf",
+        "hpux-swlist"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-extendfs",
+      "name": "extendfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "umount 한 파일시스템을 LV 크기까지 확장",
+      "description": "lvextend 로 늘어난 LV 크기만큼 파일시스템을 확장합니다. 마운트를 해제한 상태에서 문자(raw) 장치에 실행합니다. OnlineJFS 가 없는 서버에서 VxFS·HFS 를 늘리는 방법입니다.",
+      "syntax": [
+        "extendfs -F vxfs /dev/{{VG}}/r{{LV}}",
+        "extendfs -F hfs /dev/{{VG}}/r{{LV}}"
+      ],
+      "options": [
+        {
+          "flag": "-F {{FSTYPE}}",
+          "desc": "vxfs 또는 hfs"
+        }
+      ],
+      "examples": [
+        {
+          "title": "업무 중지 후 파일시스템 확장",
+          "command": "umount {{MOUNT_POINT}}\nextendfs -F vxfs /dev/{{VG}}/r{{LV}}\nmount {{MOUNT_POINT}}\nbdf {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "마운트된 상태에서 실행하지 마세요.",
+        "/, /usr, /var 처럼 umount 할 수 없는 파일시스템은 OnlineJFS(fsadm) 없이는 단일 사용자 모드 등 별도 절차가 필요합니다."
+      ],
+      "help": "man extendfs_vxfs",
+      "keywords": [
+        "파일시스템 확장",
+        "extendfs",
+        "오프라인 확장",
+        "VxFS",
+        "HFS"
+      ],
+      "related": [
+        "hpux-lvextend",
+        "hpux-fsadm",
+        "hpux-bdf",
+        "umount",
+        "mount"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-newfs",
+      "name": "newfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "LV 에 VxFS·HFS 파일시스템 생성",
+      "description": "HP-UX 에서 파일시스템을 만드는 명령입니다(Linux 의 mkfs 에 해당). 문자 장치에 실행하며 -F 로 유형을 지정합니다. 대용량 파일을 쓸 경우 -o largefiles 를 주는 것이 일반적입니다.",
+      "syntax": [
+        "newfs -F vxfs [-o largefiles] [-b {{BLOCK_SIZE}}] /dev/{{VG}}/r{{LV}}"
+      ],
+      "options": [
+        {
+          "flag": "-F vxfs",
+          "desc": "VxFS(JFS) 로 생성 (hfs 도 가능)"
+        },
+        {
+          "flag": "-o largefiles",
+          "desc": "2GB 초과 파일 허용"
+        },
+        {
+          "flag": "-b {{BLOCK_SIZE}}",
+          "desc": "블록 크기 (1024, 2048, 4096, 8192 바이트)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 LV 에 VxFS 생성하고 마운트",
+          "command": "newfs -F vxfs -o largefiles -b 8192 /dev/{{VG}}/r{{LV}}\nmkdir {{MOUNT_POINT}}\nmount -F vxfs -o delaylog,largefiles /dev/{{VG}}/{{LV}} {{MOUNT_POINT}}\nbdf {{MOUNT_POINT}}"
+        }
+      ],
+      "cautions": [
+        "기존 데이터가 모두 지워집니다. 대상 LV 가 비어 있는지(bdf, /etc/fstab, DB raw 사용 여부) 확인하세요.",
+        "블록 장치(/dev/{{VG}}/{{LV}})가 아닌 문자 장치(/dev/{{VG}}/r{{LV}})를 지정합니다."
+      ],
+      "help": "man newfs_vxfs",
+      "keywords": [
+        "포맷",
+        "파일시스템 생성",
+        "newfs",
+        "VxFS",
+        "largefiles",
+        "mkfs"
+      ],
+      "related": [
+        "hpux-lvcreate",
+        "hpux-etc-fstab",
+        "hpux-bdf",
+        "mount",
+        "mkfs"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-etc-fstab",
+      "name": "/etc/fstab",
+      "kind": "file",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "HP-UX 부팅 시 자동 마운트 목록",
+      "description": "부팅할 때 마운트할 파일시스템 목록입니다. 형식은 Linux 와 비슷하지만 장치는 /dev/{{VG}}/{{LV}} 형태, 유형은 vxfs·hfs·nfs, 옵션은 delaylog 처럼 VxFS 전용 값을 씁니다. Serviceguard 패키지가 마운트하는 파일시스템은 fstab 에 넣지 않습니다.",
+      "syntax": [
+        "{{DEVICE}} {{MOUNT_POINT}} {{FSTYPE}} {{OPTIONS}} {{BACKUP_FREQ}} {{PASS}}"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "필드 형식",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "/dev/{{VG}}/{{LV}}",
+              "desc": "1: 블록 장치 (NFS 는 {{SERVER}}:{{EXPORT}})"
+            },
+            {
+              "cmd": "{{MOUNT_POINT}}",
+              "desc": "2: 마운트 위치"
+            },
+            {
+              "cmd": "vxfs | hfs | nfs",
+              "desc": "3: 파일시스템 유형"
+            },
+            {
+              "cmd": "delaylog | defaults | ro | largefiles | nosuid",
+              "desc": "4: 마운트 옵션 (쉼표로 구분, VxFS 는 delaylog 가 일반적)"
+            },
+            {
+              "cmd": "0",
+              "desc": "5: 백업 주기 (보통 0)"
+            },
+            {
+              "cmd": "1 | 2 | 0",
+              "desc": "6: 부팅 시 fsck 순서 (/ 는 1, 나머지 2, NFS 는 0)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "VxFS 데이터 볼륨 항목",
+          "command": "/dev/{{VG}}/{{LV}} {{MOUNT_POINT}} vxfs delaylog,largefiles 0 2"
+        },
+        {
+          "title": "NFS 마운트 항목",
+          "command": "{{NFS_SERVER}}:{{EXPORT_DIR}} {{MOUNT_POINT}} nfs defaults 0 0"
+        },
+        {
+          "title": "수정 후 검증",
+          "command": "cp -p /etc/fstab /etc/fstab.$(date +%Y%m%d)\nvi /etc/fstab\nmount -a\nbdf",
+          "note": "mount -a 에서 오류가 나면 재부팅 전에 고쳐야 부팅이 멈추지 않습니다."
+        }
+      ],
+      "cautions": [
+        "잘못된 항목은 부팅 중 파일시스템 점검 단계에서 멈출 수 있습니다. 수정 전 백업하고 mount -a 로 검증하세요.",
+        "Serviceguard 패키지 파일시스템을 fstab 에 넣으면 두 노드가 동시에 마운트를 시도할 수 있습니다."
+      ],
+      "help": "man fstab",
+      "keywords": [
+        "자동 마운트",
+        "fstab",
+        "부팅 마운트",
+        "vxfs",
+        "delaylog",
+        "HP-UX"
+      ],
+      "related": [
+        "hpux-newfs",
+        "hpux-bdf",
+        "mount",
+        "etc-fstab"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-swapinfo",
+      "name": "swapinfo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "스왑(장치·파일시스템·메모리) 사용량 확인",
+      "description": "HP-UX 의 스왑 영역별 크기와 사용률을 보여 줍니다. dev(스왑 LV), reserve(예약), memory(pseudo-swap) 항목이 따로 나오며, -t 로 합계 줄을 보면 전체 스왑 사용률을 알 수 있습니다. HP-UX 는 프로세스 생성 때 스왑을 예약하므로 실사용이 적어도 예약 부족으로 fork 가 실패할 수 있습니다.",
+      "syntax": [
+        "swapinfo -tam"
+      ],
+      "options": [
+        {
+          "flag": "-t",
+          "desc": "합계(total) 줄 추가"
+        },
+        {
+          "flag": "-a",
+          "desc": "사용 중이 아닌 장치까지 모두 표시"
+        },
+        {
+          "flag": "-m",
+          "desc": "MB 단위 표시"
+        },
+        {
+          "flag": "-d",
+          "desc": "장치 스왑만 표시"
+        },
+        {
+          "flag": "-f",
+          "desc": "파일시스템 스왑만 표시"
+        }
+      ],
+      "examples": [
+        {
+          "title": "스왑 사용률 확인",
+          "command": "swapinfo -tam"
+        },
+        {
+          "title": "스왑 LV 추가 (연속 할당)",
+          "command": "lvcreate -C y -r n -L {{SIZE_MB}} -n {{LV}} /dev/vg00\nswapon /dev/vg00/{{LV}}\nswapinfo -tam",
+          "note": "재부팅 후에도 쓰려면 /etc/fstab 에 swap 항목을 추가합니다."
+        }
+      ],
+      "cautions": [
+        "total 의 PCT USED 가 높으면 새 프로세스 생성이 실패할 수 있습니다(예약 기준). 메모리 사용량(glance, vmstat)과 함께 보세요."
+      ],
+      "help": "man swapinfo",
+      "keywords": [
+        "스왑",
+        "swap 사용량",
+        "swapinfo",
+        "pseudo-swap",
+        "가상 메모리"
+      ],
+      "related": [
+        "swapon",
+        "vmstat",
+        "hpux-glance",
+        "hpux-machinfo",
+        "hpux-lvcreate"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-make-tape-recovery",
+      "name": "make_tape_recovery",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.os-backup",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Ignite-UX 부팅 가능한 OS 복구 테이프 생성",
+      "description": "Ignite-UX 의 시스템 복구 도구로, vg00(OS 영역)을 부팅 가능한 테이프에 백업합니다. 장애 시 이 테이프로 부팅해 OS 를 통째로 복원할 수 있습니다. 패치·커널 변경 같은 큰 작업 전에 받아 두는 것이 일반적입니다. 명령 위치는 /opt/ignite/bin 입니다.",
+      "syntax": [
+        "/opt/ignite/bin/make_tape_recovery -A -v -x inc_entire=vg00 -a {{TAPE_DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-A",
+          "desc": "포함한 VG 의 디스크·VG 전체를 복구 대상으로 지정"
+        },
+        {
+          "flag": "-x inc_entire=vg00",
+          "desc": "vg00 전체 포함"
+        },
+        {
+          "flag": "-x exclude={{PATH}}",
+          "desc": "특정 디렉토리 제외 (덤프·임시 파일 등)"
+        },
+        {
+          "flag": "-a {{TAPE_DEVICE}}",
+          "desc": "테이프 장치 (예: /dev/rtape/tape0_BEST, 레거시 /dev/rmt/0mn)"
+        },
+        {
+          "flag": "-I",
+          "desc": "복구 시 대화형(Ignite 화면)으로 진행하도록 설정"
+        },
+        {
+          "flag": "-p",
+          "desc": "미리보기: 실제 백업 없이 구성 파일만 생성"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "작업 전 OS 복구 테이프 받기",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ioscan -fnNC tape",
+              "desc": "테이프 장치 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mt -f /dev/rtape/tape0_BEST status",
+              "desc": "테이프 삽입·쓰기 가능 상태 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "/opt/ignite/bin/make_tape_recovery -A -v -x inc_entire=vg00 -a /dev/rtape/tape0_BEST",
+              "desc": "vg00 복구 테이프 생성 (수십 분 이상 소요)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tail /var/opt/ignite/recovery/latest/recovery.log",
+              "desc": "성공 여부 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "vg00 이외 데이터 VG 는 보통 포함하지 않습니다. 데이터는 별도 백업 솔루션으로 받으세요.",
+        "복구 테이프는 같은 기종·유사 하드웨어에서만 복원이 보장됩니다. 정기적으로 복원 가능성을 점검하세요.",
+        "로그에 오류나 경고가 있으면 테이프를 신뢰하지 말고 원인을 해결한 뒤 다시 받으세요."
+      ],
+      "install": {
+        "hpux": {
+          "package": "Ignite-UX",
+          "preinstalled": false,
+          "note": "Ignite-UX 제품이 설치돼 있어야 함 (HPE 무료 배포)"
+        }
+      },
+      "help": "man make_tape_recovery",
+      "keywords": [
+        "OS 백업",
+        "복구 테이프",
+        "Ignite",
+        "make_tape_recovery",
+        "vg00 백업",
+        "시스템 이미지"
+      ],
+      "related": [
+        "hpux-make-net-recovery",
+        "hpux-print-manifest",
+        "hpux-vgcfgbackup",
+        "hpux-setboot"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-make-net-recovery",
+      "name": "make_net_recovery",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.os-backup",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Ignite 서버로 OS 복구 이미지 네트워크 백업",
+      "description": "Ignite-UX 서버에 vg00 복구 아카이브를 네트워크로 저장합니다. 테이프 장치가 없는 서버에서 주로 쓰며, 장애 시 Ignite 서버에서 네트워크 부팅해 복원합니다. 서버 쪽에 클라이언트 등록과 NFS 공유(/var/opt/ignite/recovery/archives/{{HOST}})가 준비돼 있어야 합니다.",
+      "syntax": [
+        "/opt/ignite/bin/make_net_recovery -s {{IGNITE_SERVER}} -A -v -x inc_entire=vg00"
+      ],
+      "options": [
+        {
+          "flag": "-s {{IGNITE_SERVER}}",
+          "desc": "Ignite 서버 이름 또는 IP"
+        },
+        {
+          "flag": "-a {{SERVER}}:{{ARCHIVE_DIR}}",
+          "desc": "아카이브 저장 위치 직접 지정"
+        },
+        {
+          "flag": "-A",
+          "desc": "포함한 VG 의 디스크·VG 전체 포함"
+        },
+        {
+          "flag": "-x inc_entire=vg00",
+          "desc": "vg00 전체 포함"
+        },
+        {
+          "flag": "-x exclude={{PATH}}",
+          "desc": "특정 경로 제외"
+        },
+        {
+          "flag": "-n {{COUNT}}",
+          "desc": "서버에 보관할 아카이브 개수"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Ignite 서버로 OS 이미지 백업",
+          "command": "/opt/ignite/bin/make_net_recovery -s {{IGNITE_SERVER}} -A -v -x inc_entire=vg00\ntail /var/opt/ignite/recovery/latest/recovery.log",
+          "note": "Ignite 서버 쪽 /var/opt/ignite/recovery/archives/{{HOST}} 의 여유 공간을 먼저 확인하세요."
+        }
+      ],
+      "cautions": [
+        "백업 중 네트워크 대역을 많이 쓰므로 업무 시간 외에 실행하세요.",
+        "Ignite 서버의 Ignite-UX 버전이 클라이언트보다 같거나 높아야 합니다."
+      ],
+      "install": {
+        "hpux": {
+          "package": "Ignite-UX",
+          "preinstalled": false,
+          "note": "클라이언트·서버 모두 Ignite-UX 필요"
+        }
+      },
+      "help": "man make_net_recovery",
+      "keywords": [
+        "OS 백업",
+        "네트워크 복구",
+        "Ignite 서버",
+        "make_net_recovery",
+        "vg00",
+        "시스템 이미지"
+      ],
+      "related": [
+        "hpux-make-tape-recovery",
+        "hpux-print-manifest",
+        "hpux-vgcfgbackup"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

@@ -18,50 +18,34 @@
       "risk": "caution",
       "requiresAdmin": false,
       "summary": "IP 주소·인터페이스·라우팅·ARP 조회 및 설정",
-      "description": "iproute2 의 통합 네트워크 명령으로 IP 주소, 링크(인터페이스), 라우팅 테이블, ARP(neighbor) 를 조회하고 변경합니다. ifconfig·route·arp 를 대체하는 표준 도구입니다. 조회는 일반 사용자도 가능하지만 변경은 root 가 필요하고, ip 로 바꾼 설정은 재부팅하면 사라집니다.",
+      "description": "iproute2 의 통합 네트워크 명령으로 IP 주소, 링크(인터페이스), 라우팅 테이블, ARP(neighbor) 를 조회하고 변경합니다. ifconfig·route·arp 를 대체하는 표준 도구입니다. 조회는 일반 사용자도 가능하지만 변경은 root 가 필요하고, ip 로 바꾼 설정은 재부팅하면 사라집니다. AIX·HP-UX·Solaris 에는 없으며 ifconfig·netstat -rn·route (Solaris 11 은 ipadm·dladm)를 사용합니다.",
       "syntax": [
         "ip [-br] [-4|-6] {addr|link|route|neigh} [show|add|del] ..."
       ],
       "options": [
         {
-          "flag": "-br a",
-          "desc": "인터페이스별 상태·IP 를 한 줄씩 간단히 (brief)"
+          "flag": "-br",
+          "desc": "한 줄 요약 출력 (brief). 예: ip -br a, ip -br link"
         },
         {
-          "flag": "addr show dev {{IFACE}}",
-          "desc": "특정 인터페이스의 IP 주소 상세"
+          "flag": "-s",
+          "desc": "송수신 바이트·패킷·에러·드롭 통계 함께 표시 (예: ip -s link show {{IFACE}})"
         },
         {
-          "flag": "link show",
-          "desc": "인터페이스 목록, UP/DOWN, MAC, MTU"
+          "flag": "-d",
+          "desc": "상세 정보 (bond·vlan·bridge 등 링크 종류별 설정)"
         },
         {
-          "flag": "-s link show {{IFACE}}",
-          "desc": "송수신 바이트·패킷·에러·드롭 통계"
+          "flag": "-4 / -6",
+          "desc": "IPv4 / IPv6 만 표시"
         },
         {
-          "flag": "route",
-          "desc": "라우팅 테이블 (기본 게이트웨이 = default via)"
+          "flag": "-c",
+          "desc": "색상으로 구분해 출력"
         },
         {
-          "flag": "route get {{IP}}",
-          "desc": "해당 IP 로 갈 때 실제 사용하는 경로·출발지 IP·인터페이스"
-        },
-        {
-          "flag": "neigh",
-          "desc": "ARP(IPv4)·NDP(IPv6) 이웃 테이블"
-        },
-        {
-          "flag": "addr add {{IP}}/{{PREFIX}} dev {{IFACE}}",
-          "desc": "IP 임시 추가 (del 로 삭제)"
-        },
-        {
-          "flag": "route add {{CIDR}} via {{GATEWAY}} dev {{IFACE}}",
-          "desc": "정적 경로 임시 추가 (del 로 삭제)"
-        },
-        {
-          "flag": "link set dev {{IFACE}} up|down",
-          "desc": "인터페이스 활성화 / 비활성화"
+          "flag": "-j",
+          "desc": "JSON 형식 출력 (스크립트용)"
         }
       ],
       "examples": [
@@ -76,13 +60,60 @@
           "output": "default via 10.0.0.1 dev ens192 proto static metric 100\n10.0.0.0/24 dev ens192 proto kernel scope link src 10.0.0.21 metric 100"
         },
         {
-          "title": "특정 목적지로 가는 경로 확인",
-          "command": "ip route get {{IP}}"
+          "title": "보조 IP 임시 추가 → 확인 → 원복",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "ip -br a show dev {{IFACE}}",
+              "desc": "작업 전 현재 IP 기록"
+            },
+            {
+              "prompt": "$",
+              "cmd": "sudo ip addr add {{IP}}/{{PREFIX}} dev {{IFACE}}",
+              "desc": "보조 IP 추가"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ip -br a show dev {{IFACE}}",
+              "desc": "추가된 IP 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ping -c 2 -I {{IP}} {{GATEWAY}}",
+              "desc": "새 IP 를 출발지로 게이트웨이 통신 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "sudo ip addr del {{IP}}/{{PREFIX}} dev {{IFACE}}",
+              "desc": "(원복) 테스트가 끝나면 삭제"
+            }
+          ],
+          "note": "영구 적용은 nmcli(RHEL) 또는 netplan(Ubuntu)으로 하세요."
         },
         {
-          "title": "정적 경로 임시 추가",
-          "command": "ip route add {{CIDR}} via {{GATEWAY}} dev {{IFACE}}",
-          "note": "영구 적용은 nmcli(+ipv4.routes) 또는 netplan(routes:)으로 설정합니다."
+          "title": "정적 경로 임시 추가 → 확인 → 롤백",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "ip route get {{IP}}",
+              "desc": "대상 IP 로 가는 현재 경로 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "sudo ip route add {{CIDR}} via {{GATEWAY}} dev {{IFACE}}",
+              "desc": "정적 경로 추가"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ip route get {{IP}}",
+              "desc": "새 게이트웨이로 바뀌었는지 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "sudo ip route del {{CIDR}}",
+              "desc": "(롤백) 문제가 있으면 삭제"
+            }
+          ]
         },
         {
           "title": "ARP 테이블 확인 및 항목 삭제",
@@ -124,7 +155,105 @@
         "nmcli",
         "netplan",
         "ethtool"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주소 (ip addr)",
+          "type": "subcommand",
+          "note": "ip a, ip l, ip r, ip n 처럼 줄여 쓸 수 있습니다. add·del·set 은 root 가 필요하고 재부팅이나 NetworkManager 재적용 시 사라집니다.",
+          "items": [
+            {
+              "cmd": "ip addr show [dev {{IFACE}}]",
+              "desc": "IP 주소 상세 (보조 IP 포함). ip a 로 줄여 씀"
+            },
+            {
+              "cmd": "ip addr add {{IP}}/{{PREFIX}} dev {{IFACE}}",
+              "desc": "IP(보조 IP) 임시 추가"
+            },
+            {
+              "cmd": "ip addr del {{IP}}/{{PREFIX}} dev {{IFACE}}",
+              "desc": "IP 삭제 (프리픽스까지 같게 지정)"
+            },
+            {
+              "cmd": "ip addr flush dev {{IFACE}}",
+              "desc": "인터페이스의 모든 IP 삭제 (원격 접속 중 사용 금지)"
+            }
+          ]
+        },
+        {
+          "title": "링크 (ip link)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "ip link show [{{IFACE}}]",
+              "desc": "인터페이스 목록, UP/DOWN, MAC, MTU"
+            },
+            {
+              "cmd": "ip -s link show {{IFACE}}",
+              "desc": "송수신·에러·드롭 카운터"
+            },
+            {
+              "cmd": "ip link set dev {{IFACE}} up",
+              "desc": "인터페이스 활성화"
+            },
+            {
+              "cmd": "ip link set dev {{IFACE}} down",
+              "desc": "인터페이스 비활성화 (접속 중인 인터페이스면 즉시 끊김)"
+            },
+            {
+              "cmd": "ip link set dev {{IFACE}} mtu {{MTU}}",
+              "desc": "MTU 임시 변경"
+            }
+          ]
+        },
+        {
+          "title": "경로 (ip route)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "ip route show",
+              "desc": "라우팅 테이블 (기본 게이트웨이 = default via). ip r"
+            },
+            {
+              "cmd": "ip route get {{IP}}",
+              "desc": "그 IP 로 갈 때 실제 쓰는 경로·출발지 IP·인터페이스"
+            },
+            {
+              "cmd": "ip route add {{CIDR}} via {{GATEWAY}} dev {{IFACE}}",
+              "desc": "정적 경로 임시 추가"
+            },
+            {
+              "cmd": "ip route del {{CIDR}}",
+              "desc": "정적 경로 삭제"
+            },
+            {
+              "cmd": "ip route replace default via {{GATEWAY}}",
+              "desc": "기본 게이트웨이 교체 (없으면 추가)"
+            }
+          ]
+        },
+        {
+          "title": "이웃·ARP (ip neigh)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "ip neigh show [dev {{IFACE}}]",
+              "desc": "ARP/NDP 테이블. 상태 REACHABLE=정상, STALE=오래됨(쓸 때 재확인), FAILED=응답 없음, PERMANENT=정적"
+            },
+            {
+              "cmd": "ip neigh del {{IP}} dev {{IFACE}}",
+              "desc": "특정 항목 삭제 (VIP 이동·장비 교체 후)"
+            },
+            {
+              "cmd": "ip neigh flush dev {{IFACE}}",
+              "desc": "인터페이스의 이웃 항목 전체 삭제"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ipconfig",
@@ -203,7 +332,10 @@
         "netsh",
         "win-route",
         "win-nslookup"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-netipaddress",
@@ -243,14 +375,6 @@
         {
           "flag": "-PrefixOrigin Dhcp|Manual",
           "desc": "DHCP 로 받은 주소 / 수동 주소만"
-        },
-        {
-          "flag": "Get-NetIPConfiguration -Detailed",
-          "desc": "IP·게이트웨이·DNS·연결 프로필을 한 번에"
-        },
-        {
-          "flag": "Get-NetRoute -AddressFamily IPv4",
-          "desc": "IPv4 라우팅 테이블"
         }
       ],
       "examples": [
@@ -282,7 +406,30 @@
         "ipconfig",
         "new-netipaddress",
         "get-netadapter"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "함께 쓰는 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Get-NetIPConfiguration -Detailed",
+              "desc": "IP·게이트웨이·DNS·연결 프로필을 한 번에"
+            },
+            {
+              "cmd": "Get-NetRoute -AddressFamily IPv4",
+              "desc": "IPv4 라우팅 테이블"
+            },
+            {
+              "cmd": "Get-DnsClientServerAddress -AddressFamily IPv4",
+              "desc": "인터페이스별 DNS 서버"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ifconfig",
@@ -293,53 +440,101 @@
       "task": "network.legacy",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
       "requiresAdmin": false,
       "summary": "(구형) 인터페이스·IP 조회 및 임시 설정",
-      "description": "net-tools 패키지의 구형 인터페이스 조회·설정 명령입니다. 최신 배포판에는 기본 설치되지 않으며 ip addr / ip link 로 대체되었습니다. 보조 IP 가 일부만 보이는 등 한계가 있어 조회는 ip -br a 를 권장합니다.",
+      "description": "인터페이스의 IP·넷마스크·상태(UP/DOWN)·MAC 을 조회하고 임시로 설정하는 전통 명령입니다. Linux 에서는 net-tools 패키지의 구형 명령으로 ip addr / ip link 로 대체되었지만, AIX·HP-UX·Solaris 에서는 여전히 기본 도구입니다. 어느 OS 든 ifconfig 로 바꾼 값은 재부팅하면 사라지므로 OS 별 영구 설정 방법을 함께 써야 합니다.",
       "syntax": [
-        "ifconfig [-a] [{{IFACE}}]",
+        "ifconfig -a",
+        "ifconfig {{IFACE}}",
         "ifconfig {{IFACE}} {{IP}} netmask {{NETMASK}} up"
       ],
       "options": [
         {
           "flag": "-a",
-          "desc": "DOWN 상태 포함 모든 인터페이스"
-        },
-        {
-          "flag": "{{IFACE}}",
-          "desc": "특정 인터페이스만"
-        },
-        {
-          "flag": "{{IFACE}} up | down",
-          "desc": "인터페이스 활성화 / 비활성화"
-        },
-        {
-          "flag": "{{IFACE}} {{IP}} netmask {{NETMASK}}",
-          "desc": "IP 임시 설정"
-        },
-        {
-          "flag": "{{IFACE}} mtu {{MTU}}",
-          "desc": "MTU 임시 변경"
+          "desc": "모든 인터페이스 표시 (HP-UX 는 지원하지 않아 netstat -in 으로 목록을 본 뒤 ifconfig {{IFACE}} 로 조회)"
         }
       ],
       "examples": [
         {
           "title": "전체 인터페이스 확인",
-          "command": "ifconfig -a"
+          "command": "ifconfig -a",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix",
+            "solaris"
+          ]
+        },
+        {
+          "title": "인터페이스 목록 확인 후 조회 (HP-UX)",
+          "command": "netstat -in\nifconfig lan0",
+          "platforms": [
+            "hpux"
+          ]
         },
         {
           "title": "같은 작업을 ip 로",
           "command": "ip -br a",
-          "note": "ifconfig 이 없을 때 대체 명령"
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "보조 IP 영구 추가 (AIX)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ifconfig {{IFACE}}",
+              "desc": "현재 주소 확인 (예: en0)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lsattr -El {{IFACE}}",
+              "desc": "ODM 에 저장된 설정 확인·기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chdev -l {{IFACE}} -a alias4={{IP}},{{NETMASK}}",
+              "desc": "ODM 저장과 동시에 적용"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ifconfig {{IFACE}}",
+              "desc": "추가된 IP 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chdev -l {{IFACE}} -a delalias4={{IP}},{{NETMASK}}",
+              "desc": "(롤백) 보조 IP 제거"
+            }
+          ],
+          "note": "ifconfig {{IFACE}} alias 로만 추가하면 재부팅 시 사라집니다.",
+          "platforms": [
+            "aix"
+          ]
+        },
+        {
+          "title": "보조 IP 임시 추가 (Solaris 10)",
+          "command": "ifconfig {{IFACE}} addif {{IP}} netmask {{NETMASK}} up\nifconfig -a",
+          "note": "영구 설정은 /etc/hostname.{{IFACE}}:1 파일. Solaris 11 은 ipadm create-addr 를 사용합니다.",
+          "platforms": [
+            "solaris"
+          ],
+          "version": "Solaris 10"
         }
       ],
       "cautions": [
-        "ip addr add 로 추가한 보조 IP 는 ifconfig 에 보이지 않을 수 있습니다.",
-        "설정 변경은 재부팅 시 사라집니다."
+        "(Linux) ip addr add 로 추가한 보조 IP 는 ifconfig 에 보이지 않을 수 있습니다.",
+        "ifconfig 로 바꾼 설정은 어느 OS 든 재부팅 시 사라집니다. 영구 설정은 OS 별 방법(nmcli, netplan, chdev, netconf, ipadm)을 사용하세요.",
+        "원격 접속 중인 인터페이스에 down 이나 주소 변경을 하면 즉시 접속이 끊깁니다. 콘솔(HMC, iLO/MP, ILOM 등) 접속 수단을 먼저 확보하세요."
       ],
       "install": {
         "rhel": {
@@ -362,8 +557,120 @@
       "related": [
         "ip",
         "netstat",
-        "route"
-      ]
+        "route",
+        "nmcli",
+        "netplan"
+      ],
+      "commandGroups": [
+        {
+          "title": "인터페이스 지정 사용법",
+          "type": "subcommand",
+          "note": "ifconfig 로 바꾼 값은 모두 런타임 전용입니다. 영구 설정은 플랫폼별 차이를 참고하세요.",
+          "items": [
+            {
+              "cmd": "ifconfig {{IFACE}}",
+              "desc": "특정 인터페이스 조회",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} up",
+              "desc": "인터페이스 활성화",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} down",
+              "desc": "인터페이스 비활성화 (접속 중인 인터페이스면 즉시 끊김)",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} {{IP}} netmask {{NETMASK}} up",
+              "desc": "IP 임시 설정",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} mtu {{MTU}}",
+              "desc": "MTU 임시 변경",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}}:1 {{IP}} netmask {{NETMASK}} up",
+              "desc": "논리 인터페이스(별칭)로 보조 IP 추가",
+              "platforms": [
+                "rhel",
+                "debian",
+                "hpux"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} alias {{IP}} netmask {{NETMASK}}",
+              "desc": "보조 IP 추가 (AIX)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} delete {{IP}}",
+              "desc": "보조 IP 삭제 (AIX)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} plumb",
+              "desc": "인터페이스를 IP 스택에 연결 (Solaris 10, 주소 설정 전에 필요)",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "ifconfig {{IFACE}} addif {{IP}} netmask {{NETMASK}} up",
+              "desc": "다음 빈 논리 인터페이스에 보조 IP 추가 (Solaris)",
+              "platforms": [
+                "solaris"
+              ]
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "rhel": "net-tools 패키지 (기본 미설치). 조회는 ip -br a, 영구 설정은 nmcli 를 사용합니다.",
+        "debian": "net-tools 패키지 (기본 미설치). 조회는 ip -br a, 영구 설정은 netplan 을 사용합니다.",
+        "aix": "인터페이스 이름은 en0, en1 … (물리 어댑터 ent0 위의 IP 계층)입니다. ifconfig 변경은 ODM 에 저장되지 않아 재부팅 시 사라집니다. 영구 변경은 chdev -l en0 -a netaddr={{IP}} -a netmask={{NETMASK}} 또는 smitty chinet, 보조 IP 는 chdev -l en0 -a alias4={{IP}},{{NETMASK}}. 저장된 값은 lsattr -El en0 으로 확인합니다.",
+        "hpux": "인터페이스 이름은 lan0, lan1 …, 보조 IP 는 lan0:1 같은 논리 인터페이스입니다. -a 를 지원하지 않으므로 netstat -in 또는 lanscan 으로 목록을 봅니다. 영구 설정은 /etc/rc.config.d/netconf 의 INTERFACE_NAME[n]·IP_ADDRESS[n]·SUBNET_MASK[n] 입니다.",
+        "solaris": "Solaris 10 은 ifconfig {{IFACE}} plumb 후 주소를 설정하고, 영구 설정은 /etc/hostname.{{IFACE}} (+ /etc/netmasks)입니다. Solaris 11 은 ipadm 이 표준(ipadm show-addr, ipadm create-addr)이며, ipadm 으로 만든 주소를 ifconfig 로 바꾸면 영구 설정에 반영되지 않습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netstat",
@@ -374,66 +681,123 @@
       "task": "network.legacy",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
       "requiresAdmin": false,
       "summary": "(구형) 열린 포트·연결·라우팅·통계 조회",
-      "description": "net-tools 패키지의 구형 네트워크 상태 조회 명령입니다. 리스닝 포트, 연결 세션, 라우팅 테이블, 프로토콜 통계를 보여 줍니다. 최신 배포판에서는 ss 로 대체되었으며 기본 설치되지 않습니다.",
+      "description": "연결·리스닝 포트, 라우팅 테이블(-rn), 인터페이스 통계(-in), 프로토콜 통계(-s)를 보는 명령입니다. Linux 에서는 net-tools 의 구형 명령으로 ss 로 대체되어 기본 설치되지 않지만, AIX·HP-UX·Solaris 에서는 기본 점검 도구입니다. -an, -rn, -in, -s 는 모든 OS 에서 같고 -t/-u/-l/-p 는 Linux 전용입니다.",
       "syntax": [
-        "netstat [-tulnp] [-an] [-r] [-s] [-i]"
+        "netstat -an",
+        "netstat -rn",
+        "netstat -in",
+        "netstat -tulnp"
       ],
       "options": [
         {
-          "flag": "-t / -u",
-          "desc": "TCP / UDP 만"
-        },
-        {
-          "flag": "-l",
-          "desc": "리스닝(LISTEN) 소켓만"
+          "flag": "-a",
+          "desc": "모든 소켓 (LISTEN + 연결). 공통"
         },
         {
           "flag": "-n",
-          "desc": "이름 변환 없이 숫자(IP·포트)로 표시"
-        },
-        {
-          "flag": "-p",
-          "desc": "소켓을 사용하는 PID/프로그램 (다른 사용자 프로세스는 root 필요)"
-        },
-        {
-          "flag": "-a",
-          "desc": "모든 소켓 (LISTEN + 연결)"
+          "desc": "이름 변환 없이 숫자(IP·포트)로 표시. 공통"
         },
         {
           "flag": "-r",
-          "desc": "라우팅 테이블 (route -n 과 동일)"
-        },
-        {
-          "flag": "-s",
-          "desc": "프로토콜별 통계 (재전송, 에러 등)"
+          "desc": "라우팅 테이블 (보통 -rn). 공통"
         },
         {
           "flag": "-i",
-          "desc": "인터페이스별 패킷·에러 통계"
+          "desc": "인터페이스별 패킷·에러 통계 (보통 -in). 공통"
+        },
+        {
+          "flag": "-s",
+          "desc": "프로토콜별 통계 (재전송, 에러 등). 공통"
+        },
+        {
+          "flag": "-t / -u",
+          "desc": "(Linux) TCP / UDP 만"
+        },
+        {
+          "flag": "-l",
+          "desc": "(Linux) 리스닝(LISTEN) 소켓만"
+        },
+        {
+          "flag": "-p",
+          "desc": "(Linux) 소켓을 사용하는 PID/프로그램 (다른 사용자 프로세스는 root 필요). AIX·HP-UX 에서 -p {{PROTO}} 는 해당 프로토콜 통계 출력"
+        },
+        {
+          "flag": "-A",
+          "desc": "(AIX) 소켓의 PCB 주소 표시. rmsock 으로 사용 프로세스를 찾을 때 사용"
+        },
+        {
+          "flag": "-f inet",
+          "desc": "(AIX·HP-UX·Solaris) 주소 체계 제한 (inet = IPv4, inet6 = IPv6)"
+        },
+        {
+          "flag": "-P {{PROTO}}",
+          "desc": "(Solaris) tcp·udp 등 프로토콜 제한"
         }
       ],
       "examples": [
         {
-          "title": "리스닝 포트와 프로세스 확인",
-          "command": "netstat -tulnp"
+          "title": "리스닝 포트와 프로세스 확인 (Linux)",
+          "command": "netstat -tulnp",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "특정 포트 연결 확인",
-          "command": "netstat -anp | grep :{{PORT}}"
+          "title": "리스닝 포트 확인 (모든 OS)",
+          "command": "netstat -an | grep LISTEN",
+          "note": "포트 구분자는 Linux 는 :, AIX·HP-UX·Solaris 는 . 입니다 (예: *.22)."
         },
         {
-          "title": "상태별 연결 수 세기",
-          "command": "netstat -ant | awk 'NR>2 {print $6}' | sort | uniq -c"
+          "title": "포트를 쓰는 프로세스 찾기 (AIX)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "netstat -Aan | grep {{PORT}}",
+              "desc": "해당 포트 줄의 첫 칸(PCB 주소, 예: f1000e0001c0bbb8) 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "rmsock {{PCB_ADDR}} tcpcb",
+              "desc": "소켓을 잡고 있는 프로세스 PID 출력"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ps -fp {{PID}}",
+              "desc": "프로세스 상세 확인"
+            }
+          ],
+          "note": "rmsock 은 소켓을 쓰는 프로세스가 없으면 그 소켓을 실제로 제거하니 조회 목적으로 반복 실행하지 마세요.",
+          "platforms": [
+            "aix"
+          ]
+        },
+        {
+          "title": "라우팅·인터페이스 에러 확인 (모든 OS)",
+          "command": "netstat -rn\nnetstat -in",
+          "note": "-in 의 Ierrs·Oerrs(Linux 는 RX-ERR·TX-ERR) 가 계속 늘면 케이블·NIC·듀플렉스 문제를 의심합니다."
+        },
+        {
+          "title": "상태별 연결 수 세기 (Linux)",
+          "command": "netstat -ant | awk 'NR>2 {print $6}' | sort | uniq -c",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
-        "연결이 많은 서버에서는 느립니다. ss 를 권장합니다."
+        "연결이 많은 Linux 서버에서는 느립니다. ss 를 권장합니다.",
+        "AIX·HP-UX·Solaris 10 의 netstat 은 PID 를 보여 주지 않습니다. AIX 는 rmsock, Solaris 는 pfiles, HP-UX 는 lsof(별도 설치)로 확인합니다."
       ],
       "install": {
         "rhel": {
@@ -459,7 +823,17 @@
         "lsof",
         "ifconfig",
         "route"
-      ]
+      ],
+      "platformNotes": {
+        "rhel": "net-tools 패키지 (기본 미설치). 같은 정보는 ss -tulnp, ip route, ip -s link 로 봅니다.",
+        "debian": "net-tools 패키지 (기본 미설치). 같은 정보는 ss -tulnp, ip route, ip -s link 로 봅니다.",
+        "aix": "PID 표시 옵션이 없어 netstat -Aan 으로 PCB 주소를 얻고 rmsock {{PCB_ADDR}} tcpcb 로 프로세스를 찾습니다 (lsof 는 AIX Toolbox 에서 별도 설치). -v 는 어댑터 상세 통계(entstat 와 비슷), -p {{PROTO}} 는 프로토콜 통계입니다.",
+        "hpux": "PID 표시가 없어 lsof(별도 설치)로 확인합니다. -p {{PROTO}} 는 프로토콜 통계입니다. 인터페이스 목록은 netstat -in, 하드웨어 정보는 lanscan 으로 봅니다.",
+        "solaris": "Solaris 10 은 PID 표시가 없어 pfiles {{PID}} 로 프로세스별 소켓을 확인합니다. -f inet -P tcp 로 범위를 좁힐 수 있습니다. Solaris 11 은 인터페이스·링크 정보에 ipadm·dladm 이 표준입니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "route",
@@ -470,53 +844,124 @@
       "task": "network.legacy",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux"
       ],
       "level": "frequent",
       "risk": "caution",
       "requiresAdmin": false,
       "summary": "(구형) 라우팅 테이블 조회·정적 경로 임시 추가",
-      "description": "net-tools 패키지의 구형 라우팅 테이블 조회·변경 명령입니다. ip route 로 대체되었으며 기본 설치되지 않습니다. 변경 사항은 런타임 전용입니다.",
+      "description": "라우팅 테이블에 정적 경로·기본 게이트웨이를 임시로 추가·삭제합니다. Linux 에서는 net-tools 의 구형 명령으로 ip route 로 대체되었고, AIX·HP-UX·Solaris 에서는 기본 명령이지만 인자 형식이 OS 마다 다릅니다. route 로 바꾼 경로는 런타임 전용이라(Solaris 의 -p 제외) 영구 설정을 따로 해야 하며, Unix 의 조회는 netstat -rn 으로 합니다.",
       "syntax": [
         "route -n",
-        "route add -net {{NETWORK}} netmask {{NETMASK}} gw {{GATEWAY}} [dev {{IFACE}}]"
+        "route add -net {{NETWORK}} netmask {{NETMASK}} gw {{GATEWAY}} [dev {{IFACE}}]",
+        "route add -net {{NETWORK}} -netmask {{NETMASK}} {{GATEWAY}}",
+        "route add net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}} {{COUNT}}"
       ],
       "options": [
         {
           "flag": "-n",
-          "desc": "숫자로 표시 (DNS 조회를 안 해서 빠름)"
+          "desc": "이름 변환 없이 숫자로 (Linux 는 route -n 이 조회 명령)"
         },
         {
-          "flag": "add -net {{NETWORK}} netmask {{NETMASK}} gw {{GATEWAY}}",
-          "desc": "네트워크 경로 추가"
+          "flag": "-p",
+          "desc": "(Solaris) 영구 경로로 추가·삭제 (재부팅 후 유지, route -p show 로 확인)"
         },
         {
-          "flag": "add -host {{IP}} gw {{GATEWAY}}",
-          "desc": "단일 호스트 경로 추가"
-        },
-        {
-          "flag": "add default gw {{GATEWAY}}",
-          "desc": "기본 게이트웨이 추가"
-        },
-        {
-          "flag": "del -net {{NETWORK}} netmask {{NETMASK}}",
-          "desc": "경로 삭제"
+          "flag": "-f",
+          "desc": "(AIX·HP-UX·Solaris) 게이트웨이 경로 전체 삭제 (위험)"
         }
       ],
       "examples": [
         {
-          "title": "라우팅 테이블 확인",
-          "command": "route -n"
+          "title": "라우팅 테이블 확인 (Linux)",
+          "command": "route -n",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "정적 경로 임시 추가",
+          "title": "정적 경로 임시 추가 (Linux)",
           "command": "route add -net {{NETWORK}} netmask {{NETMASK}} gw {{GATEWAY}}",
-          "note": "ip route add {{CIDR}} via {{GATEWAY}} 와 같습니다."
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "정적 경로 추가 후 영구 저장 (AIX)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "netstat -rn",
+              "desc": "현재 경로 확인·기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "route add -net {{NETWORK}} -netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "임시로 추가해 통신 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chdev -l inet0 -a route=net,-hopcount,0,-netmask,{{NETMASK}},,,{{NETWORK}},{{GATEWAY}}",
+              "desc": "ODM(inet0)에 영구 저장 (smitty mkroute 와 같음)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lsattr -El inet0 -a route",
+              "desc": "저장된 경로 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "route delete -net {{NETWORK}} -netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "(롤백) 런타임 경로 삭제. ODM 은 smitty rmroute 로 삭제"
+            }
+          ],
+          "note": "이미 route 로 추가한 상태에서 chdev 를 실행하면 같은 경로가 있다는 오류가 날 수 있습니다. 그 경우 먼저 route delete 후 chdev 를 실행합니다.",
+          "platforms": [
+            "aix"
+          ]
+        },
+        {
+          "title": "정적 경로 추가 후 영구 저장 (HP-UX)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "netstat -rn",
+              "desc": "현재 경로 확인·기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "route add net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}} 1",
+              "desc": "경로 임시 추가"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/rc.config.d/netconf /etc/rc.config.d/netconf.bak",
+              "desc": "영구 설정 파일 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/rc.config.d/netconf",
+              "desc": "ROUTE_DESTINATION[n]=\"net {{NETWORK}}\", ROUTE_MASK[n], ROUTE_GATEWAY[n], ROUTE_COUNT[n]=1 추가 (n 은 다음 빈 번호)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "route delete net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "(롤백) 런타임 경로 삭제 후 netconf 를 백업본으로 복원"
+            }
+          ],
+          "platforms": [
+            "hpux"
+          ]
         }
       ],
       "cautions": [
-        "재부팅하면 사라집니다. 영구 적용은 nmcli·netplan 으로 하세요.",
-        "원격에서 기본 게이트웨이를 지우면 접속이 끊깁니다."
+        "route 로 추가한 경로는 재부팅하면 사라집니다(Solaris -p 제외). 영구 설정은 nmcli·netplan(Linux), chdev(AIX), netconf(HP-UX)로 하세요.",
+        "원격에서 기본 게이트웨이를 지우면 접속이 끊깁니다.",
+        "-f 는 게이트웨이 경로를 모두 지워 원격 접속이 바로 끊길 수 있습니다."
       ],
       "install": {
         "rhel": {
@@ -540,8 +985,101 @@
         "ip",
         "netstat",
         "nmcli",
-        "netplan"
-      ]
+        "netplan",
+        "solaris-route"
+      ],
+      "commandGroups": [
+        {
+          "title": "OS 별 경로 추가·삭제 형식",
+          "type": "subcommand",
+          "note": "Unix 에서 현재 경로 조회는 netstat -rn 입니다.",
+          "items": [
+            {
+              "cmd": "route add -net {{NETWORK}} netmask {{NETMASK}} gw {{GATEWAY}}",
+              "desc": "네트워크 경로 추가 (Linux, gw 키워드 필요)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "route add -host {{IP}} gw {{GATEWAY}}",
+              "desc": "단일 호스트 경로 추가 (Linux)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "route add default gw {{GATEWAY}}",
+              "desc": "기본 게이트웨이 추가 (Linux)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "route del -net {{NETWORK}} netmask {{NETMASK}}",
+              "desc": "경로 삭제 (Linux)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "route add -net {{NETWORK}} -netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "네트워크 경로 추가 (AIX·Solaris, 게이트웨이를 바로 씀)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "route add default {{GATEWAY}}",
+              "desc": "기본 게이트웨이 추가 (AIX·Solaris)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "route delete -net {{NETWORK}} -netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "경로 삭제 (AIX·Solaris)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "route add net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}} 1",
+              "desc": "네트워크 경로 추가 (HP-UX, 끝의 숫자는 홉 수: 다른 라우터 경유 1, 직접 연결 0)",
+              "platforms": [
+                "hpux"
+              ]
+            },
+            {
+              "cmd": "route add default {{GATEWAY}} 1",
+              "desc": "기본 게이트웨이 추가 (HP-UX)",
+              "platforms": [
+                "hpux"
+              ]
+            },
+            {
+              "cmd": "route delete net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}}",
+              "desc": "경로 삭제 (HP-UX)",
+              "platforms": [
+                "hpux"
+              ]
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "rhel": "net-tools 패키지 (기본 미설치). 영구 경로는 nmcli con mod \"{{CONN}}\" +ipv4.routes 로 설정합니다.",
+        "debian": "net-tools 패키지 (기본 미설치). 영구 경로는 netplan 의 routes: 로 설정합니다.",
+        "aix": "조회는 netstat -rn. route 로 추가한 경로는 재부팅 시 사라지며, 영구 경로는 chdev -l inet0 -a route=... 또는 smitty mkroute 로 ODM(inet0)에 저장합니다. 저장된 경로는 lsattr -El inet0 -a route 로 확인합니다.",
+        "hpux": "형식이 route add net|host {{DEST}} netmask {{NETMASK}} {{GATEWAY}} {{COUNT}} 로, 끝에 홉 수(count)를 넣습니다. 영구 경로는 /etc/rc.config.d/netconf 의 ROUTE_DESTINATION[n]·ROUTE_MASK[n]·ROUTE_GATEWAY[n]·ROUTE_COUNT[n] 입니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ping",
@@ -552,67 +1090,108 @@
       "task": "network.ping",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
       "requiresAdmin": false,
       "summary": "ICMP 로 대상 호스트 응답·지연 확인",
-      "description": "ICMP echo 요청을 보내 대상 호스트가 응답하는지, 왕복 지연(RTT)과 손실률이 얼마인지 확인합니다. Linux 에서는 Ctrl+C 로 멈출 때까지 계속 보내므로 -c 로 횟수를 지정하는 것이 일반적입니다.",
+      "description": "ICMP echo 요청을 보내 대상 호스트가 응답하는지, 왕복 지연(RTT)과 손실률이 얼마인지 확인합니다. Linux·AIX 는 Ctrl+C 로 멈출 때까지 계속 보내므로 -c 로 횟수를 지정하는 것이 일반적입니다. HP-UX 는 ping {{HOST}} -n {{COUNT}} 형식이고, Solaris 의 ping {{HOST}} 는 'is alive' 한 줄만 출력하므로 통계는 ping -s 로 봅니다.",
       "syntax": [
-        "ping [-c {{COUNT}}] [-i {{INTERVAL}}] [-s {{SIZE}}] [-I {{IFACE}}] {{HOST}}"
+        "ping [-c {{COUNT}}] [-i {{INTERVAL}}] [-s {{SIZE}}] [-I {{IFACE}}] {{HOST}}",
+        "ping {{HOST}} [{{SIZE}}] [-n {{COUNT}}]",
+        "ping -s {{HOST}} [{{SIZE}}] [{{COUNT}}]"
       ],
       "options": [
         {
           "flag": "-c {{COUNT}}",
-          "desc": "보낼 횟수 (없으면 무한)"
+          "desc": "(Linux·AIX) 보낼 횟수 (없으면 무한)"
         },
         {
           "flag": "-i {{SEC}}",
-          "desc": "전송 간격(초). 0.2 미만은 root 필요"
-        },
-        {
-          "flag": "-W {{SEC}}",
-          "desc": "각 응답 대기 시간"
-        },
-        {
-          "flag": "-w {{SEC}}",
-          "desc": "전체 실행 제한 시간"
+          "desc": "(Linux·AIX) 전송 간격(초). Linux 에서 0.2 미만은 root 필요"
         },
         {
           "flag": "-s {{SIZE}}",
-          "desc": "데이터 크기(바이트). 기본 56"
+          "desc": "(Linux·AIX) 데이터 크기(바이트). 기본 56. Solaris 에서 -s 는 통계 모드"
+        },
+        {
+          "flag": "-W {{SEC}}",
+          "desc": "(Linux) 각 응답 대기 시간"
+        },
+        {
+          "flag": "-w {{SEC}}",
+          "desc": "(Linux) 전체 실행 제한 시간"
         },
         {
           "flag": "-M do",
-          "desc": "단편화 금지 (MTU 확인용)"
+          "desc": "(Linux) 단편화 금지 (MTU 확인용)"
         },
         {
           "flag": "-I {{IFACE}}",
-          "desc": "출발 인터페이스 또는 출발지 IP 지정"
+          "desc": "(Linux) 출발 인터페이스 또는 출발지 IP 지정"
         },
         {
           "flag": "-4 / -6",
-          "desc": "IPv4 / IPv6 강제"
+          "desc": "(Linux) IPv4 / IPv6 강제"
         },
         {
           "flag": "-q",
-          "desc": "요약만 출력"
+          "desc": "(Linux) 요약만 출력"
+        },
+        {
+          "flag": "-n {{COUNT}}",
+          "desc": "(HP-UX) 보낼 횟수. ping {{HOST}} -n 4 처럼 호스트 뒤에 씀 (Linux·Solaris 의 -n 은 숫자 표시)"
+        },
+        {
+          "flag": "-s",
+          "desc": "(Solaris) 통계 모드: 1초마다 보내고 끝나면 손실률·RTT 요약. 호스트 뒤에 크기·횟수 지정 가능"
         }
       ],
       "examples": [
         {
           "title": "4회만 보내고 종료",
-          "command": "ping -c 4 {{HOST}}"
+          "command": "ping -c 4 {{HOST}}",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix"
+          ]
+        },
+        {
+          "title": "4회만 보내고 종료 (HP-UX)",
+          "command": "ping {{HOST}} -n 4",
+          "platforms": [
+            "hpux"
+          ]
+        },
+        {
+          "title": "응답 여부 / 통계 확인 (Solaris)",
+          "command": "ping {{HOST}}\nping -s {{HOST}} 56 4",
+          "note": "첫 줄은 응답하면 '{{HOST}} is alive' 만 출력합니다. 둘째 줄은 56바이트로 4회 보내고 손실률·RTT 를 보여 줍니다.",
+          "platforms": [
+            "solaris"
+          ]
         },
         {
           "title": "MTU 확인 (1500 기준: 1472 + 헤더 28)",
           "command": "ping -M do -s 1472 -c 3 {{IP}}",
-          "note": "'message too long' 이나 응답 없음이면 경로 MTU 가 더 작습니다."
+          "note": "'message too long' 이나 응답 없음이면 경로 MTU 가 더 작습니다.",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "특정 인터페이스로 핑",
-          "command": "ping -I {{IFACE}} -c 4 {{IP}}"
+          "command": "ping -I {{IFACE}} -c 4 {{IP}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
@@ -645,7 +1224,15 @@
         "mtr",
         "nc",
         "ip"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-c 횟수, -s 크기 지정 방식이 Linux 와 같습니다. Linux 전용 옵션(-W, -w, -M 등)은 없거나 의미가 다를 수 있으니 man ping 으로 확인하세요.",
+        "hpux": "ping {{HOST}} [{{SIZE}}] [-n {{COUNT}}] 형식입니다. 횟수를 주지 않으면 Ctrl+C 를 누를 때까지 계속합니다.",
+        "solaris": "ping {{HOST}} 는 응답이 오면 '{{HOST}} is alive' 한 줄을 출력하고 끝나며, 응답이 없으면 기본 20초 뒤 'no answer from {{HOST}}' 를 출력합니다. RTT·손실률은 ping -s {{HOST}} [{{SIZE}}] [{{COUNT}}] 로 봅니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-ping",
@@ -735,7 +1322,10 @@
         "tracert",
         "pathping",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "test-connection",
@@ -806,7 +1396,10 @@
       "related": [
         "win-ping",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ss",
@@ -823,7 +1416,7 @@
       "risk": "safe",
       "requiresAdmin": false,
       "summary": "열린 포트·소켓·연결 세션과 사용 프로세스 조회",
-      "description": "소켓 상태를 조회하는 표준 도구로 netstat 을 대체합니다. 리스닝 포트, 연결 세션, 연결 상태별 개수, 사용하는 프로세스(PID) 를 빠르게 보여 줍니다. 다른 사용자의 프로세스 정보(-p)는 root 권한이 있어야 보입니다.",
+      "description": "소켓 상태를 조회하는 표준 도구로 netstat 을 대체합니다. 리스닝 포트, 연결 세션, 연결 상태별 개수, 사용하는 프로세스(PID) 를 빠르게 보여 줍니다. 다른 사용자의 프로세스 정보(-p)는 root 권한이 있어야 보입니다. AIX·HP-UX·Solaris 에는 없으며 netstat -an 을 사용합니다.",
       "syntax": [
         "ss [-tulnp] [-a] [state {{STATE}}] [ '( dport = :{{PORT}} or sport = :{{PORT}} )' ]"
       ],
@@ -859,10 +1452,6 @@
         {
           "flag": "-i",
           "desc": "TCP 내부 정보 (rtt, cwnd, 재전송 수)"
-        },
-        {
-          "flag": "state established|time-wait|...",
-          "desc": "연결 상태로 필터"
         },
         {
           "flag": "-4 / -6",
@@ -923,7 +1512,85 @@
         "nc",
         "firewall-cmd",
         "ufw"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "필터식",
+          "type": "directive",
+          "note": "필터는 옵션 뒤에 붙입니다. 예: ss -tn state established '( dport = :443 )'",
+          "items": [
+            {
+              "cmd": "state established",
+              "desc": "연결 상태로 필터 (established, syn-sent, syn-recv, fin-wait-1, fin-wait-2, time-wait, close-wait, last-ack, listening, closing)"
+            },
+            {
+              "cmd": "state connected",
+              "desc": "LISTEN·CLOSED 를 뺀 모든 연결"
+            },
+            {
+              "cmd": "'sport = :{{PORT}}'",
+              "desc": "로컬(출발) 포트 조건"
+            },
+            {
+              "cmd": "'dport = :{{PORT}}'",
+              "desc": "원격(목적) 포트 조건"
+            },
+            {
+              "cmd": "dst {{IP}}",
+              "desc": "원격 주소 조건 (dst {{CIDR}} 대역도 가능)"
+            },
+            {
+              "cmd": "src {{IP}}",
+              "desc": "로컬 주소 조건"
+            },
+            {
+              "cmd": "'( sport = :{{PORT}} or dport = :{{PORT}} )'",
+              "desc": "괄호·or·and 로 조합 (셸이 해석하지 않게 작은따옴표)"
+            }
+          ]
+        },
+        {
+          "title": "State 값의 의미 (출력)",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "LISTEN",
+              "desc": "연결 대기 중인 서버 포트 (UDP 는 UNCONN 으로 표시)"
+            },
+            {
+              "cmd": "ESTAB",
+              "desc": "연결이 맺어져 데이터 송수신 가능"
+            },
+            {
+              "cmd": "SYN-SENT",
+              "desc": "내가 연결 요청 후 응답 대기. 오래 남으면 상대 서버 다운·방화벽 차단 의심"
+            },
+            {
+              "cmd": "SYN-RECV",
+              "desc": "상대 요청을 받고 마지막 ACK 대기. 많으면 백로그 부족·SYN flood·비대칭 경로 의심"
+            },
+            {
+              "cmd": "TIME-WAIT",
+              "desc": "내가 먼저 끊은 연결의 대기 상태(약 60초). 짧은 연결이 많으면 정상적으로 많음, 포트 고갈만 주의"
+            },
+            {
+              "cmd": "CLOSE-WAIT",
+              "desc": "상대가 끊었는데 내 애플리케이션이 소켓을 닫지 않음. 계속 늘면 애플리케이션 문제"
+            },
+            {
+              "cmd": "FIN-WAIT-1 / FIN-WAIT-2",
+              "desc": "내가 끊기를 요청하고 상대 응답·종료를 기다림"
+            },
+            {
+              "cmd": "LAST-ACK",
+              "desc": "상대가 끊은 뒤 내가 종료를 보내고 마지막 ACK 대기"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-netstat",
@@ -978,10 +1645,6 @@
         {
           "flag": "-e",
           "desc": "이더넷 송수신 통계"
-        },
-        {
-          "flag": "{{INTERVAL}}",
-          "desc": "N 초마다 반복 출력"
         }
       ],
       "examples": [
@@ -998,6 +1661,11 @@
           "title": "리스닝 포트만 보기",
           "command": "netstat -ano | findstr LISTENING",
           "note": "한국어 Windows 에서도 상태 문자열은 LISTENING 으로 표시됩니다."
+        },
+        {
+          "title": "5초마다 반복 출력 (Ctrl+C 로 중지)",
+          "command": "netstat -ano 5 | findstr :{{PORT}}",
+          "note": "명령 끝의 숫자는 반복 간격(초)입니다."
         }
       ],
       "cautions": [
@@ -1017,7 +1685,10 @@
         "tasklist",
         "test-netconnection",
         "win-route"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-nettcpconnection",
@@ -1060,10 +1731,6 @@
         {
           "flag": "-OwningProcess {{PID}}",
           "desc": "특정 프로세스의 연결만"
-        },
-        {
-          "flag": "Get-NetUDPEndpoint -LocalPort {{PORT}}",
-          "desc": "UDP 리스닝 포트 조회"
         }
       ],
       "examples": [
@@ -1096,7 +1763,26 @@
         "win-netstat",
         "test-netconnection",
         "get-process"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "함께 쓰는 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Get-NetUDPEndpoint -LocalPort {{PORT}}",
+              "desc": "UDP 리스닝 포트 조회"
+            },
+            {
+              "cmd": "Get-Process -Id {{PID}}",
+              "desc": "OwningProcess(PID)의 프로세스 이름 확인"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "curl",
@@ -1107,7 +1793,9 @@
       "task": "network.http",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -1196,6 +1884,16 @@
           "package": "curl",
           "preinstalled": true,
           "note": "Debian 12 최소 설치에는 없을 수 있음"
+        },
+        "aix": {
+          "package": "curl (AIX Toolbox)",
+          "preinstalled": false,
+          "note": "AIX Toolbox for Open Source Software 에서 설치 (dnf install curl). /opt/freeware/bin/curl"
+        },
+        "solaris": {
+          "package": "web/curl",
+          "preinstalled": true,
+          "note": "Solaris 11 은 /usr/bin/curl 기본 제공. Solaris 10 에는 기본 없음"
         }
       },
       "help": "man curl  ·  curl --help all",
@@ -1215,7 +1913,17 @@
         "nc",
         "openssl",
         "dig"
-      ]
+      ],
+      "versions": {
+        "solaris": "11 이상"
+      },
+      "platformNotes": {
+        "aix": "기본 설치에는 없어 AIX Toolbox 에서 설치하며 /opt/freeware/bin 에 들어가므로 PATH 를 확인하세요. HTTPS 인증서 검증이 실패하면 --cacert {{CA_FILE}} 로 CA 파일을 지정합니다.",
+        "solaris": "Solaris 11 은 /usr/bin/curl 이 기본 제공되어 사용법이 같습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "wget",
@@ -1226,7 +1934,9 @@
       "task": "network.http",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -1298,10 +2008,22 @@
         "debian": {
           "package": "wget",
           "preinstalled": true
+        },
+        "aix": {
+          "package": "wget (AIX Toolbox)",
+          "preinstalled": false,
+          "note": "AIX Toolbox 에서 설치 (dnf install wget). /opt/freeware/bin/wget"
+        },
+        "solaris": {
+          "package": "web/wget",
+          "preinstalled": true,
+          "note": "Solaris 11 은 /usr/bin/wget, Solaris 10 은 /usr/sfw/bin/wget"
         }
       },
       "platformNotes": {
-        "rhel": "RHEL 10 / Fedora 최신 버전은 wget2 로 바뀌었지만 RHEL 8·9 는 wget 1.x 입니다."
+        "rhel": "RHEL 10 / Fedora 최신 버전은 wget2 로 바뀌었지만 RHEL 8·9 는 wget 1.x 입니다.",
+        "aix": "기본 설치에는 없어 AIX Toolbox 에서 설치합니다. /opt/freeware/bin 이 PATH 에 있는지 확인하세요.",
+        "solaris": "Solaris 11 은 /usr/bin/wget, Solaris 10 은 /usr/sfw/bin/wget 에 있습니다 (PATH 에 없으면 전체 경로로 실행)."
       },
       "help": "man wget",
       "keywords": [
@@ -1314,7 +2036,10 @@
       ],
       "related": [
         "curl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-curl",
@@ -1398,7 +2123,10 @@
       "related": [
         "invoke-webrequest",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "invoke-webrequest",
@@ -1496,7 +2224,10 @@
       "related": [
         "win-curl",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "traceroute",
@@ -1507,7 +2238,10 @@
       "task": "network.trace",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1520,31 +2254,31 @@
       "options": [
         {
           "flag": "-n",
-          "desc": "홉 주소를 DNS 역변환 없이 숫자로 (빠름)"
-        },
-        {
-          "flag": "-I",
-          "desc": "ICMP echo 방식 (root 필요)"
-        },
-        {
-          "flag": "-T",
-          "desc": "TCP SYN 방식 (root 필요, 기본 포트 80)"
-        },
-        {
-          "flag": "-p {{PORT}}",
-          "desc": "목적 포트 지정 (-T 와 함께 서비스 포트로 추적)"
+          "desc": "홉 주소를 DNS 역변환 없이 숫자로 (빠름). 공통"
         },
         {
           "flag": "-m {{MAX_HOPS}}",
-          "desc": "최대 홉 수 (기본 30)"
+          "desc": "최대 홉 수 (기본 30). 공통"
         },
         {
           "flag": "-w {{SEC}}",
-          "desc": "응답 대기 시간"
+          "desc": "응답 대기 시간. 공통"
         },
         {
           "flag": "-q {{N}}",
-          "desc": "홉당 프로브 수 (기본 3)"
+          "desc": "홉당 프로브 수 (기본 3). 공통"
+        },
+        {
+          "flag": "-p {{PORT}}",
+          "desc": "목적 포트 지정 (UDP 기본 방식의 시작 포트, Linux 는 -T 와 함께 서비스 포트)"
+        },
+        {
+          "flag": "-I",
+          "desc": "(Linux·Solaris) ICMP echo 방식 (root 필요)"
+        },
+        {
+          "flag": "-T",
+          "desc": "(Linux) TCP SYN 방식 (root 필요, 기본 포트 80)"
         }
       ],
       "examples": [
@@ -1555,7 +2289,18 @@
         {
           "title": "서비스 포트(TCP 443)로 경로 추적",
           "command": "sudo traceroute -T -p 443 -n {{HOST}}",
-          "note": "방화벽이 UDP·ICMP 를 막을 때 실제 서비스 포트로 확인"
+          "note": "방화벽이 UDP·ICMP 를 막을 때 실제 서비스 포트로 확인",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "경로 추적 (HP-UX, 전체 경로)",
+          "command": "/usr/contrib/bin/traceroute -n {{HOST}}",
+          "platforms": [
+            "hpux"
+          ]
         }
       ],
       "cautions": [
@@ -1585,7 +2330,15 @@
         "tracepath",
         "mtr",
         "ping"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "/usr/sbin/traceroute. 기본 UDP 방식이며 -n·-m·-q·-w·-p 사용법이 같습니다. TCP 방식(-T)은 없습니다.",
+        "hpux": "/usr/contrib/bin/traceroute 에 있어 PATH 에 없으면 전체 경로로 실행합니다. TCP 방식(-T)은 없습니다.",
+        "solaris": "/usr/sbin/traceroute. -I 로 ICMP 방식을 쓸 수 있고 TCP 방식(-T)은 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tracepath",
@@ -1637,6 +2390,10 @@
           "title": "경로와 PMTU 확인",
           "command": "tracepath -n {{HOST}}",
           "output": " 1?: [LOCALHOST]                      pmtu 1500\n 1:  10.0.0.1                                0.512ms\n 2:  10.10.0.1                               1.203ms pmtu 1400"
+        },
+        {
+          "title": "최대 홉을 줄여 빠르게 확인",
+          "command": "tracepath -n -m 15 {{HOST}}"
         }
       ],
       "cautions": [],
@@ -1663,7 +2420,10 @@
         "traceroute",
         "mtr",
         "ping"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "mtr",
@@ -1756,7 +2516,10 @@
         "traceroute",
         "tracepath",
         "ping"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tracert",
@@ -1798,6 +2561,10 @@
         {
           "title": "경로 추적 (숫자 표시)",
           "command": "tracert -d {{HOST}}"
+        },
+        {
+          "title": "홉 수·대기 시간을 줄여 빠르게 확인",
+          "command": "tracert -d -h 15 -w 500 {{HOST}}"
         }
       ],
       "cautions": [
@@ -1815,7 +2582,10 @@
         "pathping",
         "win-ping",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pathping",
@@ -1881,7 +2651,10 @@
       "related": [
         "tracert",
         "win-ping"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dig",
@@ -1892,7 +2665,8 @@
       "task": "network.dns",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1909,8 +2683,8 @@
           "desc": "질의할 DNS 서버 지정"
         },
         {
-          "flag": "{{TYPE}}",
-          "desc": "레코드 종류 (A, AAAA, CNAME, MX, TXT, NS, SOA, SRV, ANY)"
+          "flag": "-t {{TYPE}}",
+          "desc": "레코드 종류 (A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV). dig {{NAME}} MX 처럼 이름 뒤에 바로 써도 됨"
         },
         {
           "flag": "+short",
@@ -1990,7 +2764,13 @@
         "resolvectl",
         "etc-resolv-conf",
         "etc-hosts"
-      ]
+      ],
+      "platformNotes": {
+        "solaris": "/usr/sbin/dig 로 제공됩니다 (Solaris 11 은 BIND 도구 패키지). 사용법은 같습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nslookup",
@@ -2001,7 +2781,10 @@
       "task": "network.dns",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -2009,13 +2792,11 @@
       "summary": "DNS 이름·IP 간단 조회 (Linux)",
       "description": "DNS 서버에 질의해 이름의 IP 또는 IP 의 이름을 조회합니다. Windows 와 사용법이 비슷해 익숙하지만, 상세 분석에는 dig 가 더 정확합니다. 두 번째 인자로 DNS 서버를 지정할 수 있습니다.",
       "syntax": [
-        "nslookup [-type={{TYPE}}] {{NAME}} [{{DNS_SERVER}}]"
+        "nslookup [-type={{TYPE}}] {{NAME}} [{{DNS_SERVER}}]",
+        "nslookup {{IP}}",
+        "nslookup"
       ],
       "options": [
-        {
-          "flag": "{{NAME}} {{DNS_SERVER}}",
-          "desc": "지정한 DNS 서버로 질의"
-        },
         {
           "flag": "-type={{TYPE}}",
           "desc": "레코드 종류 (A, MX, TXT, NS, SOA, PTR...)"
@@ -2029,8 +2810,8 @@
           "desc": "응답 상세 (TTL 등) 표시"
         },
         {
-          "flag": "{{IP}}",
-          "desc": "IP 를 넣으면 역방향 조회"
+          "flag": "-timeout={{SEC}}",
+          "desc": "응답 대기 시간"
         }
       ],
       "examples": [
@@ -2041,6 +2822,36 @@
         {
           "title": "특정 DNS 서버로 MX 조회",
           "command": "nslookup -type=MX {{DOMAIN}} {{DNS_SERVER}}"
+        },
+        {
+          "title": "대화형으로 특정 DNS 서버에 MX 조회",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "nslookup",
+              "desc": "대화형 모드 시작"
+            },
+            {
+              "prompt": ">",
+              "cmd": "server {{DNS_SERVER}}",
+              "desc": "질의할 DNS 서버 지정"
+            },
+            {
+              "prompt": ">",
+              "cmd": "set type=MX",
+              "desc": "레코드 종류를 MX 로"
+            },
+            {
+              "prompt": ">",
+              "cmd": "{{DOMAIN}}",
+              "desc": "조회"
+            },
+            {
+              "prompt": ">",
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
         }
       ],
       "cautions": [
@@ -2068,7 +2879,65 @@
         "dig",
         "host",
         "resolvectl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "대화형 모드",
+          "type": "interactive",
+          "prompt": ">",
+          "note": "인자 없이 nslookup 을 실행하면 > 프롬프트가 나옵니다. 여러 이름을 같은 조건으로 연속 조회할 때 편합니다.",
+          "items": [
+            {
+              "cmd": "{{NAME}}",
+              "desc": "이름 조회 (설정한 type·server 기준)"
+            },
+            {
+              "cmd": "{{IP}}",
+              "desc": "역방향(PTR) 조회"
+            },
+            {
+              "cmd": "server {{DNS_SERVER}}",
+              "desc": "이후 질의할 DNS 서버 변경"
+            },
+            {
+              "cmd": "set type=MX",
+              "desc": "레코드 종류 변경 (A, NS, SOA, TXT, PTR, ANY 등. set q= 도 같음)"
+            },
+            {
+              "cmd": "set debug",
+              "desc": "응답 상세 표시 (set nodebug 로 끄기)"
+            },
+            {
+              "cmd": "set timeout={{SEC}}",
+              "desc": "응답 대기 시간"
+            },
+            {
+              "cmd": "set retry={{N}}",
+              "desc": "재시도 횟수"
+            },
+            {
+              "cmd": "set norecurse",
+              "desc": "재귀 질의 끄기 (권한 서버가 직접 가진 값인지 확인)"
+            },
+            {
+              "cmd": "set all",
+              "desc": "현재 설정값 보기"
+            },
+            {
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "기본 포함 (/usr/bin/nslookup). 시스템 이름 해석 순서는 /etc/netsvc.conf 가 정하지만 nslookup 은 DNS 서버에 직접 질의합니다.",
+        "hpux": "기본 포함. HP-UX 의 nslookup 은 /etc/nsswitch.conf 순서에 따라 /etc/hosts 를 먼저 볼 수 있으니(\"Using /etc/hosts on:\" 표시) 결과의 출처를 확인하세요.",
+        "solaris": "기본 포함 (/usr/sbin/nslookup). 상세 분석은 dig 를 사용합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "host",
@@ -2087,16 +2956,13 @@
       "summary": "DNS 이름·IP 를 한 줄로 간단 조회",
       "description": "DNS 이름의 IP, IP 의 이름(역방향), MX 등을 한 줄 형식으로 간단히 보여 줍니다. 빠르게 정방향·역방향을 확인할 때 dig 보다 간결합니다.",
       "syntax": [
-        "host [-t {{TYPE}}] {{NAME}} [{{DNS_SERVER}}]"
+        "host [-t {{TYPE}}] {{NAME}} [{{DNS_SERVER}}]",
+        "host {{IP}}"
       ],
       "options": [
         {
           "flag": "-t {{TYPE}}",
           "desc": "레코드 종류 (A, MX, TXT, NS, SOA...)"
-        },
-        {
-          "flag": "{{IP}}",
-          "desc": "IP 를 넣으면 역방향 조회"
         },
         {
           "flag": "-a",
@@ -2144,7 +3010,10 @@
       "related": [
         "dig",
         "nslookup"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "resolvectl",
@@ -2164,34 +3033,22 @@
       "risk": "safe",
       "requiresAdmin": false,
       "summary": "systemd-resolved 상태·실제 DNS 서버 확인·캐시 비우기",
-      "description": "systemd-resolved 가 관리하는 DNS 설정을 확인하고 조회·캐시 비우기를 합니다. Ubuntu 는 /etc/resolv.conf 에 127.0.0.53 만 보이므로 인터페이스별 실제 상위 DNS 서버는 이 명령으로 확인해야 합니다.",
+      "description": "systemd-resolved 가 관리하는 DNS 설정을 확인하고 조회·캐시 비우기를 합니다. Ubuntu 는 /etc/resolv.conf 에 127.0.0.53 만 보이므로 인터페이스별 실제 상위 DNS 서버는 이 명령으로 확인해야 합니다. AIX·HP-UX·Solaris 에는 없으며 /etc/resolv.conf 를 직접 확인합니다.",
       "syntax": [
         "resolvectl [status [{{IFACE}}] | query {{NAME}} | flush-caches | statistics]"
       ],
       "options": [
         {
-          "flag": "status",
-          "desc": "전역·인터페이스별 DNS 서버, 검색 도메인 확인"
+          "flag": "-t {{TYPE}}",
+          "desc": "query 와 함께: 레코드 종류 (A, AAAA, MX, TXT...)"
         },
         {
-          "flag": "query {{NAME}}",
-          "desc": "systemd-resolved 를 통해 이름 조회 (어느 인터페이스로 질의했는지 표시)"
+          "flag": "-i {{IFACE}}",
+          "desc": "query 와 함께: 지정한 인터페이스의 DNS 로만 조회"
         },
         {
-          "flag": "flush-caches",
-          "desc": "DNS 캐시 비우기 (root 필요)"
-        },
-        {
-          "flag": "statistics",
-          "desc": "캐시 적중률 등 통계"
-        },
-        {
-          "flag": "dns {{IFACE}} {{DNS_SERVER}}",
-          "desc": "인터페이스 DNS 임시 변경 (재시작 시 원복)"
-        },
-        {
-          "flag": "domain {{IFACE}} {{DOMAIN}}",
-          "desc": "검색 도메인 임시 변경"
+          "flag": "-4 / -6",
+          "desc": "query 와 함께: IPv4 / IPv6 주소만"
         }
       ],
       "examples": [
@@ -2239,7 +3096,46 @@
         "etc-resolv-conf",
         "dig",
         "netplan"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "resolvectl 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "resolvectl status [{{IFACE}}]",
+              "desc": "전역·인터페이스별 DNS 서버, 검색 도메인"
+            },
+            {
+              "cmd": "resolvectl query {{NAME}}",
+              "desc": "systemd-resolved 를 통해 조회 (어느 인터페이스로 질의했는지 표시)"
+            },
+            {
+              "cmd": "resolvectl flush-caches",
+              "desc": "DNS 캐시 비우기 (root)"
+            },
+            {
+              "cmd": "resolvectl statistics",
+              "desc": "캐시 적중률 등 통계"
+            },
+            {
+              "cmd": "resolvectl dns {{IFACE}} {{DNS_SERVER}}",
+              "desc": "인터페이스 DNS 임시 변경 (재시작 시 원복)"
+            },
+            {
+              "cmd": "resolvectl domain {{IFACE}} {{DOMAIN}}",
+              "desc": "검색 도메인 임시 변경"
+            },
+            {
+              "cmd": "resolvectl revert {{IFACE}}",
+              "desc": "임시로 바꾼 DNS·도메인을 원래대로"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-nslookup",
@@ -2260,13 +3156,10 @@
       "summary": "Windows DNS 이름·IP 조회",
       "description": "DNS 서버에 질의해 이름과 IP 를 조회합니다. 인자 없이 실행하면 대화형 모드로 들어가 set type= 등으로 반복 질의할 수 있습니다. hosts 파일과 DNS 클라이언트 캐시를 사용하지 않고 DNS 서버에 직접 질의합니다.",
       "syntax": [
-        "nslookup [-type={{TYPE}}] {{NAME}} [{{DNS_SERVER}}]"
+        "nslookup [-type={{TYPE}}] {{NAME}} [{{DNS_SERVER}}]",
+        "nslookup"
       ],
       "options": [
-        {
-          "flag": "{{NAME}} {{DNS_SERVER}}",
-          "desc": "지정한 DNS 서버로 질의"
-        },
         {
           "flag": "-type={{TYPE}}",
           "desc": "레코드 종류 (A, MX, TXT, NS, SRV, PTR...)"
@@ -2278,10 +3171,6 @@
         {
           "flag": "-timeout={{SEC}}",
           "desc": "응답 대기 시간"
-        },
-        {
-          "flag": "(대화형) set type={{TYPE}} / server {{DNS_SERVER}}",
-          "desc": "대화형 모드에서 종류·서버 변경, exit 로 종료"
         }
       ],
       "examples": [
@@ -2314,7 +3203,44 @@
         "resolve-dnsname",
         "ipconfig",
         "win-etc-hosts"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "대화형 모드",
+          "type": "interactive",
+          "prompt": ">",
+          "note": "인자 없이 nslookup 을 실행하면 > 프롬프트가 나옵니다.",
+          "items": [
+            {
+              "cmd": "{{NAME}}",
+              "desc": "이름 조회"
+            },
+            {
+              "cmd": "server {{DNS_SERVER}}",
+              "desc": "이후 질의할 DNS 서버 변경"
+            },
+            {
+              "cmd": "set type={{TYPE}}",
+              "desc": "레코드 종류 변경 (A, MX, SRV, TXT, PTR 등)"
+            },
+            {
+              "cmd": "set debug",
+              "desc": "응답 상세 표시 (set nodebug 로 끄기)"
+            },
+            {
+              "cmd": "set timeout={{SEC}}",
+              "desc": "응답 대기 시간"
+            },
+            {
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "resolve-dnsname",
@@ -2391,7 +3317,10 @@
         "win-nslookup",
         "ipconfig",
         "win-etc-hosts"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nc",
@@ -2406,7 +3335,8 @@
       "task": "network.port-test",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -2479,11 +3409,17 @@
         "debian": {
           "package": "netcat-openbsd",
           "preinstalled": true
+        },
+        "solaris": {
+          "package": "network/netcat",
+          "preinstalled": false,
+          "note": "설치 그룹에 따라 기본 포함될 수 있음. 없으면 pkg install netcat"
         }
       },
       "platformNotes": {
         "rhel": "ncat(nmap-ncat)은 포트 범위 지정을 지원하지 않습니다. -k 는 --keep-open 과 같습니다.",
-        "debian": "OpenBSD nc 는 리슨 시 nc -l {{PORT}} 형식 (-p 함께 쓰지 않음)."
+        "debian": "OpenBSD nc 는 리슨 시 nc -l {{PORT}} 형식 (-p 함께 쓰지 않음).",
+        "solaris": "Solaris 11 의 nc 는 OpenBSD 계열이라 -z·-v·-w·-l 사용법이 Ubuntu 와 같습니다. AIX·HP-UX 는 기본 nc 가 없어 telnet 으로 포트를 확인합니다."
       },
       "help": "man nc",
       "keywords": [
@@ -2500,7 +3436,13 @@
         "ss",
         "curl",
         "firewall-cmd"
-      ]
+      ],
+      "versions": {
+        "solaris": "11 이상"
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "telnet",
@@ -2511,7 +3453,10 @@
       "task": "network.port-test",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -2521,16 +3466,7 @@
       "syntax": [
         "telnet {{HOST}} {{PORT}}"
       ],
-      "options": [
-        {
-          "flag": "{{HOST}} {{PORT}}",
-          "desc": "지정 포트로 TCP 연결"
-        },
-        {
-          "flag": "Ctrl+] 후 quit",
-          "desc": "연결 종료"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "포트 열림 확인",
@@ -2538,8 +3474,32 @@
           "output": "Trying 10.0.0.30...\nConnected to 10.0.0.30.\nEscape character is '^]'."
         },
         {
+          "title": "포트 확인 후 빠져나오기",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "telnet {{HOST}} {{PORT}}",
+              "desc": "'Connected to' 가 나오면 포트 열림"
+            },
+            {
+              "prompt": "(연결 중)",
+              "cmd": "Ctrl+]",
+              "desc": "이스케이프 키로 telnet> 프롬프트로 이동"
+            },
+            {
+              "prompt": "telnet>",
+              "cmd": "quit",
+              "desc": "연결 종료"
+            }
+          ]
+        },
+        {
           "title": "telnet 없이 bash 로 포트 확인",
-          "command": "timeout 3 bash -c '</dev/tcp/{{HOST}}/{{PORT}}' && echo open || echo closed"
+          "command": "timeout 3 bash -c '</dev/tcp/{{HOST}}/{{PORT}}' && echo open || echo closed",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
@@ -2569,7 +3529,55 @@
         "nc",
         "ss",
         "curl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "연결 중 단축키",
+          "type": "keys",
+          "note": "포트 확인만 할 때는 Connected 를 본 뒤 Ctrl+] 를 누르고 quit 를 입력합니다.",
+          "items": [
+            {
+              "cmd": "Ctrl+]",
+              "desc": "이스케이프: 연결을 유지한 채 telnet> 프롬프트로 빠져나오기"
+            }
+          ]
+        },
+        {
+          "title": "telnet> 프롬프트 명령",
+          "type": "interactive",
+          "prompt": "telnet>",
+          "items": [
+            {
+              "cmd": "quit",
+              "desc": "연결을 끊고 telnet 종료"
+            },
+            {
+              "cmd": "close",
+              "desc": "현재 연결만 닫기"
+            },
+            {
+              "cmd": "status",
+              "desc": "연결 상태 확인"
+            },
+            {
+              "cmd": "open {{HOST}} {{PORT}}",
+              "desc": "새 연결 열기"
+            },
+            {
+              "cmd": "Enter (빈 줄)",
+              "desc": "아무 명령 없이 Enter 를 치면 연결된 세션으로 돌아감"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "클라이언트가 기본 포함되어 있습니다. 서버 쪽 telnetd 는 보안상 /etc/inetd.conf 에서 막아 두는 것이 일반적입니다.",
+        "hpux": "클라이언트가 기본 포함되어 있습니다. 포트 확인 용도로 많이 씁니다 (HP-UX 는 기본 nc 가 없음).",
+        "solaris": "Solaris 10 은 기본 포함. Solaris 11 은 network/telnet 패키지이며 없으면 pkg install telnet 으로 설치합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "test-netconnection",
@@ -2651,7 +3659,10 @@
         "test-connection",
         "get-nettcpconnection",
         "new-netfirewallrule"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-hosts",
@@ -2661,40 +3672,61 @@
       "task": "network.config",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
       "requiresAdmin": true,
       "summary": "로컬 호스트 이름 → IP 고정 매핑 파일",
-      "description": "DNS 보다 먼저 참조되는 로컬 이름 해석 파일입니다. 'IP 이름 별칭' 형식으로 한 줄에 하나씩 적으며, DNS 없이 클러스터 노드 이름을 고정하거나 이관 전 새 서버로 미리 접속해 볼 때 사용합니다. 참조 순서는 /etc/nsswitch.conf 의 hosts: 줄(보통 files dns)이 정합니다.",
+      "description": "DNS 보다 먼저 참조되는 로컬 이름 해석 파일입니다. 'IP 이름 별칭' 형식으로 한 줄에 하나씩 적으며, DNS 없이 클러스터 노드 이름을 고정하거나 이관 전 새 서버로 미리 접속해 볼 때 사용합니다. 모든 Unix·Linux 에 같은 형식으로 있고, 참조 순서는 /etc/nsswitch.conf 의 hosts: 줄(AIX 는 /etc/netsvc.conf)이 정합니다.",
       "syntax": [
         "{{IP}}  {{FQDN}}  {{SHORT_NAME}}"
       ],
-      "options": [
-        {
-          "flag": "127.0.0.1 localhost",
-          "desc": "기본 루프백 항목 (지우지 말 것)"
-        },
-        {
-          "flag": "/etc/nsswitch.conf (hosts: files dns)",
-          "desc": "hosts 파일과 DNS 중 무엇을 먼저 볼지 결정"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "항목 추가",
-          "command": "echo '{{IP}}  {{FQDN}}  {{SHORT_NAME}}' | sudo tee -a /etc/hosts"
+          "command": "echo '{{IP}}  {{FQDN}}  {{SHORT_NAME}}' | sudo tee -a /etc/hosts",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "백업 후 편집 (Unix)",
+          "command": "cp -p /etc/hosts /etc/hosts.$(date +%Y%m%d)\nvi /etc/hosts",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "실제 해석 결과 확인 (hosts 반영)",
           "command": "getent hosts {{NAME}}",
-          "note": "dig·nslookup 은 hosts 파일을 보지 않으므로 getent 로 확인합니다."
+          "note": "dig·nslookup 은 hosts 파일을 보지 않으므로 getent 로 확인합니다.",
+          "platforms": [
+            "rhel",
+            "debian",
+            "solaris"
+          ]
+        },
+        {
+          "title": "해석 결과 확인 (AIX)",
+          "command": "ping -c 1 {{NAME}}",
+          "note": "출력 첫 줄의 IP 로 hosts 반영 여부를 확인합니다. HP-UX 는 ping {{NAME}} -n 1.",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
         "dig, nslookup, host 는 /etc/hosts 를 무시합니다.",
-        "클라우드 이미지에서는 cloud-init(manage_etc_hosts) 이 재부팅 시 덮어쓸 수 있습니다."
+        "클라우드 이미지에서는 cloud-init(manage_etc_hosts) 이 재부팅 시 덮어쓸 수 있습니다.",
+        "수정 전 cp -p 로 백업하세요. 잘못된 항목은 DNS 보다 먼저 적용되어, 이관 후에도 옛 서버로 접속하는 장애를 만듭니다. 이관 테스트용 항목은 작업 후 꼭 지우세요."
       ],
       "help": "man 5 hosts",
       "keywords": [
@@ -2708,7 +3740,81 @@
         "etc-resolv-conf",
         "dig",
         "win-etc-hosts"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "줄 형식·관련 설정",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "{{IP}}  {{FQDN}}  {{SHORT_NAME}}",
+              "desc": "IP, 정식 이름(FQDN), 별칭 순서. 공백 또는 탭으로 구분",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "127.0.0.1  localhost",
+              "desc": "기본 루프백 항목 (지우지 말 것)",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "::1  localhost",
+              "desc": "IPv6 루프백 항목",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "# {{COMMENT}}",
+              "desc": "주석. 임시로 끌 항목은 줄 앞에 #",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "hosts: files dns",
+              "desc": "/etc/nsswitch.conf: hosts 파일을 먼저, 그다음 DNS",
+              "platforms": [
+                "rhel",
+                "debian",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "hosts=local,bind",
+              "desc": "/etc/netsvc.conf (AIX): local(hosts 파일) 먼저, 그다음 bind(DNS)",
+              "platforms": [
+                "aix"
+              ]
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "/etc/hosts 를 사용하며 DNS 와의 순서는 /etc/netsvc.conf 의 hosts= 줄(예: hosts=local,bind)이 정합니다. 환경 변수 NSORDER 가 설정되어 있으면 그것이 우선합니다.",
+        "hpux": "/etc/hosts 를 사용하며 순서는 /etc/nsswitch.conf 의 hosts: 줄이 정합니다.",
+        "solaris": "/etc/hosts 는 /etc/inet/hosts 의 링크입니다. 순서는 /etc/nsswitch.conf 의 hosts: 줄이며, Solaris 11 은 nsswitch.conf 를 SMF(svc:/system/name-service/switch 의 config/host 속성)가 생성하므로 svccfg 로 바꿉니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-resolv-conf",
@@ -2718,36 +3824,22 @@
       "task": "network.config",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
       "requiresAdmin": true,
       "summary": "DNS 서버·검색 도메인 설정 파일",
-      "description": "시스템이 사용할 DNS 서버(nameserver), 검색 도메인(search), 타임아웃 옵션을 지정하는 파일입니다. 다만 현재 배포판에서는 NetworkManager 나 systemd-resolved 가 자동으로 생성하므로 직접 수정하면 덮어써집니다. 영구 변경은 각 관리 도구에서 해야 합니다.",
+      "description": "시스템이 사용할 DNS 서버(nameserver), 검색 도메인(search), 타임아웃 옵션을 지정하는 파일입니다. AIX·HP-UX·Solaris 10 은 직접 수정해 관리하지만, 현재 Linux 배포판은 NetworkManager·systemd-resolved 가, Solaris 11 은 SMF 가 자동으로 생성하므로 직접 수정하면 덮어써집니다. 자동 생성되는 환경에서는 각 관리 도구에서 바꿔야 합니다.",
       "syntax": [
         "nameserver {{DNS_SERVER}}",
         "search {{DOMAIN}}",
         "options timeout:{{SEC}} attempts:{{N}}"
       ],
-      "options": [
-        {
-          "flag": "nameserver {{DNS_SERVER}}",
-          "desc": "DNS 서버 (최대 3개, 위에서부터 순서대로 사용)"
-        },
-        {
-          "flag": "search {{DOMAIN}}",
-          "desc": "짧은 이름 뒤에 붙여 조회할 도메인"
-        },
-        {
-          "flag": "options timeout:2 attempts:2",
-          "desc": "서버당 대기 시간과 재시도 횟수"
-        },
-        {
-          "flag": "options rotate",
-          "desc": "nameserver 를 돌아가며 사용"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "현재 설정과 관리 주체 확인",
@@ -2766,15 +3858,68 @@
           "platforms": [
             "debian"
           ]
+        },
+        {
+          "title": "백업 후 직접 수정 (AIX·HP-UX·Solaris 10)",
+          "command": "cp -p /etc/resolv.conf /etc/resolv.conf.bak\nvi /etc/resolv.conf\nnslookup {{NAME}}",
+          "note": "Solaris 11 에서는 이 방법 대신 SMF 로 설정합니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
+        },
+        {
+          "title": "DNS 서버 변경 (Solaris 11, SMF)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client listprop config",
+              "desc": "현재 DNS 설정 확인·기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client setprop config/nameserver = net_address: \"({{DNS1}} {{DNS2}})\"",
+              "desc": "DNS 서버 지정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client setprop config/search = astring: '(\"{{DOMAIN}}\")'",
+              "desc": "검색 도메인 지정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s system/name-service/switch setprop config/host = astring: '\"files dns\"'",
+              "desc": "hosts 조회 순서에 dns 포함"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svcadm refresh network/dns/client name-service/switch",
+              "desc": "설정 반영 (/etc/resolv.conf 재생성)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cat /etc/resolv.conf",
+              "desc": "결과 확인. 롤백은 기록한 값으로 다시 setprop 후 refresh"
+            }
+          ],
+          "note": "DNS 를 처음 켜는 경우 svcadm enable network/dns/client 도 필요합니다.",
+          "platforms": [
+            "solaris"
+          ],
+          "version": "Solaris 11 이상"
         }
       ],
       "cautions": [
-        "직접 수정해도 NetworkManager 재시작·DHCP 갱신 시 덮어써집니다.",
+        "(Linux·Solaris 11) 직접 수정해도 NetworkManager 재시작·DHCP 갱신·SMF refresh 시 덮어써집니다.",
         "nameserver 는 4개 이상 적어도 앞의 3개만 사용됩니다."
       ],
       "platformNotes": {
         "rhel": "NetworkManager 가 생성합니다 ('# Generated by NetworkManager'). DNS 는 nmcli 의 ipv4.dns 로 설정하세요.",
-        "debian": "Ubuntu 는 /run/systemd/resolve/stub-resolv.conf 로의 심볼릭 링크이고 nameserver 127.0.0.53(systemd-resolved 스텁)만 보입니다. 실제 상위 DNS 는 resolvectl status 또는 /run/systemd/resolve/resolv.conf 에서 확인하고, 변경은 netplan 의 nameservers: 로 합니다."
+        "debian": "Ubuntu 는 /run/systemd/resolve/stub-resolv.conf 로의 심볼릭 링크이고 nameserver 127.0.0.53(systemd-resolved 스텁)만 보입니다. 실제 상위 DNS 는 resolvectl status 또는 /run/systemd/resolve/resolv.conf 에서 확인하고, 변경은 netplan 의 nameservers: 로 합니다.",
+        "aix": "직접 수정해 관리합니다(파일이 있으면 DNS 사용). 조회 순서는 /etc/netsvc.conf 이며, namerslv -s 로 현재 DNS 서버를 확인하고 smitty namerslv 로도 설정할 수 있습니다.",
+        "hpux": "직접 수정해 관리합니다. DNS 를 쓰려면 /etc/nsswitch.conf 의 hosts: 줄에 dns 가 있어야 합니다.",
+        "solaris": "Solaris 10 은 직접 수정하고 /etc/nsswitch.conf 의 hosts: 에 dns 를 넣은 뒤 svcadm enable dns/client 합니다. Solaris 11 은 SMF 서비스 svc:/network/dns/client 의 속성으로 생성되므로 svccfg 로 config/nameserver·config/search 를 바꾸고 svcadm refresh 합니다."
       },
       "help": "man 5 resolv.conf",
       "keywords": [
@@ -2791,7 +3936,67 @@
         "netplan",
         "etc-hosts",
         "dig"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "설정 항목",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "nameserver {{DNS_SERVER}}",
+              "desc": "DNS 서버. 최대 3개, 위에서부터 순서대로 사용",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "search {{DOMAIN}} [{{DOMAIN2}}]",
+              "desc": "짧은 이름 뒤에 차례로 붙여 조회할 도메인",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "domain {{DOMAIN}}",
+              "desc": "로컬 도메인 (search 와 같이 쓰면 나중에 나온 줄만 적용)",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "options timeout:{{SEC}} attempts:{{N}}",
+              "desc": "서버당 대기 시간과 재시도 횟수",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "options rotate",
+              "desc": "nameserver 를 돌아가며 사용",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nmcli",
@@ -2807,51 +4012,35 @@
       "risk": "caution",
       "requiresAdmin": true,
       "summary": "NetworkManager 로 IP·DNS·라우팅·본딩 영구 설정",
-      "description": "NetworkManager 의 명령줄 도구로 연결 프로필(connection)을 만들고 수정해 고정 IP, 게이트웨이, DNS, 정적 경로, 본딩·VLAN 을 영구 설정합니다. RHEL 8·9 의 표준 네트워크 설정 방법이며, 수정 후 nmcli con up 으로 적용해야 반영됩니다.",
+      "description": "NetworkManager 의 명령줄 도구로 연결 프로필(connection)을 만들고 수정해 고정 IP, 게이트웨이, DNS, 정적 경로, 본딩·VLAN 을 영구 설정합니다. RHEL 8·9 의 표준 네트워크 설정 방법이며, 수정 후 nmcli con up 으로 적용해야 반영됩니다. Unix 에는 없으며 AIX 는 chdev·smitty, HP-UX 는 /etc/rc.config.d/netconf, Solaris 11 은 ipadm 으로 영구 설정합니다.",
       "syntax": [
-        "nmcli {general|device|connection} {{ACTION}} ...",
+        "nmcli [-t] [-f {{FIELDS}}] {general|device|connection} {{ACTION}} ...",
         "nmcli con mod \"{{CONN}}\" {{SETTING}} {{VALUE}}"
       ],
       "options": [
         {
-          "flag": "device status",
-          "desc": "장치(인터페이스)별 상태와 연결된 프로필"
+          "flag": "-t",
+          "desc": "간결한 출력 (콜론 구분, 스크립트용)"
         },
         {
-          "flag": "con show [\"{{CONN}}\"]",
-          "desc": "연결 프로필 목록 / 상세 설정"
+          "flag": "-f {{FIELDS}}",
+          "desc": "출력할 필드 지정 (예: -f NAME,DEVICE,STATE, ipv4.addresses)"
         },
         {
-          "flag": "con mod \"{{CONN}}\" ipv4.addresses {{IP}}/{{PREFIX}}",
-          "desc": "IP 주소 설정 (+ipv4.addresses 는 추가)"
+          "flag": "-g {{FIELDS}}",
+          "desc": "지정 필드 값만 출력 (-t -f 의 축약)"
         },
         {
-          "flag": "ipv4.gateway {{GATEWAY}} ipv4.dns \"{{DNS1}} {{DNS2}}\"",
-          "desc": "게이트웨이·DNS 설정"
+          "flag": "-p",
+          "desc": "사람이 읽기 좋게 정렬해 출력"
         },
         {
-          "flag": "ipv4.method manual | auto",
-          "desc": "고정 IP / DHCP"
+          "flag": "-a",
+          "desc": "필요한 값이 빠지면 물어보기"
         },
         {
-          "flag": "+ipv4.routes \"{{CIDR}} {{GATEWAY}}\"",
-          "desc": "정적 경로 영구 추가 (-ipv4.routes 는 삭제)"
-        },
-        {
-          "flag": "con up | down \"{{CONN}}\"",
-          "desc": "프로필 적용(활성화) / 비활성화"
-        },
-        {
-          "flag": "con add type {{TYPE}} con-name {{CONN}} ifname {{IFACE}}",
-          "desc": "새 프로필 생성 (ethernet, bond, vlan, team 등)"
-        },
-        {
-          "flag": "con reload",
-          "desc": "설정 파일을 직접 수정한 뒤 다시 읽기"
-        },
-        {
-          "flag": "con delete \"{{CONN}}\"",
-          "desc": "프로필 삭제"
+          "flag": "-w {{SEC}}",
+          "desc": "작업 완료를 기다릴 최대 시간 (기본 90초)"
         }
       ],
       "examples": [
@@ -2860,9 +4049,35 @@
           "command": "nmcli device status\nnmcli con show"
         },
         {
-          "title": "고정 IP 영구 설정",
-          "command": "nmcli con mod \"{{CONN}}\" ipv4.method manual ipv4.addresses {{IP}}/{{PREFIX}} ipv4.gateway {{GATEWAY}} ipv4.dns \"{{DNS1}} {{DNS2}}\" connection.autoconnect yes\nnmcli con up \"{{CONN}}\"",
-          "note": "프로필 이름은 nmcli con show 의 NAME (보통 인터페이스 이름과 같거나 'System eth0', 'Wired connection 1')"
+          "title": "고정 IP 변경 → 적용 → 확인 → 롤백",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "nmcli -f ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns con show \"{{CONN}}\" | tee /root/{{CONN}}.before.txt",
+              "desc": "현재 값을 파일로 기록 (롤백용)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "nmcli con mod \"{{CONN}}\" ipv4.method manual ipv4.addresses {{IP}}/{{PREFIX}} ipv4.gateway {{GATEWAY}} ipv4.dns \"{{DNS1}} {{DNS2}}\"",
+              "desc": "프로필 수정 (아직 미적용)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "nmcli con up \"{{CONN}}\"",
+              "desc": "적용. 원격이면 접속이 끊기므로 새 IP 로 다시 접속"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ip -br a show dev {{IFACE}}",
+              "desc": "IP 확인 (ip route, cat /etc/resolv.conf 도 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "nmcli con mod \"{{CONN}}\" ipv4.addresses {{OLD_IP}}/{{PREFIX}} ipv4.gateway {{OLD_GATEWAY}}",
+              "desc": "(롤백) 기록한 이전 값으로 되돌린 뒤 nmcli con up \"{{CONN}}\""
+            }
+          ],
+          "note": "원격 작업 시 콘솔 접속을 확보하거나, 같은 대역의 보조 IP 를 먼저 추가해 두면 안전합니다."
         },
         {
           "title": "정적 경로 영구 추가",
@@ -2907,7 +4122,107 @@
         "ip",
         "etc-resolv-conf",
         "at"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "연결 프로필 (connection)",
+          "type": "subcommand",
+          "note": "con = connection, dev = device 로 줄여 씁니다. 프로필(connection)을 바꾼 뒤 con up 해야 실제 인터페이스에 반영됩니다.",
+          "items": [
+            {
+              "cmd": "nmcli con show [--active]",
+              "desc": "프로필 목록 (--active 는 활성 프로필만)"
+            },
+            {
+              "cmd": "nmcli con show \"{{CONN}}\"",
+              "desc": "프로필 상세 설정 (ipv4.* 등)"
+            },
+            {
+              "cmd": "nmcli con up \"{{CONN}}\"",
+              "desc": "프로필 적용·활성화 (수정 후 반드시 실행)"
+            },
+            {
+              "cmd": "nmcli con down \"{{CONN}}\"",
+              "desc": "프로필 비활성화 (접속 중인 인터페이스면 끊김)"
+            },
+            {
+              "cmd": "nmcli con mod \"{{CONN}}\" {{SETTING}} {{VALUE}}",
+              "desc": "설정 변경 (+{{SETTING}} 은 값 추가, -{{SETTING}} 은 값 삭제)"
+            },
+            {
+              "cmd": "nmcli con add type ethernet con-name {{CONN}} ifname {{IFACE}}",
+              "desc": "새 프로필 생성 (type 은 ethernet, bond, vlan, team, bridge 등)"
+            },
+            {
+              "cmd": "nmcli con reload",
+              "desc": "설정 파일을 직접 수정한 뒤 다시 읽기"
+            },
+            {
+              "cmd": "nmcli con delete \"{{CONN}}\"",
+              "desc": "프로필 삭제"
+            }
+          ]
+        },
+        {
+          "title": "장치 (device)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "nmcli dev status",
+              "desc": "장치별 상태와 연결된 프로필"
+            },
+            {
+              "cmd": "nmcli dev show {{IFACE}}",
+              "desc": "현재 적용된 IP·게이트웨이·DNS"
+            },
+            {
+              "cmd": "nmcli dev reapply {{IFACE}}",
+              "desc": "프로필 변경을 연결을 끊지 않고 다시 적용 (일부 설정만)"
+            },
+            {
+              "cmd": "nmcli dev disconnect {{IFACE}}",
+              "desc": "장치 연결 해제 (자동 재연결 안 함)"
+            }
+          ]
+        },
+        {
+          "title": "자주 쓰는 설정 키 (con mod)",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "ipv4.method manual | auto",
+              "desc": "고정 IP / DHCP"
+            },
+            {
+              "cmd": "ipv4.addresses {{IP}}/{{PREFIX}}",
+              "desc": "IP 주소 (+ipv4.addresses 는 보조 IP 추가)"
+            },
+            {
+              "cmd": "ipv4.gateway {{GATEWAY}}",
+              "desc": "기본 게이트웨이"
+            },
+            {
+              "cmd": "ipv4.dns \"{{DNS1}} {{DNS2}}\"",
+              "desc": "DNS 서버 (DHCP DNS 를 무시하려면 ipv4.ignore-auto-dns yes)"
+            },
+            {
+              "cmd": "ipv4.dns-search {{DOMAIN}}",
+              "desc": "검색 도메인"
+            },
+            {
+              "cmd": "+ipv4.routes \"{{CIDR}} {{GATEWAY}}\"",
+              "desc": "정적 경로 추가 (-ipv4.routes 는 삭제)"
+            },
+            {
+              "cmd": "connection.autoconnect yes",
+              "desc": "부팅 시 자동 연결"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nmtui",
@@ -2927,20 +4242,7 @@
       "syntax": [
         "nmtui [edit [\"{{CONN}}\"] | connect | hostname]"
       ],
-      "options": [
-        {
-          "flag": "edit",
-          "desc": "연결 편집 화면 바로 열기"
-        },
-        {
-          "flag": "connect",
-          "desc": "연결 활성화/비활성화 화면"
-        },
-        {
-          "flag": "hostname",
-          "desc": "호스트명 설정 화면"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "메뉴 열기",
@@ -2974,7 +4276,52 @@
       "related": [
         "nmcli",
         "ip"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "nmtui 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "nmtui edit [\"{{CONN}}\"]",
+              "desc": "연결 편집 화면 바로 열기"
+            },
+            {
+              "cmd": "nmtui connect",
+              "desc": "연결 활성화/비활성화 화면"
+            },
+            {
+              "cmd": "nmtui hostname",
+              "desc": "호스트명 설정 화면"
+            }
+          ]
+        },
+        {
+          "title": "화면 조작 키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Tab / 방향키",
+              "desc": "항목 이동"
+            },
+            {
+              "cmd": "Space",
+              "desc": "체크박스 선택·해제"
+            },
+            {
+              "cmd": "Enter",
+              "desc": "선택·확인"
+            },
+            {
+              "cmd": "Esc",
+              "desc": "이전 화면으로"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-networkmanager-system-connections",
@@ -2993,28 +4340,7 @@
       "syntax": [
         "/etc/NetworkManager/system-connections/{{CONN}}.nmconnection"
       ],
-      "options": [
-        {
-          "flag": "[connection] id= type= interface-name=",
-          "desc": "프로필 이름, 종류, 인터페이스"
-        },
-        {
-          "flag": "[ipv4] method=manual",
-          "desc": "고정 IP (auto 는 DHCP)"
-        },
-        {
-          "flag": "address1={{IP}}/{{PREFIX}},{{GATEWAY}}",
-          "desc": "IP/프리픽스와 게이트웨이"
-        },
-        {
-          "flag": "dns={{DNS1}};{{DNS2}};",
-          "desc": "DNS 서버 (세미콜론 구분)"
-        },
-        {
-          "flag": "route1={{CIDR}},{{GATEWAY}}",
-          "desc": "정적 경로"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "keyfile 예시 (고정 IP)",
@@ -3044,7 +4370,47 @@
       "related": [
         "nmcli",
         "etc-sysconfig-network-scripts"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "keyfile 주요 항목",
+          "type": "directive",
+          "note": "INI 형식: [섹션] 아래에 키=값. 수정 후 파일 권한 600 을 유지하고 nmcli con reload 로 다시 읽습니다.",
+          "items": [
+            {
+              "cmd": "[connection] id= type= interface-name=",
+              "desc": "프로필 이름, 종류, 인터페이스"
+            },
+            {
+              "cmd": "[ipv4] method=manual",
+              "desc": "고정 IP (auto 는 DHCP)"
+            },
+            {
+              "cmd": "address1={{IP}}/{{PREFIX}},{{GATEWAY}}",
+              "desc": "IP/프리픽스와 게이트웨이"
+            },
+            {
+              "cmd": "dns={{DNS1}};{{DNS2}};",
+              "desc": "DNS 서버 (세미콜론 구분)"
+            },
+            {
+              "cmd": "route1={{CIDR}},{{GATEWAY}}",
+              "desc": "정적 경로"
+            },
+            {
+              "cmd": "[ipv4] dns-search={{DOMAIN}};",
+              "desc": "검색 도메인"
+            },
+            {
+              "cmd": "[connection] autoconnect=true",
+              "desc": "부팅 시 자동 연결"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-sysconfig-network-scripts",
@@ -3064,32 +4430,7 @@
         "/etc/sysconfig/network-scripts/ifcfg-{{IFACE}}",
         "/etc/sysconfig/network-scripts/route-{{IFACE}}"
       ],
-      "options": [
-        {
-          "flag": "BOOTPROTO=none | dhcp",
-          "desc": "고정 IP / DHCP"
-        },
-        {
-          "flag": "ONBOOT=yes",
-          "desc": "부팅 시 활성화"
-        },
-        {
-          "flag": "IPADDR= PREFIX= GATEWAY=",
-          "desc": "IP, 프리픽스 길이, 게이트웨이"
-        },
-        {
-          "flag": "DNS1= DNS2=",
-          "desc": "DNS 서버"
-        },
-        {
-          "flag": "DEVICE= NAME=",
-          "desc": "인터페이스 이름 / 프로필 이름"
-        },
-        {
-          "flag": "route-{{IFACE}}: {{CIDR}} via {{GATEWAY}}",
-          "desc": "정적 경로 파일 형식"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "ifcfg 예시 (고정 IP)",
@@ -3120,7 +4461,43 @@
       "related": [
         "nmcli",
         "etc-networkmanager-system-connections"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "ifcfg 주요 항목",
+          "type": "directive",
+          "note": "셸 변수 형식(키=값). 수정 후 nmcli con reload 로 다시 읽습니다.",
+          "items": [
+            {
+              "cmd": "BOOTPROTO=none | dhcp",
+              "desc": "고정 IP / DHCP"
+            },
+            {
+              "cmd": "ONBOOT=yes",
+              "desc": "부팅 시 활성화"
+            },
+            {
+              "cmd": "IPADDR= PREFIX= GATEWAY=",
+              "desc": "IP, 프리픽스 길이, 게이트웨이"
+            },
+            {
+              "cmd": "DNS1= DNS2=",
+              "desc": "DNS 서버"
+            },
+            {
+              "cmd": "DEVICE= NAME=",
+              "desc": "인터페이스 이름 / 프로필 이름"
+            },
+            {
+              "cmd": "route-{{IFACE}}: {{CIDR}} via {{GATEWAY}}",
+              "desc": "정적 경로 파일 형식"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netplan",
@@ -3142,28 +4519,12 @@
       ],
       "options": [
         {
-          "flag": "try [--timeout {{SEC}}]",
-          "desc": "임시 적용 후 Enter 로 확인하지 않으면 자동 원복 (기본 120초)"
+          "flag": "--debug",
+          "desc": "적용 과정 상세 출력 (예: netplan --debug apply)"
         },
         {
-          "flag": "apply",
-          "desc": "설정 적용"
-        },
-        {
-          "flag": "generate",
-          "desc": "백엔드 설정만 생성 (문법 검사용)"
-        },
-        {
-          "flag": "get [{{KEY}}]",
-          "desc": "병합된 현재 netplan 설정 출력"
-        },
-        {
-          "flag": "status",
-          "desc": "(Ubuntu 23.10+) 인터페이스 상태·IP·DNS 요약"
-        },
-        {
-          "flag": "--debug apply",
-          "desc": "적용 과정 상세 출력"
+          "flag": "--timeout {{SEC}}",
+          "desc": "try 와 함께: 확인 대기 시간 (기본 120초)"
         }
       ],
       "examples": [
@@ -3180,6 +4541,41 @@
         {
           "title": "설정 확인",
           "command": "netplan get\nip -br a"
+        },
+        {
+          "title": "고정 IP 변경 → 시험 적용 → 확인 → 롤백",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "mkdir -p /root/netplan.bak && cp -p /etc/netplan/*.yaml /root/netplan.bak/",
+              "desc": "기존 설정 백업 (/etc/netplan 밖에)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/netplan/{{FILE}}.yaml",
+              "desc": "addresses·routes·nameservers 수정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "netplan generate",
+              "desc": "문법 검사"
+            },
+            {
+              "prompt": "#",
+              "cmd": "netplan try --timeout 120",
+              "desc": "임시 적용. 새 세션으로 접속되면 Enter 로 확정, 아니면 120초 뒤 자동 원복"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ip -br a",
+              "desc": "IP 확인 (ip route, resolvectl status 도 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cp -p /root/netplan.bak/*.yaml /etc/netplan/ && netplan apply",
+              "desc": "(롤백) 확정 후 문제가 생기면 백업본으로 복원"
+            }
+          ]
         }
       ],
       "cautions": [
@@ -3213,7 +4609,71 @@
         "ip",
         "resolvectl",
         "etc-resolv-conf"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "netplan 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "netplan try [--timeout {{SEC}}]",
+              "desc": "임시 적용 후 Enter 로 확인하지 않으면 자동 원복"
+            },
+            {
+              "cmd": "netplan apply",
+              "desc": "설정 적용"
+            },
+            {
+              "cmd": "netplan generate",
+              "desc": "백엔드 설정만 생성 (문법 검사용)"
+            },
+            {
+              "cmd": "netplan get [{{KEY}}]",
+              "desc": "병합된 현재 설정 출력 (예: netplan get ethernets.{{IFACE}})"
+            },
+            {
+              "cmd": "netplan set {{KEY}}={{VALUE}}",
+              "desc": "YAML 을 직접 열지 않고 값 변경",
+              "version": "Ubuntu 22.04 이상"
+            },
+            {
+              "cmd": "netplan status",
+              "desc": "인터페이스 상태·IP·DNS 요약",
+              "version": "Ubuntu 23.10 이상"
+            }
+          ]
+        },
+        {
+          "title": "자주 쓰는 YAML 키",
+          "type": "directive",
+          "note": "자세한 키는 etc-netplan 항목 참고. 들여쓰기는 공백만 사용합니다.",
+          "items": [
+            {
+              "cmd": "dhcp4: true | false",
+              "desc": "DHCP 사용 여부"
+            },
+            {
+              "cmd": "addresses: [{{IP}}/{{PREFIX}}]",
+              "desc": "고정 IP (여러 개면 보조 IP)"
+            },
+            {
+              "cmd": "routes: [{to: default, via: {{GATEWAY}}}]",
+              "desc": "기본 게이트웨이·정적 경로 (gateway4 는 사용 중단)"
+            },
+            {
+              "cmd": "nameservers: {addresses: [{{DNS1}}, {{DNS2}}], search: [{{DOMAIN}}]}",
+              "desc": "DNS 서버와 검색 도메인"
+            },
+            {
+              "cmd": "bonds: {bond0: {interfaces: [{{IFACE1}}, {{IFACE2}}], parameters: {mode: active-backup}}}",
+              "desc": "본딩 구성"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-netplan",
@@ -3232,32 +4692,7 @@
       "syntax": [
         "/etc/netplan/{{NN}}-{{NAME}}.yaml"
       ],
-      "options": [
-        {
-          "flag": "network: version: 2",
-          "desc": "필수 최상위 키"
-        },
-        {
-          "flag": "renderer: networkd | NetworkManager",
-          "desc": "백엔드 (서버 기본 networkd)"
-        },
-        {
-          "flag": "ethernets: {{IFACE}}: dhcp4: true|false",
-          "desc": "인터페이스별 DHCP 사용 여부"
-        },
-        {
-          "flag": "addresses: [{{IP}}/{{PREFIX}}]",
-          "desc": "고정 IP"
-        },
-        {
-          "flag": "routes: - to: default via: {{GATEWAY}}",
-          "desc": "기본 게이트웨이·정적 경로"
-        },
-        {
-          "flag": "nameservers: addresses: [...] search: [...]",
-          "desc": "DNS 서버와 검색 도메인"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "설정 파일 확인",
@@ -3283,7 +4718,59 @@
       "related": [
         "netplan",
         "etc-resolv-conf"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "YAML 주요 키",
+          "type": "directive",
+          "note": "한 줄 형식({ })은 여러 줄 들여쓰기 형식과 같은 뜻입니다. 탭 금지, 공백만 사용합니다.",
+          "items": [
+            {
+              "cmd": "network: {version: 2}",
+              "desc": "필수 최상위 키"
+            },
+            {
+              "cmd": "renderer: networkd | NetworkManager",
+              "desc": "백엔드 (서버 기본 networkd)"
+            },
+            {
+              "cmd": "ethernets: {{IFACE}}:",
+              "desc": "인터페이스별 설정 시작"
+            },
+            {
+              "cmd": "dhcp4: true | false",
+              "desc": "DHCP 사용 여부"
+            },
+            {
+              "cmd": "addresses: [{{IP}}/{{PREFIX}}]",
+              "desc": "고정 IP (여러 개 가능)"
+            },
+            {
+              "cmd": "routes: [{to: default, via: {{GATEWAY}}}]",
+              "desc": "기본 게이트웨이. 정적 경로는 to: {{CIDR}}"
+            },
+            {
+              "cmd": "nameservers: {addresses: [{{DNS1}}, {{DNS2}}], search: [{{DOMAIN}}]}",
+              "desc": "DNS 서버와 검색 도메인"
+            },
+            {
+              "cmd": "bonds: {bond0: {interfaces: [{{IFACE1}}, {{IFACE2}}], parameters: {mode: active-backup, mii-monitor-interval: 100}}}",
+              "desc": "본딩 (멤버 인터페이스는 ethernets 에 {} 로 선언)"
+            },
+            {
+              "cmd": "vlans: {vlan{{VLAN_ID}}: {id: {{VLAN_ID}}, link: {{IFACE}}}}",
+              "desc": "VLAN 인터페이스"
+            },
+            {
+              "cmd": "optional: true",
+              "desc": "부팅 시 이 인터페이스 연결을 기다리지 않음"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netsh",
@@ -3309,40 +4796,16 @@
       ],
       "options": [
         {
-          "flag": "interface show interface",
-          "desc": "인터페이스 이름과 연결 상태 목록"
+          "flag": "-r {{HOST}}",
+          "desc": "원격 컴퓨터에서 실행"
         },
         {
-          "flag": "interface ip show config",
-          "desc": "인터페이스별 IP·게이트웨이·DNS 설정"
+          "flag": "-f {{SCRIPT_FILE}}",
+          "desc": "파일에 적힌 netsh 명령을 차례로 실행"
         },
         {
-          "flag": "interface ip set address name=\"{{IFACE}}\" static {{IP}} {{NETMASK}} {{GATEWAY}}",
-          "desc": "고정 IP 설정"
-        },
-        {
-          "flag": "interface ip set address name=\"{{IFACE}}\" dhcp",
-          "desc": "DHCP 로 변경"
-        },
-        {
-          "flag": "interface ip set dns name=\"{{IFACE}}\" static {{DNS_SERVER}}",
-          "desc": "기본 DNS 설정 (dhcp 로 되돌리기 가능)"
-        },
-        {
-          "flag": "interface ip add dns name=\"{{IFACE}}\" {{DNS_SERVER}} index=2",
-          "desc": "보조 DNS 추가"
-        },
-        {
-          "flag": "interface ipv4 show excludedportrange protocol=tcp",
-          "desc": "시스템이 예약해 사용할 수 없는 포트 범위"
-        },
-        {
-          "flag": "winhttp show proxy",
-          "desc": "시스템(WinHTTP) 프록시 설정 확인"
-        },
-        {
-          "flag": "int ip reset",
-          "desc": "TCP/IP 스택 초기화 (재부팅 필요, 위험)"
+          "flag": "-c {{CONTEXT}}",
+          "desc": "지정한 컨텍스트에서 시작 (예: -c interface)"
         }
       ],
       "examples": [
@@ -3385,7 +4848,101 @@
         "ncpa-cpl",
         "netsh-advfirewall",
         "netsh-trace"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "interface (IP·DNS)",
+          "type": "subcommand",
+          "note": "interface ip 는 interface ipv4 와 같습니다. 방화벽은 netsh advfirewall, 포트 포워딩은 netsh interface portproxy 컨텍스트를 씁니다.",
+          "items": [
+            {
+              "cmd": "netsh interface show interface",
+              "desc": "인터페이스 이름과 연결 상태 목록"
+            },
+            {
+              "cmd": "netsh interface ip show config",
+              "desc": "인터페이스별 IP·게이트웨이·DNS 설정"
+            },
+            {
+              "cmd": "netsh interface ip set address name=\"{{IFACE}}\" static {{IP}} {{NETMASK}} {{GATEWAY}}",
+              "desc": "고정 IP 설정"
+            },
+            {
+              "cmd": "netsh interface ip set address name=\"{{IFACE}}\" dhcp",
+              "desc": "DHCP 로 변경"
+            },
+            {
+              "cmd": "netsh interface ip set dns name=\"{{IFACE}}\" static {{DNS_SERVER}}",
+              "desc": "기본 DNS 설정 (dhcp 로 되돌리기 가능)"
+            },
+            {
+              "cmd": "netsh interface ip add dns name=\"{{IFACE}}\" {{DNS_SERVER}} index=2",
+              "desc": "보조 DNS 추가"
+            },
+            {
+              "cmd": "netsh interface ipv4 show excludedportrange protocol=tcp",
+              "desc": "시스템이 예약해 사용할 수 없는 포트 범위"
+            }
+          ]
+        },
+        {
+          "title": "winhttp·초기화",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "netsh winhttp show proxy",
+              "desc": "시스템(WinHTTP) 프록시 설정 확인"
+            },
+            {
+              "cmd": "netsh winhttp set proxy proxy-server=\"{{PROXY}}:{{PORT}}\" bypass-list=\"{{BYPASS_LIST}}\"",
+              "desc": "WinHTTP 프록시 설정 (Windows Update 등 서비스가 사용)"
+            },
+            {
+              "cmd": "netsh winhttp reset proxy",
+              "desc": "WinHTTP 프록시 해제 (직접 연결)"
+            },
+            {
+              "cmd": "netsh int ip reset",
+              "desc": "TCP/IP 스택 초기화 (재부팅 필요, 고정 IP 설정이 사라질 수 있음)"
+            },
+            {
+              "cmd": "netsh winsock reset",
+              "desc": "Winsock 카탈로그 초기화 (재부팅 필요)"
+            }
+          ]
+        },
+        {
+          "title": "대화형 모드",
+          "type": "interactive",
+          "prompt": "netsh>",
+          "note": "인자 없이 netsh 를 실행하면 대화형 모드로 들어갑니다.",
+          "items": [
+            {
+              "cmd": "interface ip",
+              "desc": "컨텍스트 이동 (프롬프트가 netsh interface ipv4> 로 바뀜)"
+            },
+            {
+              "cmd": "show config",
+              "desc": "현재 컨텍스트에서 명령 실행"
+            },
+            {
+              "cmd": "..",
+              "desc": "상위 컨텍스트로"
+            },
+            {
+              "cmd": "?",
+              "desc": "현재 컨텍스트에서 쓸 수 있는 명령 목록"
+            },
+            {
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "new-netipaddress",
@@ -3424,18 +4981,6 @@
         {
           "flag": "-DefaultGateway {{GATEWAY}}",
           "desc": "기본 게이트웨이"
-        },
-        {
-          "flag": "Set-DnsClientServerAddress -InterfaceAlias \"{{IFACE}}\" -ServerAddresses {{DNS1}},{{DNS2}}",
-          "desc": "DNS 서버 설정 (-ResetServerAddresses 로 DHCP 값 사용)"
-        },
-        {
-          "flag": "Remove-NetIPAddress -InterfaceAlias \"{{IFACE}}\" -IPAddress {{IP}}",
-          "desc": "IP 제거"
-        },
-        {
-          "flag": "Set-NetIPInterface -InterfaceAlias \"{{IFACE}}\" -Dhcp Enabled",
-          "desc": "DHCP 사용으로 전환"
         }
       ],
       "examples": [
@@ -3472,7 +5017,38 @@
         "netsh",
         "get-netadapter",
         "ncpa-cpl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "함께 쓰는 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Set-DnsClientServerAddress -InterfaceAlias \"{{IFACE}}\" -ServerAddresses {{DNS1}},{{DNS2}}",
+              "desc": "DNS 서버 설정 (-ResetServerAddresses 로 DHCP 값 사용)"
+            },
+            {
+              "cmd": "Remove-NetIPAddress -InterfaceAlias \"{{IFACE}}\" -IPAddress {{IP}}",
+              "desc": "IP 제거"
+            },
+            {
+              "cmd": "Set-NetIPInterface -InterfaceAlias \"{{IFACE}}\" -Dhcp Enabled",
+              "desc": "DHCP 사용으로 전환"
+            },
+            {
+              "cmd": "Remove-NetRoute -InterfaceAlias \"{{IFACE}}\" -DestinationPrefix 0.0.0.0/0 -Confirm:$false",
+              "desc": "기존 기본 게이트웨이 제거 (다시 설정 전에)"
+            },
+            {
+              "cmd": "Get-NetIPConfiguration -InterfaceAlias \"{{IFACE}}\"",
+              "desc": "적용 결과 확인 (IP·게이트웨이·DNS)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-etc-hosts",
@@ -3494,16 +5070,7 @@
       "syntax": [
         "{{IP}}  {{FQDN}}"
       ],
-      "options": [
-        {
-          "flag": "%SystemRoot%\\System32\\drivers\\etc\\hosts",
-          "desc": "파일 경로 (확장자 없음)"
-        },
-        {
-          "flag": "# 주석",
-          "desc": "# 뒤는 무시"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "관리자 메모장으로 열기 (관리자 CMD)",
@@ -3531,7 +5098,30 @@
         "etc-hosts",
         "ipconfig",
         "resolve-dnsname"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "파일 위치·줄 형식",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "%SystemRoot%\\System32\\drivers\\etc\\hosts",
+              "desc": "파일 경로 (확장자 없음, 관리자 권한으로 편집)"
+            },
+            {
+              "cmd": "{{IP}}  {{FQDN}}  {{SHORT_NAME}}",
+              "desc": "한 줄에 IP 와 이름(별칭은 공백으로 이어서)"
+            },
+            {
+              "cmd": "# {{COMMENT}}",
+              "desc": "# 뒤는 무시 (임시로 끌 때 줄 앞에 #)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ncpa-cpl",
@@ -3550,28 +5140,15 @@
       "syntax": [
         "ncpa.cpl"
       ],
-      "options": [
-        {
-          "flag": "어댑터 > 속성 > TCP/IPv4",
-          "desc": "고정 IP·게이트웨이·DNS 설정"
-        },
-        {
-          "flag": "TCP/IPv4 > 고급",
-          "desc": "추가 IP, 추가 게이트웨이, DNS 접미사, WINS"
-        },
-        {
-          "flag": "어댑터 > 상태 > 자세히",
-          "desc": "현재 IP·MAC·DHCP 정보"
-        },
-        {
-          "flag": "어댑터 > 사용 안 함",
-          "desc": "어댑터 비활성화"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "네트워크 연결 창 열기",
           "command": "ncpa.cpl"
+        },
+        {
+          "title": "제어판 명령으로 열기",
+          "command": "control ncpa.cpl"
         }
       ],
       "cautions": [
@@ -3590,7 +5167,34 @@
         "netsh",
         "new-netipaddress",
         "ipconfig"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "네트워크 연결 창에서 자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "어댑터 > 속성 > TCP/IPv4",
+              "desc": "고정 IP·게이트웨이·DNS 설정"
+            },
+            {
+              "cmd": "TCP/IPv4 > 고급",
+              "desc": "추가 IP, 추가 게이트웨이, DNS 접미사, WINS"
+            },
+            {
+              "cmd": "어댑터 > 상태 > 자세히",
+              "desc": "현재 IP·MAC·DHCP 정보"
+            },
+            {
+              "cmd": "어댑터 > 사용 안 함",
+              "desc": "어댑터 비활성화"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "iptables",
@@ -3611,7 +5215,7 @@
       "risk": "destructive",
       "requiresAdmin": true,
       "summary": "패킷 필터(방화벽)·NAT 규칙 조회 및 설정",
-      "description": "리눅스 커널 패킷 필터의 체인(INPUT, OUTPUT, FORWARD)과 테이블(filter, nat, mangle)에 규칙을 추가·삭제·조회합니다. 현재 배포판에서는 nftables 위에서 동작하는 iptables-nft 가 기본이며, firewalld·ufw 가 함께 규칙을 관리하므로 직접 수정할 때 충돌에 주의해야 합니다.",
+      "description": "리눅스 커널 패킷 필터의 체인(INPUT, OUTPUT, FORWARD)과 테이블(filter, nat, mangle)에 규칙을 추가·삭제·조회합니다. 현재 배포판에서는 nftables 위에서 동작하는 iptables-nft 가 기본이며, firewalld·ufw 가 함께 규칙을 관리하므로 직접 수정할 때 충돌에 주의해야 합니다. Unix 에는 없으며 AIX 는 genfilt·mkfilt(IP 보안 필터), HP-UX·Solaris 10 은 IPFilter(ipf), Solaris 11.4 는 PF(pfctl)를 사용합니다.",
       "syntax": [
         "iptables [-t {{TABLE}}] {-A|-I|-D} {{CHAIN}} {{MATCH}} -j {{TARGET}}",
         "iptables -L -n -v --line-numbers"
@@ -3664,8 +5268,30 @@
           "command": "iptables -L -n -v --line-numbers\niptables -t nat -L -n -v"
         },
         {
-          "title": "특정 대역에서만 포트 허용",
-          "command": "iptables -I INPUT -p tcp -s {{CIDR}} --dport {{PORT}} -j ACCEPT"
+          "title": "백업 → 규칙 추가 → 확인 → 롤백",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "iptables-save > /root/iptables.$(date +%F-%H%M).rules",
+              "desc": "현재 규칙 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "iptables -I INPUT -p tcp -s {{CIDR}} --dport {{PORT}} -j ACCEPT",
+              "desc": "특정 대역에서만 포트 허용 (맨 앞에 삽입)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "iptables -L INPUT -n -v --line-numbers",
+              "desc": "규칙 위치와 패킷 카운터 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "iptables -D INPUT 1",
+              "desc": "(롤백) 방금 넣은 1번 규칙 삭제, 또는 iptables-restore < 백업 파일"
+            }
+          ],
+          "note": "이 상태는 런타임 전용입니다. 확인 후 OS 별 영구 저장 방법을 사용하세요."
         },
         {
           "title": "규칙 백업·복원",
@@ -3726,7 +5352,59 @@
         "ufw",
         "ss",
         "at"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "체인·타깃 구조",
+          "type": "directive",
+          "note": "규칙은 위에서부터 차례로 검사해 처음 일치한 규칙의 타깃이 적용됩니다. 끝까지 일치하지 않으면 체인의 기본 정책(-P)이 적용됩니다.",
+          "items": [
+            {
+              "cmd": "INPUT",
+              "desc": "이 서버로 들어오는 패킷 (filter 테이블). 포트 개방은 여기에"
+            },
+            {
+              "cmd": "OUTPUT",
+              "desc": "이 서버에서 나가는 패킷"
+            },
+            {
+              "cmd": "FORWARD",
+              "desc": "이 서버를 거쳐 지나가는 패킷 (라우터·NAT·컨테이너 호스트)"
+            },
+            {
+              "cmd": "-t nat PREROUTING",
+              "desc": "들어오자마자 목적지 변경: DNAT·포트 포워딩"
+            },
+            {
+              "cmd": "-t nat POSTROUTING",
+              "desc": "나가기 직전 출발지 변경: SNAT·MASQUERADE"
+            },
+            {
+              "cmd": "-j ACCEPT",
+              "desc": "허용하고 이 체인 검사 종료"
+            },
+            {
+              "cmd": "-j DROP",
+              "desc": "응답 없이 버림 (상대는 타임아웃)"
+            },
+            {
+              "cmd": "-j REJECT",
+              "desc": "거부 응답을 보냄 (상대는 즉시 실패)"
+            },
+            {
+              "cmd": "-j LOG --log-prefix \"{{PREFIX}} \"",
+              "desc": "커널 로그에 기록하고 다음 규칙 계속 검사"
+            },
+            {
+              "cmd": "-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+              "desc": "이미 맺어진 연결의 응답 허용 (보통 맨 위에 둠)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nft",
@@ -3743,47 +5421,27 @@
       "risk": "destructive",
       "requiresAdmin": true,
       "summary": "nftables 방화벽 규칙셋 조회·설정",
-      "description": "iptables 를 대체하는 nftables 의 명령줄 도구로, 테이블·체인·규칙을 하나의 규칙셋으로 관리합니다. firewalld(RHEL 8+)와 iptables-nft 도 내부적으로 nftables 를 사용하므로, 실제 적용 중인 규칙 전체는 nft list ruleset 으로 확인할 수 있습니다.",
+      "description": "iptables 를 대체하는 nftables 의 명령줄 도구로, 테이블·체인·규칙을 하나의 규칙셋으로 관리합니다. firewalld(RHEL 8+)와 iptables-nft 도 내부적으로 nftables 를 사용하므로, 실제 적용 중인 규칙 전체는 nft list ruleset 으로 확인할 수 있습니다. Unix 에는 없으며 Solaris 는 IPFilter·PF, AIX 는 genfilt 를 사용합니다.",
       "syntax": [
         "nft list ruleset",
         "nft add rule {{FAMILY}} {{TABLE}} {{CHAIN}} {{MATCH}} {{VERDICT}}"
       ],
       "options": [
         {
-          "flag": "list ruleset",
-          "desc": "전체 규칙셋 출력 (firewalld 규칙 포함)"
-        },
-        {
-          "flag": "list tables",
-          "desc": "테이블 목록"
-        },
-        {
-          "flag": "-a list chain {{FAMILY}} {{TABLE}} {{CHAIN}}",
-          "desc": "규칙과 handle 번호 표시 (삭제할 때 필요)"
-        },
-        {
-          "flag": "add table inet {{TABLE}}",
-          "desc": "테이블 생성 (inet = IPv4+IPv6)"
-        },
-        {
-          "flag": "add rule inet {{TABLE}} {{CHAIN}} tcp dport {{PORT}} accept",
-          "desc": "규칙 추가 (insert 는 맨 앞)"
-        },
-        {
-          "flag": "delete rule inet {{TABLE}} {{CHAIN}} handle {{N}}",
-          "desc": "handle 번호로 규칙 삭제"
+          "flag": "-a",
+          "desc": "list 와 함께: 규칙 handle 번호 표시 (삭제할 때 필요)"
         },
         {
           "flag": "-f {{FILE}}",
           "desc": "파일의 규칙셋 적용"
         },
         {
-          "flag": "-c -f {{FILE}}",
-          "desc": "파일 문법 검사만 (적용 안 함)"
+          "flag": "-c",
+          "desc": "-f 와 함께: 문법 검사만 (적용 안 함)"
         },
         {
-          "flag": "flush ruleset",
-          "desc": "모든 규칙 삭제 (위험)"
+          "flag": "-n",
+          "desc": "주소·포트를 이름 변환 없이 숫자로"
         }
       ],
       "examples": [
@@ -3834,7 +5492,88 @@
         "iptables",
         "firewall-cmd",
         "ufw"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "nft 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "nft list ruleset",
+              "desc": "전체 규칙셋 (firewalld 규칙 포함)"
+            },
+            {
+              "cmd": "nft list tables",
+              "desc": "테이블 목록"
+            },
+            {
+              "cmd": "nft -a list chain inet {{TABLE}} {{CHAIN}}",
+              "desc": "체인의 규칙과 handle 번호"
+            },
+            {
+              "cmd": "nft add table inet {{TABLE}}",
+              "desc": "테이블 생성 (inet = IPv4+IPv6)"
+            },
+            {
+              "cmd": "nft add chain inet {{TABLE}} {{CHAIN}} '{ type filter hook input priority 0; policy accept; }'",
+              "desc": "기본 체인 생성 (hook 으로 패킷 경로에 연결)"
+            },
+            {
+              "cmd": "nft add rule inet {{TABLE}} {{CHAIN}} tcp dport {{PORT}} accept",
+              "desc": "체인 끝에 규칙 추가"
+            },
+            {
+              "cmd": "nft insert rule inet {{TABLE}} {{CHAIN}} tcp dport {{PORT}} accept",
+              "desc": "체인 맨 앞에 규칙 추가"
+            },
+            {
+              "cmd": "nft delete rule inet {{TABLE}} {{CHAIN}} handle {{N}}",
+              "desc": "handle 번호로 규칙 삭제"
+            },
+            {
+              "cmd": "nft flush ruleset",
+              "desc": "모든 규칙 삭제 (firewalld 규칙까지 사라짐, 위험)"
+            }
+          ]
+        },
+        {
+          "title": "규칙 표현식",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "ip saddr {{CIDR}}",
+              "desc": "출발지 IPv4 주소·대역 (IPv6 는 ip6 saddr)"
+            },
+            {
+              "cmd": "tcp dport {{PORT}}",
+              "desc": "목적 포트. 여러 개는 tcp dport { 80, 443 }"
+            },
+            {
+              "cmd": "iifname \"{{IFACE}}\"",
+              "desc": "들어온 인터페이스"
+            },
+            {
+              "cmd": "ct state established,related accept",
+              "desc": "맺어진 연결의 응답 허용"
+            },
+            {
+              "cmd": "counter",
+              "desc": "일치한 패킷·바이트 수 집계"
+            },
+            {
+              "cmd": "log prefix \"{{PREFIX}} \"",
+              "desc": "로그 기록"
+            },
+            {
+              "cmd": "accept | drop | reject",
+              "desc": "판정: 허용 / 버림 / 거부 응답"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "firewall-cmd",
@@ -3850,7 +5589,7 @@
       "risk": "caution",
       "requiresAdmin": true,
       "summary": "firewalld 방화벽 규칙(포트·서비스·존) 관리",
-      "description": "firewalld 방화벽의 포트·서비스·존 규칙을 조회하고 추가·삭제합니다. RHEL 7 이후 RHEL 계열의 기본 방화벽 도구이며, 내부적으로 nftables(RHEL 8+) 규칙을 관리합니다.",
+      "description": "firewalld 방화벽의 포트·서비스·존 규칙을 조회하고 추가·삭제합니다. RHEL 7 이후 RHEL 계열의 기본 방화벽 도구이며, 내부적으로 nftables(RHEL 8+) 규칙을 관리합니다. Unix 에는 없으며 AIX 는 genfilt, HP-UX·Solaris 10 은 IPFilter, Solaris 11.4 는 PF 를 사용합니다.",
       "syntax": [
         "firewall-cmd [--permanent] [--zone={{ZONE}}] {{OPTION}}"
       ],
@@ -3913,6 +5652,36 @@
         {
           "title": "포트 포워딩 (80 → 8080)",
           "command": "firewall-cmd --permanent --add-forward-port=port=80:proto=tcp:toport=8080\nfirewall-cmd --reload"
+        },
+        {
+          "title": "런타임으로 먼저 열고 확인 후 영구 저장",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "firewall-cmd --list-all",
+              "desc": "현재 존의 규칙 확인·기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "firewall-cmd --add-port={{PORT}}/tcp",
+              "desc": "런타임에만 허용 (즉시 적용)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "firewall-cmd --list-ports",
+              "desc": "적용 확인 후 상대 서버에서 접속 테스트"
+            },
+            {
+              "prompt": "#",
+              "cmd": "firewall-cmd --runtime-to-permanent",
+              "desc": "문제없으면 영구 저장"
+            },
+            {
+              "prompt": "#",
+              "cmd": "firewall-cmd --remove-port={{PORT}}/tcp",
+              "desc": "(롤백) 저장 전이면 이것만, 저장 후면 --permanent 로도 한 번 더"
+            }
+          ]
         }
       ],
       "cautions": [
@@ -3944,7 +5713,49 @@
         "nft",
         "ss",
         "systemctl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "런타임 vs 영구 설정",
+          "type": "subcommand",
+          "columns": [
+            "런타임 (즉시 적용, 재시작 시 사라짐)",
+            "영구 (--permanent, --reload 후 적용)"
+          ],
+          "note": "운영 서버에서는 런타임으로 먼저 열어 확인한 뒤 --runtime-to-permanent 로 저장하거나, 영구로 넣고 --reload 하는 방식 중 하나로 통일하세요.",
+          "items": [
+            {
+              "desc": "포트 허용",
+              "left": "firewall-cmd --add-port={{PORT}}/tcp",
+              "right": "firewall-cmd --permanent --add-port={{PORT}}/tcp"
+            },
+            {
+              "desc": "서비스 허용 해제",
+              "left": "firewall-cmd --remove-service={{SERVICE}}",
+              "right": "firewall-cmd --permanent --remove-service={{SERVICE}}"
+            },
+            {
+              "desc": "규칙 확인",
+              "left": "firewall-cmd --list-all",
+              "right": "firewall-cmd --permanent --list-all"
+            },
+            {
+              "desc": "다른 쪽으로 반영",
+              "left": "firewall-cmd --runtime-to-permanent",
+              "right": "firewall-cmd --reload",
+              "note": "왼쪽: 현재 런타임 규칙을 영구 저장. 오른쪽: 영구 설정을 런타임에 다시 적용 (저장 안 한 런타임 규칙은 사라짐)"
+            },
+            {
+              "desc": "시간 제한 허용",
+              "left": "firewall-cmd --add-port={{PORT}}/tcp --timeout=10m",
+              "right": "해당 없음 (런타임 전용)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ufw",
@@ -3960,51 +5771,19 @@
       "risk": "caution",
       "requiresAdmin": true,
       "summary": "Ubuntu 간편 방화벽(ufw) 포트 허용·차단",
-      "description": "Ubuntu 의 기본 방화벽 관리 도구로 iptables/nftables 규칙을 간단한 명령으로 관리합니다. 설치되어 있지만 기본은 비활성(inactive) 상태이며, 활성화하면 기본 정책은 들어오는 연결 차단·나가는 연결 허용입니다. 규칙은 자동으로 영구 저장됩니다.",
+      "description": "Ubuntu 의 기본 방화벽 관리 도구로 iptables/nftables 규칙을 간단한 명령으로 관리합니다. 설치되어 있지만 기본은 비활성(inactive) 상태이며, 활성화하면 기본 정책은 들어오는 연결 차단·나가는 연결 허용입니다. 규칙은 자동으로 영구 저장됩니다. Unix 에는 없습니다.",
       "syntax": [
         "ufw {allow|deny|reject|limit} [from {{CIDR}}] [to any] [port {{PORT}}] [proto tcp|udp]",
         "ufw status [verbose|numbered]"
       ],
       "options": [
         {
-          "flag": "status verbose",
-          "desc": "활성 여부, 기본 정책, 규칙 목록"
+          "flag": "--dry-run",
+          "desc": "실제로 바꾸지 않고 적용될 규칙만 출력"
         },
         {
-          "flag": "status numbered",
-          "desc": "번호와 함께 규칙 목록 (삭제용)"
-        },
-        {
-          "flag": "enable | disable",
-          "desc": "방화벽 켜기 / 끄기 (부팅 시 자동 적용 포함)"
-        },
-        {
-          "flag": "allow {{PORT}}/tcp",
-          "desc": "포트 허용"
-        },
-        {
-          "flag": "allow from {{CIDR}} to any port {{PORT}} proto tcp",
-          "desc": "특정 대역에서만 포트 허용"
-        },
-        {
-          "flag": "deny {{PORT}}",
-          "desc": "포트 차단"
-        },
-        {
-          "flag": "limit ssh",
-          "desc": "30초에 6회 이상 연결 시도하는 IP 차단 (무차별 대입 방지)"
-        },
-        {
-          "flag": "delete {{N}}",
-          "desc": "번호로 규칙 삭제"
-        },
-        {
-          "flag": "app list",
-          "desc": "등록된 애플리케이션 프로필 (OpenSSH, Nginx Full 등)"
-        },
-        {
-          "flag": "default deny incoming",
-          "desc": "기본 정책 변경"
+          "flag": "--force",
+          "desc": "확인 질문 없이 실행 (예: ufw --force enable)"
         }
       ],
       "examples": [
@@ -4046,7 +5825,74 @@
         "iptables",
         "nft",
         "ss"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "ufw 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "ufw status verbose",
+              "desc": "활성 여부, 기본 정책, 규칙 목록"
+            },
+            {
+              "cmd": "ufw status numbered",
+              "desc": "번호와 함께 규칙 목록 (삭제·삽입 위치 확인용)"
+            },
+            {
+              "cmd": "ufw enable",
+              "desc": "방화벽 켜기 (부팅 시 자동 적용 포함). 먼저 SSH 허용 확인"
+            },
+            {
+              "cmd": "ufw disable",
+              "desc": "방화벽 끄기"
+            },
+            {
+              "cmd": "ufw allow {{PORT}}/tcp",
+              "desc": "포트 허용"
+            },
+            {
+              "cmd": "ufw allow from {{CIDR}} to any port {{PORT}} proto tcp",
+              "desc": "특정 대역에서만 포트 허용"
+            },
+            {
+              "cmd": "ufw deny {{PORT}}",
+              "desc": "포트 차단 (응답 없음. reject 는 거부 응답)"
+            },
+            {
+              "cmd": "ufw limit ssh",
+              "desc": "30초에 6회 이상 접속 시도하는 IP 차단"
+            },
+            {
+              "cmd": "ufw insert {{N}} deny from {{IP}}",
+              "desc": "N 번 위치에 규칙 삽입 (차단을 허용 규칙보다 앞에)"
+            },
+            {
+              "cmd": "ufw delete {{N}}",
+              "desc": "번호로 규칙 삭제 (ufw delete allow {{PORT}}/tcp 처럼 규칙 내용으로도 가능)"
+            },
+            {
+              "cmd": "ufw app list",
+              "desc": "애플리케이션 프로필 목록 (OpenSSH, Nginx Full 등)"
+            },
+            {
+              "cmd": "ufw default deny incoming",
+              "desc": "기본 정책 변경"
+            },
+            {
+              "cmd": "ufw reload",
+              "desc": "규칙 다시 읽기"
+            },
+            {
+              "cmd": "ufw reset",
+              "desc": "모든 규칙 삭제·비활성화 (위험)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netsh-advfirewall",
@@ -4069,20 +5915,24 @@
       ],
       "options": [
         {
-          "flag": "show allprofiles",
-          "desc": "도메인·개인·공용 프로필 상태와 기본 정책"
+          "flag": "name=\"{{RULE}}\"",
+          "desc": "규칙 이름 (show·delete·set 에서 대상 지정, name=all 은 전체)"
         },
         {
-          "flag": "firewall show rule name=all [dir=in]",
-          "desc": "규칙 목록 (name=\"{{RULE}}\" 로 특정 규칙)"
+          "flag": "dir=in | out",
+          "desc": "방향 (인바운드 / 아웃바운드)"
         },
         {
-          "flag": "firewall add rule name= dir=in|out action=allow|block",
-          "desc": "규칙 추가"
+          "flag": "action=allow | block",
+          "desc": "허용 / 차단"
         },
         {
-          "flag": "protocol=TCP|UDP localport={{PORT}}",
-          "desc": "프로토콜·로컬 포트 (쉼표·범위 가능)"
+          "flag": "protocol=TCP | UDP | icmpv4",
+          "desc": "프로토콜"
+        },
+        {
+          "flag": "localport={{PORT}}",
+          "desc": "로컬 포트 (쉼표 목록·범위 8000-8010 가능)"
         },
         {
           "flag": "remoteip={{CIDR}}",
@@ -4091,18 +5941,6 @@
         {
           "flag": "profile=domain,private,public",
           "desc": "적용 프로필"
-        },
-        {
-          "flag": "firewall delete rule name=\"{{RULE}}\"",
-          "desc": "이름으로 규칙 삭제"
-        },
-        {
-          "flag": "export | import \"{{FILE}}.wfw\"",
-          "desc": "방화벽 정책 백업 / 복원"
-        },
-        {
-          "flag": "set allprofiles state on|off",
-          "desc": "모든 프로필 방화벽 켜기·끄기"
         }
       ],
       "examples": [
@@ -4141,7 +5979,54 @@
         "new-netfirewallrule",
         "wf-msc",
         "test-netconnection"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "advfirewall 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "netsh advfirewall show allprofiles",
+              "desc": "도메인·개인·공용 프로필 상태와 기본 정책"
+            },
+            {
+              "cmd": "netsh advfirewall firewall show rule name=all dir=in",
+              "desc": "인바운드 규칙 목록"
+            },
+            {
+              "cmd": "netsh advfirewall firewall show rule name=\"{{RULE}}\" verbose",
+              "desc": "특정 규칙 상세"
+            },
+            {
+              "cmd": "netsh advfirewall firewall add rule name=\"{{RULE}}\" dir=in action=allow protocol=TCP localport={{PORT}}",
+              "desc": "규칙 추가"
+            },
+            {
+              "cmd": "netsh advfirewall firewall set rule name=\"{{RULE}}\" new enable=no",
+              "desc": "규칙을 지우지 않고 끄기 (enable=yes 로 다시 켜기)"
+            },
+            {
+              "cmd": "netsh advfirewall firewall delete rule name=\"{{RULE}}\"",
+              "desc": "이름으로 규칙 삭제 (같은 이름 규칙이 모두 삭제됨)"
+            },
+            {
+              "cmd": "netsh advfirewall export \"{{FILE}}.wfw\"",
+              "desc": "방화벽 정책 백업 (import 로 복원)"
+            },
+            {
+              "cmd": "netsh advfirewall set allprofiles state on | off",
+              "desc": "모든 프로필 방화벽 켜기·끄기"
+            },
+            {
+              "cmd": "netsh advfirewall reset",
+              "desc": "기본 정책으로 초기화 (추가한 규칙이 모두 사라짐)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "new-netfirewallrule",
@@ -4235,7 +6120,10 @@
         "netsh-advfirewall",
         "wf-msc",
         "test-netconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "wf-msc",
@@ -4254,28 +6142,15 @@
       "syntax": [
         "wf.msc"
       ],
-      "options": [
-        {
-          "flag": "인바운드 규칙 > 새 규칙",
-          "desc": "포트·프로그램·미리 정의된 규칙 마법사"
-        },
-        {
-          "flag": "규칙 속성 > 범위",
-          "desc": "로컬·원격 IP 주소 제한"
-        },
-        {
-          "flag": "Windows Defender 방화벽 속성",
-          "desc": "프로필별 켜기/끄기, 기본 동작, 로깅 설정"
-        },
-        {
-          "flag": "모니터링 > 방화벽",
-          "desc": "실제 적용 중인 규칙 (GPO 포함) 확인"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "방화벽 콘솔 열기",
           "command": "wf.msc"
+        },
+        {
+          "title": "간단한 방화벽 설정 화면 (켜기·끄기, 앱 허용)",
+          "command": "firewall.cpl"
         }
       ],
       "cautions": [
@@ -4294,7 +6169,34 @@
       "related": [
         "netsh-advfirewall",
         "new-netfirewallrule"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "방화벽 콘솔에서 자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "인바운드 규칙 > 새 규칙",
+              "desc": "포트·프로그램·미리 정의된 규칙 마법사"
+            },
+            {
+              "cmd": "규칙 속성 > 범위",
+              "desc": "로컬·원격 IP 주소 제한"
+            },
+            {
+              "cmd": "Windows Defender 방화벽 속성",
+              "desc": "프로필별 켜기/끄기, 기본 동작, 로깅 설정"
+            },
+            {
+              "cmd": "모니터링 > 방화벽",
+              "desc": "실제 적용 중인 규칙 (GPO 포함) 확인"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tcpdump",
@@ -4305,13 +6207,14 @@
       "task": "network.capture",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix"
       ],
       "level": "critical",
       "risk": "safe",
       "requiresAdmin": true,
       "summary": "패킷 캡처·필터링, pcap 파일 저장",
-      "description": "네트워크 인터페이스를 지나가는 패킷을 캡처해 화면에 출력하거나 pcap 파일로 저장합니다. 호스트·포트·프로토콜 필터(BPF)로 원하는 트래픽만 잡을 수 있고, 저장한 파일은 Wireshark 로 분석합니다. 장애 시 '패킷이 실제로 도착하는가'를 확인하는 최종 수단입니다.",
+      "description": "네트워크 인터페이스를 지나가는 패킷을 캡처해 화면에 출력하거나 pcap 파일로 저장합니다. 호스트·포트·프로토콜 필터(BPF)로 원하는 트래픽만 잡을 수 있고, 저장한 파일은 Wireshark 로 분석합니다. 장애 시 '패킷이 실제로 도착하는가'를 확인하는 최종 수단입니다. AIX 에도 tcpdump 가 있으며, Solaris 는 snoop, HP-UX 는 nettl(또는 별도 설치한 tcpdump)을 사용합니다.",
       "syntax": [
         "tcpdump -i {{IFACE}} [-nn] [-w {{FILE}}.pcap] [{{FILTER}}]"
       ],
@@ -4351,38 +6254,76 @@
         {
           "flag": "-A / -X",
           "desc": "페이로드를 ASCII / HEX+ASCII 로 출력"
-        },
-        {
-          "flag": "host {{IP}} and port {{PORT}}",
-          "desc": "필터 예 (src, dst, net {{CIDR}}, tcp, udp, icmp, not, or)"
         }
       ],
       "examples": [
         {
           "title": "특정 포트 트래픽 화면 출력",
-          "command": "tcpdump -i any -nn port {{PORT}}"
+          "command": "tcpdump -i any -nn port {{PORT}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "특정 호스트·포트 트래픽을 파일로 저장",
-          "command": "tcpdump -i {{IFACE}} -nn -s 0 -w /tmp/capture_$(hostname)_$(date +%Y%m%d%H%M).pcap host {{IP}} and port {{PORT}}"
+          "title": "파일로 저장 → 읽기 → 전달",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "tcpdump -D",
+              "desc": "캡처할 인터페이스 이름 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tcpdump -i {{IFACE}} -nn -s 0 -w /tmp/capture_$(hostname)_$(date +%Y%m%d%H%M).pcap host {{IP}} and port {{PORT}}",
+              "desc": "재현하는 동안 저장, 끝나면 Ctrl+C"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tcpdump -nn -r /tmp/{{FILE}}.pcap | head -50",
+              "desc": "저장한 파일 내용 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ls -lh /tmp/{{FILE}}.pcap",
+              "desc": "크기 확인 후 scp·sftp 로 내 PC 에 받아 Wireshark 로 분석"
+            }
+          ],
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "장시간 순환 캡처 (100MB × 10개)",
-          "command": "tcpdump -i {{IFACE}} -nn -C 100 -W 10 -w /tmp/ring.pcap port {{PORT}}"
+          "command": "tcpdump -i {{IFACE}} -nn -C 100 -W 10 -w /tmp/ring.pcap port {{PORT}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "TCP SYN·RST 만 보기 (연결 실패 분석)",
-          "command": "tcpdump -i any -nn 'tcp[tcpflags] & (tcp-syn|tcp-rst) != 0 and port {{PORT}}'"
+          "command": "tcpdump -i any -nn 'tcp[tcpflags] & (tcp-syn|tcp-rst) != 0 and port {{PORT}}'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "저장 파일 읽기",
-          "command": "tcpdump -nn -r /tmp/{{FILE}}.pcap | head -50"
+          "title": "특정 호스트·포트 캡처 (AIX)",
+          "command": "tcpdump -i en0 -n host {{IP}} and port {{PORT}}\ntcpdump -i en0 -n -w /tmp/{{FILE}}.pcap host {{IP}}",
+          "note": "-i any 는 지원하지 않으므로 en0 처럼 인터페이스를 지정합니다.",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
         "필터 없이 바쁜 서버에서 캡처하면 디스크가 금방 찹니다. 필터와 -C/-W 또는 -c 를 함께 쓰세요.",
         "RHEL 에서 -w 사용 시 tcpdump 가 권한을 낮춰(tcpdump 사용자) 쓰기 때문에 쓰기 권한 없는 디렉토리에서 실패할 수 있습니다. /tmp 를 쓰거나 -Z root 를 붙이세요.",
-        "캡처 파일에는 평문 비밀번호·개인정보가 포함될 수 있으니 전달·보관에 주의하세요."
+        "캡처 파일에는 평문 비밀번호·개인정보가 포함될 수 있으니 전달·보관에 주의하세요.",
+        "원격에서 화면 출력으로 캡처할 때는 'not port 22' 로 내 SSH 세션을 빼야 출력이 폭주하지 않습니다."
       ],
       "install": {
         "rhel": {
@@ -4410,7 +6351,62 @@
         "ip",
         "nc",
         "ethtool"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "필터식 (BPF)",
+          "type": "directive",
+          "note": "필터는 명령 맨 끝에 씁니다. 자세한 문법: man pcap-filter",
+          "items": [
+            {
+              "cmd": "host {{IP}}",
+              "desc": "출발지·목적지 어느 쪽이든 해당 IP"
+            },
+            {
+              "cmd": "src host {{IP}} / dst host {{IP}}",
+              "desc": "출발지만 / 목적지만"
+            },
+            {
+              "cmd": "port {{PORT}}",
+              "desc": "출발·목적 포트 어느 쪽이든 (src port, dst port 로 한쪽만)"
+            },
+            {
+              "cmd": "portrange {{START}}-{{END}}",
+              "desc": "포트 범위"
+            },
+            {
+              "cmd": "net {{CIDR}}",
+              "desc": "대역 (예: net 10.1.0.0/16)"
+            },
+            {
+              "cmd": "tcp / udp / icmp / arp",
+              "desc": "프로토콜"
+            },
+            {
+              "cmd": "and / or / not",
+              "desc": "조건 조합 (&&, ||, ! 도 같음)"
+            },
+            {
+              "cmd": "'host {{IP}} and (port 80 or port 443)'",
+              "desc": "괄호로 묶기 (셸이 해석하지 않게 작은따옴표)"
+            },
+            {
+              "cmd": "'not port 22'",
+              "desc": "내 SSH 세션 트래픽 제외 (원격에서 캡처할 때)"
+            },
+            {
+              "cmd": "'tcp[tcpflags] & (tcp-syn|tcp-rst) != 0'",
+              "desc": "SYN·RST 패킷만 (연결 실패 분석)"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "AIX 에도 /usr/sbin/tcpdump 가 기본 제공됩니다. -i en0 처럼 인터페이스를 지정하며 -i any 는 Linux 전용입니다. 버전이 낮아 일부 옵션(-C·-W 등)이 없을 수 있으니 tcpdump -h 로 확인하세요. AIX 고유 도구로 iptrace(캡처)·ipreport(해석)도 있습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pktmon",
@@ -4434,40 +6430,32 @@
       ],
       "options": [
         {
-          "flag": "filter add -p {{PORT}}",
-          "desc": "포트 필터 추가 (-i {{IP}} 주소, -t TCP 프로토콜 등)"
+          "flag": "-p {{PORT}}",
+          "desc": "filter add: 포트 조건"
         },
         {
-          "flag": "filter list | filter remove",
-          "desc": "필터 목록 / 모든 필터 삭제"
+          "flag": "-i {{IP}}",
+          "desc": "filter add: IP 주소 조건"
         },
         {
-          "flag": "start --capture",
-          "desc": "패킷 캡처 시작"
+          "flag": "-t TCP | UDP",
+          "desc": "filter add: 전송 프로토콜 조건"
+        },
+        {
+          "flag": "--capture",
+          "desc": "start: 패킷 캡처 포함 (없으면 카운터만)"
         },
         {
           "flag": "--pkt-size 0",
-          "desc": "패킷 전체 저장 (기본은 앞부분 128바이트)"
+          "desc": "start: 패킷 전체 저장 (기본은 앞부분 128바이트)"
         },
         {
           "flag": "-f {{FILE}}.etl",
-          "desc": "저장 파일 이름 (기본 PktMon.etl)"
+          "desc": "start: 저장 파일 이름 (기본 PktMon.etl)"
         },
         {
           "flag": "--comp nics",
-          "desc": "물리 NIC 에서만 캡처 (중복 패킷 줄이기)"
-        },
-        {
-          "flag": "stop",
-          "desc": "캡처 중지 및 파일 저장"
-        },
-        {
-          "flag": "etl2pcap {{FILE}}.etl -o {{FILE}}.pcapng",
-          "desc": "Wireshark 용 pcapng 로 변환 (최신 빌드는 pktmon pcapng 도 사용)"
-        },
-        {
-          "flag": "counters",
-          "desc": "구성 요소별 패킷·드롭 카운터"
+          "desc": "start: 물리 NIC 에서만 캡처 (중복 패킷 줄이기)"
         }
       ],
       "examples": [
@@ -4496,7 +6484,50 @@
       "related": [
         "netsh-trace",
         "win-netstat"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "pktmon 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "pktmon filter add -p {{PORT}} [-i {{IP}}]",
+              "desc": "캡처 필터 추가 (여러 번 추가 가능)"
+            },
+            {
+              "cmd": "pktmon filter list",
+              "desc": "필터 목록"
+            },
+            {
+              "cmd": "pktmon filter remove",
+              "desc": "모든 필터 삭제"
+            },
+            {
+              "cmd": "pktmon start --capture --pkt-size 0 -f {{FILE}}.etl",
+              "desc": "캡처 시작"
+            },
+            {
+              "cmd": "pktmon stop",
+              "desc": "캡처 중지 및 파일 저장"
+            },
+            {
+              "cmd": "pktmon counters",
+              "desc": "구성 요소별 패킷·드롭 카운터"
+            },
+            {
+              "cmd": "pktmon etl2pcap {{FILE}}.etl -o {{FILE}}.pcapng",
+              "desc": "Wireshark 용 pcapng 로 변환 (최신 빌드는 pktmon pcapng)"
+            },
+            {
+              "cmd": "pktmon format {{FILE}}.etl -o {{FILE}}.txt",
+              "desc": "텍스트로 변환"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netsh-trace",
@@ -4545,10 +6576,6 @@
         {
           "flag": "scenario={{SCENARIO}}",
           "desc": "미리 정의된 시나리오 (show scenarios 로 목록)"
-        },
-        {
-          "flag": "stop",
-          "desc": "추적 중지 및 파일 생성 (수 분 걸릴 수 있음)"
         }
       ],
       "examples": [
@@ -4577,7 +6604,34 @@
       "related": [
         "pktmon",
         "netsh"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "netsh trace 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "netsh trace start capture=yes tracefile={{FILE}}.etl",
+              "desc": "추적 시작"
+            },
+            {
+              "cmd": "netsh trace stop",
+              "desc": "추적 중지 및 파일 생성 (수 분 걸릴 수 있음)"
+            },
+            {
+              "cmd": "netsh trace show status",
+              "desc": "추적 진행 여부 확인"
+            },
+            {
+              "cmd": "netsh trace show scenarios",
+              "desc": "scenario= 에 쓸 수 있는 시나리오 목록"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ethtool",
@@ -4594,15 +6648,12 @@
       "risk": "caution",
       "requiresAdmin": false,
       "summary": "NIC 링크 속도·듀플렉스·드라이버·오류 통계 확인",
-      "description": "네트워크 카드의 링크 상태, 속도, 듀플렉스, 자동 협상 여부, 드라이버·펌웨어 버전, 하드웨어 통계(에러·드롭), 오프로드·링 버퍼 설정을 조회하고 변경합니다. 회선 속도 저하, 링크 플래핑, 패킷 드롭 원인을 볼 때 사용합니다.",
+      "description": "네트워크 카드의 링크 상태, 속도, 듀플렉스, 자동 협상 여부, 드라이버·펌웨어 버전, 하드웨어 통계(에러·드롭), 오프로드·링 버퍼 설정을 조회하고 변경합니다. 회선 속도 저하, 링크 플래핑, 패킷 드롭 원인을 볼 때 사용합니다. Unix 에는 없으며 AIX 는 entstat -d, HP-UX 는 nwmgr·lanadmin, Solaris 11 은 dladm show-phys·show-linkprop 로 같은 정보를 봅니다.",
       "syntax": [
+        "ethtool {{IFACE}}",
         "ethtool [-i | -S | -k | -g] {{IFACE}}"
       ],
       "options": [
-        {
-          "flag": "{{IFACE}}",
-          "desc": "링크 감지(Link detected), 속도, 듀플렉스, 자동 협상"
-        },
         {
           "flag": "-i {{IFACE}}",
           "desc": "드라이버 이름·버전, 펌웨어, PCI 버스 주소"
@@ -4686,7 +6737,10 @@
         "ip",
         "tcpdump",
         "nmcli"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-netadapter",
@@ -4720,20 +6774,8 @@
           "desc": "물리 어댑터만"
         },
         {
-          "flag": "| Format-List *",
-          "desc": "드라이버 버전·날짜 등 모든 속성"
-        },
-        {
-          "flag": "Get-NetAdapterStatistics -Name \"{{IFACE}}\"",
-          "desc": "송수신 바이트·오류·폐기 통계"
-        },
-        {
-          "flag": "Get-NetAdapterAdvancedProperty -Name \"{{IFACE}}\"",
-          "desc": "속도·듀플렉스, Jumbo Packet, RSS 등 고급 속성"
-        },
-        {
-          "flag": "Restart-NetAdapter -Name \"{{IFACE}}\"",
-          "desc": "어댑터 재시작 (Disable/Enable-NetAdapter 도 있음)"
+          "flag": "-InterfaceDescription \"{{DESC}}\"",
+          "desc": "드라이버 설명(제품명)으로 조회 (와일드카드 * 가능)"
         }
       ],
       "examples": [
@@ -4766,7 +6808,34 @@
         "get-netipaddress",
         "new-netlbfoteam",
         "ncpa-cpl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "함께 쓰는 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Get-NetAdapter -Name \"{{IFACE}}\" | Format-List *",
+              "desc": "드라이버 버전·날짜 등 모든 속성"
+            },
+            {
+              "cmd": "Get-NetAdapterStatistics -Name \"{{IFACE}}\"",
+              "desc": "송수신 바이트·오류·폐기 통계"
+            },
+            {
+              "cmd": "Get-NetAdapterAdvancedProperty -Name \"{{IFACE}}\"",
+              "desc": "속도·듀플렉스, Jumbo Packet, RSS 등 고급 속성"
+            },
+            {
+              "cmd": "Restart-NetAdapter -Name \"{{IFACE}}\"",
+              "desc": "어댑터 재시작 (Disable/Enable-NetAdapter 도 있음)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "arp",
@@ -4777,29 +6846,32 @@
       "task": "network.arp-route",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
       "requiresAdmin": false,
       "summary": "(구형) ARP 테이블 조회·삭제·정적 등록",
-      "description": "IP 와 MAC 주소 매핑(ARP 캐시)을 조회하고 항목을 삭제하거나 정적으로 등록합니다. IP 충돌, 게이트웨이 MAC 변경(장비 교체·VIP 이동) 후 통신 불가 문제를 확인할 때 사용합니다. net-tools 패키지 명령으로, ip neigh 가 대체 명령입니다.",
+      "description": "IP 와 MAC 주소 매핑(ARP 캐시)을 조회하고 항목을 삭제하거나 정적으로 등록합니다. IP 충돌, 게이트웨이 MAC 변경(장비 교체·VIP 이동) 후 통신 불가 문제를 확인할 때 사용합니다. Linux 에서는 net-tools 패키지의 구형 명령으로 ip neigh 가 대체 명령이고, AIX·HP-UX·Solaris 에서는 기본 명령이며 arp -a 로 조회합니다.",
       "syntax": [
         "arp -n",
         "arp -d {{IP}}"
       ],
       "options": [
         {
-          "flag": "-n",
-          "desc": "숫자로 표시"
+          "flag": "-a",
+          "desc": "모든 항목 표시 (Unix 의 기본 조회 방법. Linux 는 BSD 형식 출력)"
         },
         {
-          "flag": "-a",
-          "desc": "BSD 형식으로 전체 출력"
+          "flag": "-n",
+          "desc": "(Linux) 숫자로 표시"
         },
         {
           "flag": "-i {{IFACE}}",
-          "desc": "특정 인터페이스만"
+          "desc": "(Linux) 특정 인터페이스만"
         },
         {
           "flag": "-d {{IP}}",
@@ -4813,17 +6885,43 @@
       "examples": [
         {
           "title": "ARP 테이블 확인",
-          "command": "arp -n"
+          "command": "arp -n",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "ARP 테이블 확인 (Unix)",
+          "command": "arp -a",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "같은 작업을 ip 로",
           "command": "ip neigh show\nip neigh flush dev {{IFACE}}",
-          "note": "flush 는 해당 인터페이스의 ARP 캐시를 모두 비웁니다."
+          "note": "flush 는 해당 인터페이스의 ARP 캐시를 모두 비웁니다.",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "IP 충돌 확인 (중복 응답 검사)",
           "command": "arping -D -I {{IFACE}} -c 3 {{IP}}",
-          "note": "arping 은 iputils(RHEL) / iputils-arping(Ubuntu) 패키지"
+          "note": "arping 은 iputils(RHEL) / iputils-arping(Ubuntu) 패키지",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "VIP 이동 후 오래된 항목 삭제",
+          "command": "arp -d {{IP}}\nping -c 1 {{IP}}",
+          "note": "삭제 후 통신하면 새 MAC 으로 다시 학습됩니다. HP-UX 는 ping {{IP}} -n 1, Solaris 는 ping {{IP}}."
         }
       ],
       "cautions": [
@@ -4853,7 +6951,17 @@
         "ip",
         "route",
         "tcpdump"
-      ]
+      ],
+      "platformNotes": {
+        "rhel": "net-tools 패키지 (기본 미설치). ip neigh 로 같은 작업을 합니다.",
+        "debian": "net-tools 패키지 (기본 미설치). ip neigh 로 같은 작업을 합니다.",
+        "aix": "arp -a 로 조회, arp -d {{IP}} 로 삭제합니다. 항목은 기본 20분 뒤 만료되며 값은 no -o arpt_killc 로 확인합니다.",
+        "hpux": "arp -a 로 조회, arp -d {{IP}} 로 삭제합니다. 정적 항목은 arp -s {{IP}} {{MAC}} 입니다.",
+        "solaris": "arp -a 로 조회, arp -d {{IP}} 로 삭제합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-arp",
@@ -4919,7 +7027,10 @@
         "win-route",
         "ipconfig",
         "win-ping"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-route",
@@ -4945,32 +7056,16 @@
       ],
       "options": [
         {
-          "flag": "print [-4]",
-          "desc": "라우팅 테이블과 인터페이스 번호 목록 (-4 는 IPv4 만)"
-        },
-        {
-          "flag": "add {{NETWORK}} mask {{NETMASK}} {{GATEWAY}}",
-          "desc": "정적 경로 추가"
-        },
-        {
           "flag": "-p",
-          "desc": "영구 경로로 추가 (재부팅 후 유지)"
+          "desc": "add 와 함께: 영구 경로로 추가 (재부팅 후 유지)"
         },
         {
-          "flag": "metric {{N}}",
-          "desc": "경로 우선순위 (낮을수록 우선)"
+          "flag": "-4 / -6",
+          "desc": "print 와 함께: IPv4 / IPv6 만"
         },
         {
-          "flag": "if {{IF_INDEX}}",
-          "desc": "나갈 인터페이스 번호 (route print 의 인터페이스 목록)"
-        },
-        {
-          "flag": "delete {{NETWORK}}",
-          "desc": "경로 삭제"
-        },
-        {
-          "flag": "change {{NETWORK}} mask {{NETMASK}} {{GATEWAY}}",
-          "desc": "경로 게이트웨이·메트릭 변경"
+          "flag": "-f",
+          "desc": "게이트웨이 경로 전체 삭제 (위험)"
         }
       ],
       "examples": [
@@ -5005,7 +7100,34 @@
         "ipconfig",
         "get-netipaddress",
         "tracert"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "route 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "route print [-4]",
+              "desc": "라우팅 테이블과 인터페이스 번호 목록"
+            },
+            {
+              "cmd": "route add {{NETWORK}} mask {{NETMASK}} {{GATEWAY}} [metric {{N}}] [if {{IF_INDEX}}]",
+              "desc": "정적 경로 추가 (metric 낮을수록 우선, if 는 route print 의 인터페이스 번호)"
+            },
+            {
+              "cmd": "route delete {{NETWORK}}",
+              "desc": "경로 삭제 (영구 경로도 함께 삭제)"
+            },
+            {
+              "cmd": "route change {{NETWORK}} mask {{NETMASK}} {{GATEWAY}}",
+              "desc": "경로 게이트웨이·메트릭 변경"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "new-netlbfoteam",
@@ -5044,18 +7166,6 @@
         {
           "flag": "-LoadBalancingAlgorithm Dynamic|TransportPorts|HyperVPort|IPAddresses|MacAddresses",
           "desc": "부하 분산 방식 (기본 Dynamic)"
-        },
-        {
-          "flag": "Set-NetLbfoTeamMember -Name \"{{IFACE2}}\" -AdministrativeMode Standby",
-          "desc": "멤버를 대기(Standby) 로 지정 (active-standby 구성)"
-        },
-        {
-          "flag": "Get-NetLbfoTeam / Get-NetLbfoTeamMember",
-          "desc": "팀·멤버 상태 확인"
-        },
-        {
-          "flag": "Remove-NetLbfoTeam -Name {{TEAM}}",
-          "desc": "팀 해제"
         }
       ],
       "examples": [
@@ -5094,7 +7204,30 @@
         "new-netipaddress",
         "nmcli",
         "netplan"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "팀 관리 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Set-NetLbfoTeamMember -Name \"{{IFACE2}}\" -AdministrativeMode Standby",
+              "desc": "멤버를 대기(Standby) 로 지정 (active-standby 구성)"
+            },
+            {
+              "cmd": "Get-NetLbfoTeam / Get-NetLbfoTeamMember",
+              "desc": "팀·멤버 상태 확인"
+            },
+            {
+              "cmd": "Remove-NetLbfoTeam -Name {{TEAM}}",
+              "desc": "팀 해제"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

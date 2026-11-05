@@ -12,7 +12,10 @@
       "task": "content.view",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -33,11 +36,11 @@
         },
         {
           "flag": "-A",
-          "desc": "탭(^I), 줄 끝($), 제어 문자를 보이게 표시 (CRLF 는 ^M$)"
+          "desc": "탭(^I), 줄 끝($), 제어 문자를 보이게 표시 (CRLF 는 ^M$) (GNU/Linux 전용. Unix 는 cat -vet)"
         },
         {
           "flag": "-s",
-          "desc": "연속된 빈 줄을 하나로 줄임"
+          "desc": "연속된 빈 줄을 하나로 줄임 (GNU 의미. Solaris·HP-UX 의 -s 는 \"없는 파일 오류 메시지 숨김\")"
         },
         {
           "flag": "-v",
@@ -47,19 +50,55 @@
       "examples": [
         {
           "title": "설정 파일 내용 확인",
-          "command": "cat /etc/os-release"
+          "command": "cat /etc/os-release",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "주석과 빈 줄 빼고 실제 설정만 보기",
-          "command": "grep -Ev '^\\s*(#|$)' /etc/ssh/sshd_config"
+          "command": "grep -Ev '^\\s*(#|$)' /etc/ssh/sshd_config",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "주석과 빈 줄 빼고 실제 설정만 보기",
+          "command": "grep -v '^#' {{FILE}} | grep -v '^$'",
+          "note": "\\s 는 GNU grep 확장이라 Unix 에서는 이 형식이 확실합니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "숨은 공백·탭·CRLF 확인",
-          "command": "cat -A {{FILE}}"
+          "command": "cat -A {{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "숨은 공백·탭·CRLF 확인",
+          "command": "cat -vet {{FILE}}",
+          "note": "탭은 ^I, 줄 끝은 $, CR 은 ^M 으로 표시됩니다 (Linux 에서도 같은 결과).",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "히어독으로 설정 파일 작성",
-          "command": "cat > /etc/sysctl.d/99-custom.conf <<'EOF'\nvm.swappiness = 10\nEOF"
+          "command": "cat > /etc/sysctl.d/99-custom.conf <<'EOF'\nvm.swappiness = 10\nEOF",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "분할 파일 합치기",
@@ -85,7 +124,15 @@
         "head",
         "tail",
         "grep"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-A 가 없으므로 cat -vet 로 탭·줄 끝·제어 문자를 확인합니다.",
+        "hpux": "-A 가 없으므로 cat -vet 를 사용합니다. -s 는 빈 줄 압축이 아니라 \"없는 파일 등의 오류 메시지를 숨김\" 입니다.",
+        "solaris": "-A 가 없으므로 cat -vet 를 사용합니다. -s 는 빈 줄 압축이 아니라 \"없는 파일 오류 메시지를 숨김\" 입니다. Solaris 11 은 /usr/gnu/bin/cat 으로 GNU 옵션을 쓸 수 있습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "less",
@@ -96,7 +143,8 @@
       "task": "content.view",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -131,22 +179,6 @@
         {
           "flag": "+G",
           "desc": "파일 끝에서 시작"
-        },
-        {
-          "flag": "/{{PATTERN}} · n · N",
-          "desc": "(화면 안) 앞으로 검색 · 다음 · 이전 결과 (?는 뒤로 검색)"
-        },
-        {
-          "flag": "g · G · q",
-          "desc": "(화면 안) 처음으로 · 끝으로 · 종료"
-        },
-        {
-          "flag": "F",
-          "desc": "(화면 안) 실시간 추적 모드 전환"
-        },
-        {
-          "flag": "&{{PATTERN}}",
-          "desc": "(화면 안) 패턴과 일치하는 줄만 표시"
         }
       ],
       "examples": [
@@ -155,6 +187,13 @@
           "command": "less +G /var/log/messages",
           "platforms": [
             "rhel"
+          ]
+        },
+        {
+          "title": "로그 파일을 끝에서부터 보기",
+          "command": "less +G /var/adm/messages",
+          "platforms": [
+            "solaris"
           ]
         },
         {
@@ -178,7 +217,8 @@
         }
       ],
       "cautions": [
-        "압축된 로그(.gz)는 zless 또는 zcat {{FILE}}.gz | less 로 봅니다."
+        "압축된 로그(.gz)는 zless 또는 zcat {{FILE}}.gz | less 로 봅니다.",
+        "AIX·HP-UX 에는 기본 설치되어 있지 않습니다. more 나 pg 를 사용하거나, AIX 는 AIX Toolbox 의 less 패키지를 설치합니다."
       ],
       "help": "man less (실행 중 h)",
       "keywords": [
@@ -195,7 +235,109 @@
         "tail",
         "grep",
         "journalctl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "이동",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Space (또는 f)",
+              "desc": "다음 화면"
+            },
+            {
+              "cmd": "b",
+              "desc": "이전 화면"
+            },
+            {
+              "cmd": "d · u",
+              "desc": "반 화면 아래 · 위"
+            },
+            {
+              "cmd": "Enter (또는 j) · k",
+              "desc": "한 줄 아래 · 위"
+            },
+            {
+              "cmd": "g · G",
+              "desc": "파일 처음 · 끝으로"
+            },
+            {
+              "cmd": "{{N}}g",
+              "desc": "N 번째 줄로 이동"
+            },
+            {
+              "cmd": "{{N}}p",
+              "desc": "파일의 N% 위치로 이동 (예: 50p)"
+            },
+            {
+              "cmd": "← · →",
+              "desc": "-S 로 자른 긴 줄을 좌우로 보기"
+            }
+          ]
+        },
+        {
+          "title": "검색·필터",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "/{{PATTERN}}",
+              "desc": "아래 방향 검색 (정규식)"
+            },
+            {
+              "cmd": "?{{PATTERN}}",
+              "desc": "위 방향 검색"
+            },
+            {
+              "cmd": "n · N",
+              "desc": "다음 · 이전 검색 결과"
+            },
+            {
+              "cmd": "&{{PATTERN}}",
+              "desc": "패턴과 일치하는 줄만 표시 (& 만 입력하면 해제)"
+            },
+            {
+              "cmd": "-i",
+              "desc": "실행 중에 대소문자 무시 켜기/끄기 (-S, -N 등 다른 옵션도 같은 방식으로 전환)"
+            }
+          ]
+        },
+        {
+          "title": "실시간 추적·기타",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "F",
+              "desc": "파일 끝에서 실시간 추적 모드 (tail -f 처럼). Ctrl+C 로 멈추고 다시 검색 가능"
+            },
+            {
+              "cmd": "=",
+              "desc": "현재 위치(줄 번호·전체 바이트) 정보"
+            },
+            {
+              "cmd": "v",
+              "desc": "현재 파일을 편집기($EDITOR 또는 vi)로 열기"
+            },
+            {
+              "cmd": ":n · :p",
+              "desc": "여러 파일을 열었을 때 다음 · 이전 파일"
+            },
+            {
+              "cmd": "h",
+              "desc": "도움말"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "solaris": "Solaris 11 은 기본 설치되어 있습니다. Solaris 10 은 설치 구성에 따라 없을 수 있으며 버전이 오래되어 일부 기능(& 필터 등)이 없을 수 있습니다. 없으면 more 또는 pg 를 사용합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "more",
@@ -206,7 +348,10 @@
       "task": "content.view",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -233,14 +378,6 @@
         {
           "flag": "-d",
           "desc": "하단에 조작 안내 메시지 표시"
-        },
-        {
-          "flag": "Space · Enter · b · q",
-          "desc": "(화면 안) 다음 페이지 · 한 줄 · 이전 페이지 · 종료"
-        },
-        {
-          "flag": "/{{PATTERN}}",
-          "desc": "(화면 안) 패턴 검색"
         }
       ],
       "examples": [
@@ -258,6 +395,29 @@
           "platforms": [
             "rhel"
           ]
+        },
+        {
+          "title": "설치 패키지 목록 끊어 보기",
+          "command": "lslpp -L | more",
+          "platforms": [
+            "aix"
+          ]
+        },
+        {
+          "title": "설치 패키지 목록 끊어 보기",
+          "command": "swlist | more",
+          "platforms": [
+            "hpux"
+          ]
+        },
+        {
+          "title": "설치 패키지 목록 끊어 보기",
+          "command": "pkg list | more",
+          "note": "Solaris 10 은 pkginfo | more",
+          "platforms": [
+            "solaris"
+          ],
+          "version": "Solaris 11 이상"
         }
       ],
       "cautions": [
@@ -273,7 +433,59 @@
       "related": [
         "less",
         "cat"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "이동·검색·종료",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Space",
+              "desc": "다음 화면"
+            },
+            {
+              "cmd": "Enter",
+              "desc": "한 줄 아래"
+            },
+            {
+              "cmd": "b",
+              "desc": "이전 화면 (파일을 직접 열었을 때만, 파이프 입력은 불가)"
+            },
+            {
+              "cmd": "/{{PATTERN}}",
+              "desc": "패턴 검색"
+            },
+            {
+              "cmd": "n",
+              "desc": "다음 검색 결과"
+            },
+            {
+              "cmd": "=",
+              "desc": "현재 줄 번호 표시"
+            },
+            {
+              "cmd": "v",
+              "desc": "현재 줄에서 vi 로 열기"
+            },
+            {
+              "cmd": "h",
+              "desc": "도움말 (사용 가능한 키 목록)"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "less 가 기본 설치되어 있지 않아 more 와 pg 가 기본 페이저입니다. pg {{FILE}} 은 - (이전 화면), /{{PATTERN}} 검색을 지원합니다.",
+        "hpux": "less 가 없어 more 또는 pg 를 사용합니다. 시스템 로그 예: more /var/adm/syslog/syslog.log",
+        "solaris": "/usr/bin/more 와 POSIX 형식의 /usr/xpg4/bin/more 가 있습니다. Solaris 11 은 less 도 기본 설치되어 있습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "type",
@@ -328,7 +540,10 @@
         "win-more",
         "findstr",
         "get-content"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-more",
@@ -392,7 +607,10 @@
       "related": [
         "type",
         "get-content"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-content",
@@ -485,7 +703,10 @@
         "measure-object",
         "tee-object",
         "get-winevent"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "head",
@@ -496,7 +717,10 @@
       "task": "content.head-tail",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -514,7 +738,7 @@
         },
         {
           "flag": "-n -{{N}}",
-          "desc": "마지막 N줄을 제외한 나머지 전부 출력"
+          "desc": "마지막 N줄을 제외한 나머지 전부 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-c {{N}}",
@@ -522,11 +746,11 @@
         },
         {
           "flag": "-q",
-          "desc": "여러 파일일 때 파일 이름 머리글 생략"
+          "desc": "여러 파일일 때 파일 이름 머리글 생략 (GNU/Linux 전용)"
         },
         {
           "flag": "-v",
-          "desc": "항상 파일 이름 머리글 출력"
+          "desc": "항상 파일 이름 머리글 출력 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -536,11 +760,29 @@
         },
         {
           "title": "용량 큰 디렉토리 상위 10개",
-          "command": "du -sh /var/* 2>/dev/null | sort -rh | head -n 10"
+          "command": "du -sh /var/* 2>/dev/null | sort -rh | head -n 10",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "용량 큰 디렉토리 상위 10개",
+          "command": "du -sk /var/* 2>/dev/null | sort -rn | head -n 10",
+          "note": "Unix 의 sort 에는 -h 가 없어 KB 단위 숫자로 정렬합니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "CPU 사용률 상위 프로세스 5개",
-          "command": "ps aux --sort=-%cpu | head -n 6"
+          "command": "ps aux --sort=-%cpu | head -n 6",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [],
@@ -556,7 +798,15 @@
         "tail",
         "less",
         "sort"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-n -N(마지막 N줄 제외), -q, -v 가 없습니다. 옛 형식 head -10 {{FILE}} 도 동작합니다.",
+        "hpux": "-n -N(마지막 N줄 제외), -q, -v 가 없습니다. 옛 형식 head -10 {{FILE}} 도 동작합니다.",
+        "solaris": "-n -N(마지막 N줄 제외), -q, -v 가 없습니다. 옛 형식 head -10 {{FILE}} 도 동작합니다. Solaris 11 은 /usr/gnu/bin/head 로 GNU 옵션을 쓸 수 있습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tail",
@@ -567,7 +817,10 @@
       "task": "content.head-tail",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -592,7 +845,7 @@
         },
         {
           "flag": "-F",
-          "desc": "-f + 파일이 순환(logrotate)·재생성되어도 다시 열어 계속 추적"
+          "desc": "-f + 파일이 순환(logrotate)·재생성되어도 다시 열어 계속 추적 (GNU/Linux 전용)"
         },
         {
           "flag": "-c {{N}}",
@@ -600,11 +853,11 @@
         },
         {
           "flag": "--pid={{PID}}",
-          "desc": "-f 사용 시 해당 프로세스가 끝나면 함께 종료"
+          "desc": "-f 사용 시 해당 프로세스가 끝나면 함께 종료 (GNU/Linux 전용)"
         },
         {
           "flag": "-q",
-          "desc": "여러 파일일 때 파일 이름 머리글 생략"
+          "desc": "여러 파일일 때 파일 이름 머리글 생략 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -614,21 +867,65 @@
         },
         {
           "title": "서비스 재시작하며 로그 실시간 확인",
-          "command": "tail -F /var/log/{{APP}}/{{LOG_FILE}}"
+          "command": "tail -F /var/log/{{APP}}/{{LOG_FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "실시간 로그에서 오류만 보기",
-          "command": "tail -F {{FILE}} | grep --line-buffered -i error"
+          "command": "tail -F {{FILE}} | grep --line-buffered -i error",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "실시간 로그에서 오류만 보기",
+          "command": "tail -f {{FILE}} | grep -i error",
+          "note": "Unix 의 tail 에는 -F 가 없어 로그가 순환되면 tail 을 다시 실행해야 합니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "여러 로그를 동시에 추적",
-          "command": "tail -f /var/log/nginx/access.log /var/log/nginx/error.log"
+          "command": "tail -f /var/log/nginx/access.log /var/log/nginx/error.log",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "시스템 로그 실시간 확인",
           "command": "tail -f /var/log/messages",
           "platforms": [
             "rhel"
+          ]
+        },
+        {
+          "title": "시스템 로그 실시간 확인",
+          "command": "tail -f /var/adm/syslog/syslog.log",
+          "platforms": [
+            "hpux"
+          ]
+        },
+        {
+          "title": "시스템 로그 실시간 확인",
+          "command": "tail -f /var/adm/messages",
+          "platforms": [
+            "solaris"
+          ]
+        },
+        {
+          "title": "시스템 로그 실시간 확인",
+          "command": "grep -v '^#' /etc/syslog.conf\ntail -f {{SYSLOG_FILE}}",
+          "note": "AIX 는 기본 syslog.conf 에 활성 항목이 없어 로그 파일 위치를 먼저 확인합니다. 하드웨어·시스템 오류는 errpt 로 봅니다.",
+          "platforms": [
+            "aix"
           ]
         }
       ],
@@ -638,7 +935,10 @@
       ],
       "platformNotes": {
         "rhel": "시스템 로그는 /var/log/messages, 인증 로그는 /var/log/secure 입니다.",
-        "debian": "시스템 로그는 /var/log/syslog, 인증 로그는 /var/log/auth.log 입니다. Debian 12 는 rsyslog 가 기본 설치되지 않아 journalctl -f 를 사용합니다."
+        "debian": "시스템 로그는 /var/log/syslog, 인증 로그는 /var/log/auth.log 입니다. Debian 12 는 rsyslog 가 기본 설치되지 않아 journalctl -f 를 사용합니다.",
+        "aix": "-F, --pid, -q 가 없고 한 번에 파일을 하나만 지정할 수 있습니다. 순환(rotate)된 로그는 tail -f 를 다시 실행해야 합니다. GNU tail 은 AIX Toolbox coreutils 로 설치할 수 있습니다.",
+        "hpux": "-F, --pid, -q 가 없고 한 번에 파일을 하나만 지정할 수 있습니다. 순환(rotate)된 로그는 tail -f 를 다시 실행해야 합니다. 시스템 로그는 /var/adm/syslog/syslog.log 입니다.",
+        "solaris": "-F, --pid, -q 가 없고 한 번에 파일을 하나만 지정할 수 있습니다. 순환(rotate)된 로그는 tail -f 를 다시 실행해야 합니다. 시스템 로그는 /var/adm/messages 입니다. Solaris 11 은 /usr/gnu/bin/tail 로 -F 를 쓸 수 있습니다."
       },
       "help": "man tail",
       "keywords": [
@@ -655,7 +955,10 @@
         "less",
         "journalctl",
         "grep"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "vim",
@@ -669,7 +972,10 @@
       "task": "content.editor",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -694,32 +1000,12 @@
           "desc": "읽기 전용으로 열기 (view 와 동일)"
         },
         {
+          "flag": "-r {{FILE}}",
+          "desc": "비정상 종료로 남은 스왑 파일에서 편집 내용 복구 (vi 도 지원)"
+        },
+        {
           "flag": "-d {{FILE1}} {{FILE2}}",
-          "desc": "두 파일 차이를 나란히 비교 (vimdiff)"
-        },
-        {
-          "flag": "i · a · o",
-          "desc": "(명령 모드) 커서 앞 · 뒤 · 다음 줄에서 입력 시작, Esc 로 명령 모드 복귀"
-        },
-        {
-          "flag": ":w · :q · :wq · :q!",
-          "desc": "(명령 모드) 저장 · 종료 · 저장 후 종료 · 저장 없이 강제 종료"
-        },
-        {
-          "flag": "/{{PATTERN}} · n · N",
-          "desc": "(명령 모드) 검색 · 다음 · 이전"
-        },
-        {
-          "flag": "dd · yy · p · u",
-          "desc": "(명령 모드) 줄 삭제(잘라내기) · 줄 복사 · 붙여넣기 · 되돌리기"
-        },
-        {
-          "flag": ":%s/{{OLD}}/{{NEW}}/g",
-          "desc": "(명령 모드) 파일 전체 문자열 치환"
-        },
-        {
-          "flag": ":set nu · :set paste",
-          "desc": "(명령 모드) 줄 번호 표시 · 붙여넣기 시 자동 들여쓰기 끄기"
+          "desc": "두 파일 차이를 나란히 비교 (vimdiff) (vim 전용, 기본 vi 에는 없음)"
         }
       ],
       "examples": [
@@ -733,11 +1019,64 @@
         },
         {
           "title": "root 권한 파일을 안전하게 편집 (sudoedit)",
-          "command": "sudo -e /etc/{{FILE}}"
+          "command": "sudo -e /etc/{{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "원본과 백업 차이 비교",
-          "command": "vim -d /etc/{{FILE}}.bak /etc/{{FILE}}"
+          "command": "vim -d /etc/{{FILE}}.bak /etc/{{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "설정 값 하나 바꾸고 저장 (vi 공통)",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "cp -p /etc/{{FILE}} /etc/{{FILE}}.bak",
+              "desc": "수정 전 원본 백업 (속성 유지)"
+            },
+            {
+              "prompt": "$",
+              "cmd": "vi /etc/{{FILE}}",
+              "desc": "파일 열기"
+            },
+            {
+              "prompt": "명령 모드",
+              "cmd": "/{{PATTERN}}",
+              "desc": "바꿀 설정이 있는 줄 검색 (n 으로 다음 결과)"
+            },
+            {
+              "prompt": "명령 모드",
+              "cmd": "cw",
+              "desc": "커서 단어를 지우고 새 값 입력 후 Esc"
+            },
+            {
+              "prompt": ":",
+              "cmd": ":wq",
+              "desc": "저장 후 종료 (잘못 고쳤으면 :q! 로 저장 없이 종료)"
+            },
+            {
+              "prompt": "$",
+              "cmd": "diff /etc/{{FILE}}.bak /etc/{{FILE}}",
+              "desc": "바뀐 부분 확인. 롤백은 cp -p /etc/{{FILE}}.bak /etc/{{FILE}}"
+            }
+          ]
+        },
+        {
+          "title": "터미널 종류 오류로 vi 가 제대로 열리지 않을 때",
+          "command": "TERM=vt100; export TERM\nvi {{FILE}}",
+          "note": "PC 터미널 프로그램의 TERM 값(xterm-256color 등)을 서버가 모르면 화면이 깨지거나 열리지 않습니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         }
       ],
       "cautions": [
@@ -759,7 +1098,10 @@
       },
       "platformNotes": {
         "rhel": "vim-enhanced 설치 시 root 가 아닌 사용자는 vi 명령도 vim 으로 연결됩니다.",
-        "debian": "기본 편집기(sudoedit, crontab -e 등)가 nano 인 경우가 많습니다. select-editor 또는 update-alternatives --config editor 로 변경합니다."
+        "debian": "기본 편집기(sudoedit, crontab -e 등)가 nano 인 경우가 많습니다. select-editor 또는 update-alternatives --config editor 로 변경합니다.",
+        "aix": "기본은 vi(vim 아님)입니다. 저장·이동·:%s·:g 등 기본 명령은 같지만 비주얼 모드(v), gg, Ctrl+r, 여러 단계 되돌리기, :set paste, -d 가 없습니다. vim 은 AIX Toolbox 에서 설치할 수 있습니다.",
+        "hpux": "기본은 vi 만 제공됩니다. 비주얼 모드(v), gg, Ctrl+r, 여러 단계 되돌리기, :set paste, -d 가 없습니다. 화면이 깨지면 TERM=vt100 으로 지정합니다.",
+        "solaris": "Solaris 10 은 기본 vi 만 있어 vim 전용 기능(비주얼 모드, gg, Ctrl+r, :set paste, -d)이 없습니다. Solaris 11 은 vim 패키지(editor/vim)를 제공하며, 설치되어 있으면 vim 명령을 쓸 수 있습니다."
       },
       "help": "vimtutor / vim 안에서 :help",
       "keywords": [
@@ -776,7 +1118,239 @@
         "cp",
         "diff",
         "visudo"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "모드 전환",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Esc",
+              "desc": "명령(일반) 모드로 돌아가기. 헷갈리면 Esc 를 두세 번 누름"
+            },
+            {
+              "cmd": "i · a",
+              "desc": "커서 앞 · 뒤에서 입력 시작"
+            },
+            {
+              "cmd": "I · A",
+              "desc": "줄 맨 앞 · 줄 끝에서 입력 시작"
+            },
+            {
+              "cmd": "o · O",
+              "desc": "아래 · 위에 새 줄을 만들고 입력 시작"
+            },
+            {
+              "cmd": "R",
+              "desc": "덮어쓰기 모드"
+            },
+            {
+              "cmd": "v · V",
+              "desc": "문자 · 줄 단위 선택(비주얼) 모드. 선택 후 d 삭제, y 복사",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음)"
+            }
+          ]
+        },
+        {
+          "title": "저장·종료",
+          "type": "interactive",
+          "prompt": ":",
+          "note": "명령 모드에서 : 를 누르면 화면 아래에 입력줄이 나옵니다.",
+          "items": [
+            {
+              "cmd": ":w",
+              "desc": "저장"
+            },
+            {
+              "cmd": ":wq (또는 :x, ZZ)",
+              "desc": "저장 후 종료"
+            },
+            {
+              "cmd": ":q",
+              "desc": "종료 (변경 내용이 있으면 거부됨)"
+            },
+            {
+              "cmd": ":q!",
+              "desc": "저장하지 않고 강제 종료"
+            },
+            {
+              "cmd": ":w {{FILE}}",
+              "desc": "다른 이름으로 저장 (원본은 그대로)"
+            },
+            {
+              "cmd": ":e!",
+              "desc": "마지막 저장 상태로 되돌리기 (편집 내용 버림)"
+            }
+          ]
+        },
+        {
+          "title": "이동",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "h · j · k · l",
+              "desc": "왼쪽 · 아래 · 위 · 오른쪽 (화살표 키도 대부분 동작)"
+            },
+            {
+              "cmd": "w · b",
+              "desc": "다음 · 이전 단어"
+            },
+            {
+              "cmd": "0 · $",
+              "desc": "줄 처음 · 줄 끝"
+            },
+            {
+              "cmd": "G · {{N}}G",
+              "desc": "파일 끝 · N 번째 줄 (:{{N}} 도 같음)"
+            },
+            {
+              "cmd": "gg",
+              "desc": "파일 처음",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음). vi 에서는 1G"
+            },
+            {
+              "cmd": "Ctrl+f · Ctrl+b",
+              "desc": "한 화면 아래 · 위"
+            },
+            {
+              "cmd": "%",
+              "desc": "짝이 되는 괄호로 이동"
+            }
+          ]
+        },
+        {
+          "title": "검색·치환",
+          "type": "interactive",
+          "prompt": ":",
+          "items": [
+            {
+              "cmd": "/{{PATTERN}} · ?{{PATTERN}}",
+              "desc": "아래 · 위 방향 검색 (명령 모드에서 / 입력)"
+            },
+            {
+              "cmd": "n · N",
+              "desc": "다음 · 이전 검색 결과"
+            },
+            {
+              "cmd": ":%s/{{OLD}}/{{NEW}}/g",
+              "desc": "파일 전체 치환"
+            },
+            {
+              "cmd": ":%s/{{OLD}}/{{NEW}}/gc",
+              "desc": "하나씩 확인(y/n)하며 치환"
+            },
+            {
+              "cmd": ":{{N}},{{M}}s/{{OLD}}/{{NEW}}/g",
+              "desc": "N~M 번째 줄에서만 치환"
+            },
+            {
+              "cmd": ":%s#/old/path#/new/path#g",
+              "desc": "경로처럼 / 가 들어간 문자열은 구분자를 # 등으로 변경"
+            },
+            {
+              "cmd": ":noh",
+              "desc": "검색 강조 표시 끄기",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음)"
+            }
+          ]
+        },
+        {
+          "title": "편집",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "x",
+              "desc": "커서 위치 글자 삭제"
+            },
+            {
+              "cmd": "dd · {{N}}dd",
+              "desc": "현재 줄 · N줄 삭제(잘라내기)"
+            },
+            {
+              "cmd": "dw · D",
+              "desc": "단어 삭제 · 커서부터 줄 끝까지 삭제"
+            },
+            {
+              "cmd": "cw",
+              "desc": "단어를 지우고 입력 모드로 (값 하나 바꿀 때 편리)"
+            },
+            {
+              "cmd": "yy · {{N}}yy",
+              "desc": "현재 줄 · N줄 복사"
+            },
+            {
+              "cmd": "p · P",
+              "desc": "커서 아래 · 위에 붙여넣기"
+            },
+            {
+              "cmd": "u",
+              "desc": "되돌리기",
+              "note": "기본 vi 는 한 단계만 되돌리며 u 를 다시 누르면 되돌리기가 취소됨"
+            },
+            {
+              "cmd": "Ctrl+r",
+              "desc": "다시 실행(redo)",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음)"
+            },
+            {
+              "cmd": ".",
+              "desc": "직전 편집 반복"
+            },
+            {
+              "cmd": "J",
+              "desc": "아래 줄을 현재 줄 끝에 이어 붙이기"
+            }
+          ]
+        },
+        {
+          "title": "ex 명령·설정",
+          "type": "interactive",
+          "prompt": ":",
+          "items": [
+            {
+              "cmd": ":set nu · :set nonu",
+              "desc": "줄 번호 표시 · 끄기"
+            },
+            {
+              "cmd": ":set list",
+              "desc": "탭(^I)과 줄 끝($)을 보이게 표시"
+            },
+            {
+              "cmd": ":set paste",
+              "desc": "붙여넣을 때 자동 들여쓰기 끄기 (:set nopaste 로 복귀)",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음)"
+            },
+            {
+              "cmd": ":set ff=unix",
+              "desc": "CRLF(DOS) 줄바꿈을 LF 로 바꿔 저장 준비",
+              "note": "vim 전용 (AIX·HP-UX·Solaris 10 기본 vi 에는 없음)"
+            },
+            {
+              "cmd": ":g/{{PATTERN}}/d",
+              "desc": "패턴이 있는 줄 모두 삭제"
+            },
+            {
+              "cmd": ":v/{{PATTERN}}/d",
+              "desc": "패턴이 없는 줄 모두 삭제 (일치하는 줄만 남김)"
+            },
+            {
+              "cmd": ":r {{FILE}}",
+              "desc": "다른 파일 내용을 커서 아래에 넣기"
+            },
+            {
+              "cmd": ":!{{COMMAND}}",
+              "desc": "vi 를 나가지 않고 셸 명령 실행"
+            },
+            {
+              "cmd": ":e {{FILE}}",
+              "desc": "다른 파일 열기"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nano",
@@ -813,22 +1387,6 @@
         {
           "flag": "-v",
           "desc": "읽기 전용(보기 모드)으로 열기"
-        },
-        {
-          "flag": "Ctrl+O · Ctrl+X",
-          "desc": "(편집 중) 저장 · 종료"
-        },
-        {
-          "flag": "Ctrl+W · Ctrl+\\",
-          "desc": "(편집 중) 검색 · 치환"
-        },
-        {
-          "flag": "Ctrl+K · Ctrl+U",
-          "desc": "(편집 중) 줄 잘라내기 · 붙여넣기"
-        },
-        {
-          "flag": "Ctrl+_",
-          "desc": "(편집 중) 지정한 줄 번호로 이동"
         }
       ],
       "examples": [
@@ -849,7 +1407,8 @@
         }
       ],
       "cautions": [
-        "YAML 처럼 들여쓰기가 중요한 파일에서 Tab 키는 탭 문자를 넣습니다. 공백을 써야 하는 파일은 주의하세요."
+        "YAML 처럼 들여쓰기가 중요한 파일에서 Tab 키는 탭 문자를 넣습니다. 공백을 써야 하는 파일은 주의하세요.",
+        "AIX·HP-UX·Solaris 에는 기본 제공되지 않으므로 vi 를 사용합니다."
       ],
       "install": {
         "rhel": {
@@ -872,7 +1431,59 @@
       ],
       "related": [
         "vim"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "편집 중 단축키",
+          "type": "keys",
+          "note": "화면 아래 안내의 ^ 는 Ctrl, M- 는 Alt 입니다.",
+          "items": [
+            {
+              "cmd": "Ctrl+O → Enter",
+              "desc": "저장 (파일 이름 확인 후 Enter)"
+            },
+            {
+              "cmd": "Ctrl+X",
+              "desc": "종료 (저장 안 했으면 Y/N 확인)"
+            },
+            {
+              "cmd": "Ctrl+W",
+              "desc": "검색 (Alt+W 다음 결과)"
+            },
+            {
+              "cmd": "Ctrl+\\",
+              "desc": "찾아 바꾸기"
+            },
+            {
+              "cmd": "Ctrl+K · Ctrl+U",
+              "desc": "현재 줄 잘라내기 · 붙여넣기"
+            },
+            {
+              "cmd": "Alt+6",
+              "desc": "현재 줄 복사"
+            },
+            {
+              "cmd": "Alt+U · Alt+E",
+              "desc": "되돌리기 · 다시 실행"
+            },
+            {
+              "cmd": "Ctrl+_",
+              "desc": "지정한 줄 번호로 이동"
+            },
+            {
+              "cmd": "Ctrl+C",
+              "desc": "현재 커서 위치(줄·열) 표시"
+            },
+            {
+              "cmd": "Ctrl+G",
+              "desc": "도움말"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "notepad",
@@ -928,7 +1539,10 @@
       "related": [
         "type",
         "get-content"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "wc",
@@ -939,7 +1553,10 @@
       "task": "content.count",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -969,7 +1586,7 @@
         },
         {
           "flag": "-L",
-          "desc": "가장 긴 줄의 길이"
+          "desc": "가장 긴 줄의 길이 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -984,7 +1601,20 @@
         },
         {
           "title": "현재 ESTABLISHED 연결 수",
-          "command": "ss -Htan state established | wc -l"
+          "command": "ss -Htan state established | wc -l",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "현재 ESTABLISHED 연결 수",
+          "command": "netstat -an | grep ESTABLISHED | wc -l",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "디렉토리의 파일 개수",
@@ -1006,7 +1636,15 @@
         "grep",
         "sort",
         "uniq"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-L(가장 긴 줄 길이)이 없습니다. 필요하면 awk '{ if (length > m) m = length } END { print m }' {{FILE}} 를 사용합니다.",
+        "hpux": "-L(가장 긴 줄 길이)이 없습니다. 필요하면 awk '{ if (length > m) m = length } END { print m }' {{FILE}} 를 사용합니다.",
+        "solaris": "-L(가장 긴 줄 길이)이 없습니다. 필요하면 awk '{ if (length > m) m = length } END { print m }' {{FILE}} 를 사용합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "measure-object",
@@ -1093,7 +1731,10 @@
         "get-content",
         "get-childitem",
         "select-string"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "diff",
@@ -1104,7 +1745,10 @@
       "task": "content.compare",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1118,11 +1762,15 @@
       "options": [
         {
           "flag": "-u",
-          "desc": "통합(unified) 형식 출력, 앞뒤 문맥 3줄 포함 (패치 형식)"
+          "desc": "통합(unified) 형식 출력, 앞뒤 문맥 3줄 포함 (패치 형식). HP-UX 는 -c 사용"
+        },
+        {
+          "flag": "-c",
+          "desc": "문맥(context) 형식 출력. 모든 Unix diff 에서 지원"
         },
         {
           "flag": "-y",
-          "desc": "좌우 나란히 비교 (--suppress-common-lines 로 다른 줄만)"
+          "desc": "좌우 나란히 비교 (--suppress-common-lines 로 다른 줄만) (GNU/Linux 전용)"
         },
         {
           "flag": "-r",
@@ -1130,7 +1778,7 @@
         },
         {
           "flag": "-q",
-          "desc": "내용 대신 다른지 여부만 출력"
+          "desc": "내용 대신 다른지 여부만 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-w",
@@ -1138,7 +1786,7 @@
         },
         {
           "flag": "-B",
-          "desc": "빈 줄 차이 무시"
+          "desc": "빈 줄 차이 무시 (GNU/Linux 전용)"
         },
         {
           "flag": "-i",
@@ -1146,33 +1794,89 @@
         },
         {
           "flag": "--color",
-          "desc": "차이를 색상으로 표시"
+          "desc": "차이를 색상으로 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-x {{PATTERN}}",
-          "desc": "디렉토리 비교 시 제외할 파일 패턴"
+          "desc": "디렉토리 비교 시 제외할 파일 패턴 (GNU/Linux 전용)"
         }
       ],
       "examples": [
         {
           "title": "설정 변경 전후 비교",
-          "command": "diff -u /etc/{{FILE}}.bak /etc/{{FILE}}"
+          "command": "diff -u /etc/{{FILE}}.bak /etc/{{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix",
+            "solaris"
+          ]
+        },
+        {
+          "title": "설정 변경 전후 비교",
+          "command": "diff -c /etc/{{FILE}}.bak /etc/{{FILE}}",
+          "note": "바뀐 줄은 !, 추가는 +, 삭제는 - 로 표시됩니다.",
+          "platforms": [
+            "hpux"
+          ]
         },
         {
           "title": "원격 서버와 설정 파일 비교",
-          "command": "diff <(ssh {{HOST}} cat /etc/{{FILE}}) /etc/{{FILE}}"
+          "command": "diff <(ssh {{HOST}} cat /etc/{{FILE}}) /etc/{{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "원격 서버와 설정 파일 비교",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "ssh {{HOST}} cat /etc/{{FILE}} > /tmp/{{FILE}}.{{HOST}}",
+              "desc": "원격 파일을 임시 파일로 받기"
+            },
+            {
+              "prompt": "$",
+              "cmd": "diff /tmp/{{FILE}}.{{HOST}} /etc/{{FILE}}",
+              "desc": "로컬 파일과 비교"
+            },
+            {
+              "prompt": "$",
+              "cmd": "rm /tmp/{{FILE}}.{{HOST}}",
+              "desc": "임시 파일 정리"
+            }
+          ],
+          "note": "ksh88·POSIX sh 에는 <( ) 프로세스 치환이 없어 임시 파일을 씁니다.",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         },
         {
           "title": "두 디렉토리에서 다른 파일만 나열",
-          "command": "diff -rq {{DIR1}} {{DIR2}}"
+          "command": "diff -rq {{DIR1}} {{DIR2}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "좌우 나란히 다른 줄만 보기",
-          "command": "diff -y --suppress-common-lines {{FILE1}} {{FILE2}}"
+          "command": "diff -y --suppress-common-lines {{FILE1}} {{FILE2}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "주석을 뺀 실제 설정만 비교",
-          "command": "diff <(grep -Ev '^\\s*(#|$)' {{FILE1}}) <(grep -Ev '^\\s*(#|$)' {{FILE2}})"
+          "command": "diff <(grep -Ev '^\\s*(#|$)' {{FILE1}}) <(grep -Ev '^\\s*(#|$)' {{FILE2}})",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
@@ -1200,7 +1904,52 @@
         "vim",
         "sha256sum",
         "md5sum"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "출력 읽는 법",
+          "type": "directive",
+          "note": "종료 코드는 0 같음, 1 다름, 2 오류 입니다. 스크립트에서 if diff -q ... 처럼 활용합니다.",
+          "items": [
+            {
+              "cmd": "3c3 · 5d4 · 7a8",
+              "desc": "기본 형식의 위치 표시. 왼쪽 줄 번호 + c(바뀜)·d(삭제)·a(추가) + 오른쪽 줄 번호"
+            },
+            {
+              "cmd": "< {{LINE}}",
+              "desc": "첫 번째 파일(왼쪽)에만 있는 내용"
+            },
+            {
+              "cmd": "> {{LINE}}",
+              "desc": "두 번째 파일(오른쪽)에만 있는 내용"
+            },
+            {
+              "cmd": "--- {{FILE1}} / +++ {{FILE2}}",
+              "desc": "-u 형식 머리글. --- 가 원본, +++ 가 변경본"
+            },
+            {
+              "cmd": "@@ -10,6 +10,7 @@",
+              "desc": "-u 형식 구간 표시. 원본 10번째 줄부터 6줄이 변경본 10번째 줄부터 7줄로 바뀜"
+            },
+            {
+              "cmd": "-{{LINE}} · +{{LINE}}",
+              "desc": "-u 형식에서 삭제된 줄 · 추가된 줄 (앞에 공백인 줄은 문맥)"
+            },
+            {
+              "cmd": "! {{LINE}}",
+              "desc": "-c 형식에서 바뀐 줄 (+ 추가, - 삭제)"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "-u·-c 는 지원하지만 -y, -q, -B, --color, -x, --strip-trailing-cr 이 없습니다. ksh88 에는 <( ) 가 없어 임시 파일로 비교합니다. GNU diff 는 AIX Toolbox diffutils 로 설치할 수 있습니다.",
+        "hpux": "-y, -q, -B, --color, -x, --strip-trailing-cr 이 없습니다. 변경 비교는 -c(문맥 형식)를 쓰는 것이 확실합니다. <( ) 프로세스 치환도 기본 셸에서 안 됩니다.",
+        "solaris": "-u 는 지원하지만 -y, -q, --color 등 GNU 옵션은 없습니다. Solaris 11 은 GNU diff 를 /usr/gnu/bin/diff (gdiff) 로 쓸 수 있습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "cmp",
@@ -1211,7 +1960,10 @@
       "task": "content.compare",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1232,11 +1984,11 @@
         },
         {
           "flag": "-b",
-          "desc": "다른 바이트를 문자로도 표시"
+          "desc": "다른 바이트를 문자로도 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-n {{N}}",
-          "desc": "처음 N바이트까지만 비교"
+          "desc": "처음 N바이트까지만 비교 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -1269,7 +2021,15 @@
       "related": [
         "diff",
         "sha256sum"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-s, -l 은 같고 -b, -n 은 없습니다.",
+        "hpux": "-s, -l 은 같고 -b, -n 은 없습니다.",
+        "solaris": "-s, -l 은 같고 -b, -n 은 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "fc",
@@ -1346,7 +2106,10 @@
       "related": [
         "compare-object",
         "get-filehash"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "compare-object",
@@ -1429,7 +2192,10 @@
         "get-content",
         "fc",
         "get-filehash"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

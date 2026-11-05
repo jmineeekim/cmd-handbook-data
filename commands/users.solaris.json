@@ -1,0 +1,300 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "users",
+  "commands": [
+    {
+      "id": "solaris-passwd",
+      "name": "passwd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Solaris 비밀번호 변경·계정 잠금 해제·만료 정책 설정",
+      "description": "비밀번호 변경 외에 계정 상태 확인(-s), 잠금(-l)·해제(-u), 비밀번호 만료 주기(-x, -n, -w) 설정을 합니다. 옵션 체계가 Linux 와 다릅니다 (Linux 의 -S 대신 -s, chage 기능 일부를 passwd 가 담당). 로그인 실패로 잠긴 계정 해제에도 씁니다.",
+      "syntax": ["passwd [{{USER}}]", "passwd -s [-a | {{USER}}]", "passwd [-l | -u | -N | -d] [-f] [-n {{MIN}}] [-x {{MAX}}] [-w {{WARN}}] {{USER}}"],
+      "options": [
+        {"flag": "-s", "desc": "계정 비밀번호 상태 (상태, 변경일, 최소·최대·경고 일수)"},
+        {"flag": "-sa", "desc": "모든 계정 상태"},
+        {"flag": "-l", "desc": "계정 잠금 (LK)"},
+        {"flag": "-u", "desc": "잠금 해제 (로그인 실패 잠금 포함)"},
+        {"flag": "-N", "desc": "비밀번호 로그인 불가 계정으로 (NL. 서비스 계정, cron·ssh 키는 사용 가능)"},
+        {"flag": "-d", "desc": "비밀번호 삭제 (NP. 보안상 사용 금지)"},
+        {"flag": "-f", "desc": "다음 로그인 시 비밀번호 변경 강제"},
+        {"flag": "-x {{MAX}}", "desc": "비밀번호 최대 사용 일수 (-1 은 만료 없음)"},
+        {"flag": "-n {{MIN}}", "desc": "변경 후 다시 바꿀 수 있기까지 최소 일수"},
+        {"flag": "-w {{WARN}}", "desc": "만료 전 경고 일수"},
+        {"flag": "-r files", "desc": "로컬 파일(/etc/shadow) 저장소 지정 (LDAP 등과 구분)"}
+      ],
+      "commandGroups": [
+        {"title": "passwd -s 상태 값", "type": "directive", "items": [
+          {"cmd": "PS", "desc": "비밀번호 있음 (정상)"},
+          {"cmd": "LK", "desc": "잠김"},
+          {"cmd": "NP", "desc": "비밀번호 없음 (위험)"},
+          {"cmd": "NL", "desc": "로그인 불가(no login) 계정"}
+        ]}
+      ],
+      "examples": [
+        {"title": "계정 상태 점검 (비밀번호 없는 계정 찾기)", "command": "passwd -sa | awk '$2 == \"NP\"'"},
+        {"title": "잠긴 계정 해제", "command": "passwd -s {{USER}}\npasswd -u {{USER}}\npasswd -s {{USER}}"},
+        {"title": "기존 사용자에 만료 정책 적용", "command": "passwd -x 90 -n 1 -w 7 {{USER}}\npasswd -s {{USER}}", "note": "/etc/default/passwd 의 MAXWEEKS 등은 새 계정·비밀번호 변경 시점에 적용되므로 기존 계정은 이렇게 따로 적용합니다."},
+        {"title": "임시 비밀번호 발급 후 변경 강제", "command": "passwd {{USER}}\npasswd -f {{USER}}"}
+      ],
+      "cautions": [
+        "root 계정에 -l, -x 를 잘못 적용하면 콘솔 로그인까지 막힐 수 있습니다.",
+        "-d 로 비밀번호를 지우면 비밀번호 없이 로그인될 수 있습니다. 서비스 계정은 -N 을 쓰세요."
+      ],
+      "platformNotes": {"solaris": "Linux 의 passwd -S / chage 와 옵션이 다릅니다. 정책 기본값은 /etc/default/passwd, 잠금 정책은 /etc/security/policy.conf 와 /etc/default/login."},
+      "help": "man passwd",
+      "keywords": ["비밀번호 변경", "계정 잠금 해제", "passwd -s", "비밀번호 만료", "passwd", "계정 상태"],
+      "related": ["solaris-etc-default-passwd", "solaris-etc-security-policy-conf", "passwd", "chage", "useradd"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-etc-default-passwd",
+      "name": "/etc/default/passwd",
+      "kind": "file",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Solaris 비밀번호 복잡도·만료 기본 정책 파일",
+      "description": "비밀번호 길이, 문자 조합, 재사용 금지, 만료 주기의 기본값을 정하는 파일입니다. 금융권 보안 점검(비밀번호 복잡도·사용 기간)의 주요 확인 대상입니다. 주석(#)을 풀고 값을 지정하면 다음 비밀번호 변경부터 적용됩니다.",
+      "syntax": ["{{PARAMETER}}={{VALUE}}"],
+      "options": [],
+      "commandGroups": [
+        {"title": "주요 항목", "type": "directive", "note": "주 단위 값(WEEKS)에 주의. 예: MAXWEEKS=12 는 약 90일.", "items": [
+          {"cmd": "PASSLENGTH=8", "desc": "최소 길이"},
+          {"cmd": "MINALPHA=1", "desc": "최소 영문자 수"},
+          {"cmd": "MINDIGIT=1", "desc": "최소 숫자 수"},
+          {"cmd": "MINSPECIAL=1", "desc": "최소 특수문자 수"},
+          {"cmd": "MINUPPER=1 / MINLOWER=1", "desc": "최소 대문자·소문자 수"},
+          {"cmd": "MINNONALPHA=1", "desc": "최소 비영문자(숫자+특수문자) 수 (MINDIGIT/MINSPECIAL 과 함께 쓰지 않음)"},
+          {"cmd": "MINDIFF=3", "desc": "이전 비밀번호와 달라야 하는 최소 문자 수"},
+          {"cmd": "MAXREPEATS=2", "desc": "같은 문자 연속 반복 허용 수"},
+          {"cmd": "HISTORY=5", "desc": "재사용 금지 이전 비밀번호 개수 (최대 26)"},
+          {"cmd": "NAMECHECK=YES", "desc": "계정명이 포함된 비밀번호 금지"},
+          {"cmd": "MAXWEEKS=12", "desc": "비밀번호 최대 사용 기간(주)"},
+          {"cmd": "MINWEEKS=1", "desc": "변경 후 재변경 금지 기간(주)"},
+          {"cmd": "WARNWEEKS=1", "desc": "만료 전 경고 기간(주)"},
+          {"cmd": "DICTIONLIST=/usr/share/lib/dict/words", "desc": "사전 단어 비밀번호 금지 (사전 파일 지정)"}
+        ]}
+      ],
+      "examples": [
+        {"title": "현재 정책 확인", "command": "grep -v '^#' /etc/default/passwd | grep ."},
+        {"title": "정책 변경 (백업 후)", "command": "cp -p /etc/default/passwd /etc/default/passwd.$(date +%Y%m%d)\nvi /etc/default/passwd"}
+      ],
+      "cautions": [
+        "MAXWEEKS·MINWEEKS 는 새로 만드는 계정과 비밀번호를 바꾸는 시점에 적용됩니다. 기존 계정은 passwd -x/-n/-w 로 따로 적용하세요.",
+        "Solaris 10 기본 암호화(crypt_unix)는 앞 8자만 유효합니다. 긴 비밀번호 정책을 쓰려면 /etc/security/policy.conf 의 CRYPT_DEFAULT 를 5(SHA-256) 또는 6(SHA-512)로 바꾸세요.",
+        "root 가 passwd 로 다른 사용자 비밀번호를 지정할 때는 복잡도 검사가 적용되지 않을 수 있습니다."
+      ],
+      "platformNotes": {"solaris": "Linux 의 /etc/login.defs + pwquality.conf 를 합친 역할. Solaris 11.4 도 같은 파일을 씁니다."},
+      "keywords": ["비밀번호 정책", "비밀번호 복잡도", "만료 기간", "HISTORY", "/etc/default/passwd", "보안 점검"],
+      "related": ["solaris-passwd", "solaris-etc-security-policy-conf", "solaris-etc-default-login", "chage"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-etc-security-policy-conf",
+      "name": "/etc/security/policy.conf",
+      "kind": "file",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로그인 실패 잠금·비밀번호 암호화 알고리즘·기본 권한 정책",
+      "description": "시스템 전체 보안 정책 파일입니다. 로그인 실패 시 계정 잠금(LOCK_AFTER_RETRIES), 비밀번호 해시 알고리즘(CRYPT_DEFAULT), 모든 사용자에게 기본으로 주는 RBAC 권한·프로파일을 지정합니다. 잠금 횟수 자체는 /etc/default/login 의 RETRIES 값을 따릅니다.",
+      "syntax": ["{{PARAMETER}}={{VALUE}}"],
+      "options": [],
+      "commandGroups": [
+        {"title": "주요 항목", "type": "directive", "items": [
+          {"cmd": "LOCK_AFTER_RETRIES=YES", "desc": "RETRIES(/etc/default/login) 횟수만큼 실패하면 계정 잠금 (해제는 passwd -u)"},
+          {"cmd": "CRYPT_DEFAULT=6", "desc": "새 비밀번호 해시 알고리즘 (5=SHA-256, 6=SHA-512, __unix__=구형 crypt)"},
+          {"cmd": "CRYPT_ALGORITHMS_ALLOW=1,2a,md5,5,6", "desc": "허용하는 해시 알고리즘 목록"},
+          {"cmd": "AUTHS_GRANTED=", "desc": "모든 사용자에게 기본 부여하는 권한(authorization)"},
+          {"cmd": "PROFS_GRANTED=Basic Solaris User", "desc": "모든 사용자에게 기본 부여하는 권한 프로파일"}
+        ]}
+      ],
+      "examples": [
+        {"title": "로그인 5회 실패 시 잠금 설정", "command": "grep LOCK_AFTER_RETRIES /etc/security/policy.conf\ngrep RETRIES /etc/default/login", "note": "policy.conf 에 LOCK_AFTER_RETRIES=YES, /etc/default/login 에 RETRIES=5 를 지정합니다."},
+        {"title": "서비스 계정을 잠금 정책에서 제외", "command": "usermod -K lock_after_retries=no {{USER}}"}
+      ],
+      "cautions": [
+        "LOCK_AFTER_RETRIES 를 켜면 root 를 제외한 계정(애플리케이션·배치 계정 포함)이 잠길 수 있습니다. 잘못된 비밀번호로 반복 접속하는 배치가 없는지 확인하고, 필요하면 계정별로 lock_after_retries=no 를 지정하세요.",
+        "CRYPT_DEFAULT 변경은 이후 비밀번호를 바꾼 계정부터 적용됩니다."
+      ],
+      "keywords": ["계정 잠금", "로그인 실패", "LOCK_AFTER_RETRIES", "CRYPT_DEFAULT", "policy.conf", "보안 정책"],
+      "related": ["solaris-etc-default-login", "solaris-etc-default-passwd", "solaris-passwd"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-etc-default-login",
+      "name": "/etc/default/login",
+      "kind": "file",
+      "category": "users",
+      "task": "users.pam",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "root 원격 로그인 제한·로그인 재시도·세션 타임아웃 설정",
+      "description": "login 프로그램의 기본 동작을 정하는 파일입니다. root 의 직접 로그인을 콘솔로 제한(CONSOLE), 로그인 재시도 횟수(RETRIES), 실패 기록(SYSLOG_FAILED_LOGINS), 셸 타임아웃 등을 지정합니다. root 원격 접속 제한은 보안 점검의 필수 항목입니다.",
+      "syntax": ["{{PARAMETER}}={{VALUE}}"],
+      "options": [],
+      "commandGroups": [
+        {"title": "주요 항목", "type": "directive", "items": [
+          {"cmd": "CONSOLE=/dev/console", "desc": "root 직접 로그인을 콘솔에서만 허용 (telnet·rlogin 차단. ssh 는 sshd_config 의 PermitRootLogin 으로 따로 제한)"},
+          {"cmd": "PASSREQ=YES", "desc": "비밀번호 없는 로그인 금지"},
+          {"cmd": "RETRIES=5", "desc": "로그인 재시도 허용 횟수 (policy.conf LOCK_AFTER_RETRIES 와 연동)"},
+          {"cmd": "SYSLOG_FAILED_LOGINS=0", "desc": "로그인 실패를 몇 번째부터 syslog 에 기록할지 (0 = 매번)"},
+          {"cmd": "SYSLOG=YES", "desc": "root 로그인·실패를 syslog 에 기록"},
+          {"cmd": "TIMEOUT=300", "desc": "로그인 프롬프트 입력 대기 시간(초)"},
+          {"cmd": "UMASK=022", "desc": "로그인 시 기본 umask"}
+        ]}
+      ],
+      "examples": [
+        {"title": "현재 설정 점검", "command": "egrep '^(CONSOLE|PASSREQ|RETRIES|SYSLOG)' /etc/default/login"},
+        {"title": "ssh root 접속 제한 함께 확인", "command": "grep -i PermitRootLogin /etc/ssh/sshd_config"}
+      ],
+      "cautions": ["CONSOLE 을 설정한 상태에서 콘솔(ILOM) 접근 방법이 없으면 root 로 직접 로그인할 방법이 없어집니다. 일반 계정 + su 경로를 확인하세요."],
+      "platformNotes": {"solaris": "Solaris 11 에서 root 는 기본적으로 역할(role)이라 직접 로그인할 수 없고, 사용자로 로그인 후 su 해야 합니다."},
+      "keywords": ["root 접속 제한", "CONSOLE", "로그인 실패", "RETRIES", "/etc/default/login", "보안 점검"],
+      "related": ["solaris-etc-security-policy-conf", "solaris-etc-default-passwd", "etc-ssh-sshd-config", "su"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-roleadd",
+      "name": "roleadd",
+      "aliases": ["rolemod", "roles"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "RBAC 역할(role) 계정 생성과 사용자에게 역할 부여",
+      "description": "Solaris RBAC 의 역할(role) 계정을 만듭니다. 역할은 직접 로그인할 수 없고, 역할이 부여된 사용자가 su 로 전환해서만 쓸 수 있는 특수 계정입니다. 역할에 권한 프로파일을 붙여 root 를 공유하지 않고도 필요한 관리 작업만 허용할 수 있습니다.",
+      "syntax": ["roleadd -m -d {{HOME}} -P \"{{PROFILE}}\" {{ROLE}}", "usermod -R {{ROLE}} {{USER}}", "roles [{{USER}}]"],
+      "options": [
+        {"flag": "-m -d {{HOME}}", "desc": "홈 디렉토리 생성"},
+        {"flag": "-P \"{{PROFILE}}\"", "desc": "역할에 붙일 권한 프로파일 (쉼표로 여러 개)"},
+        {"flag": "-A {{AUTH}}", "desc": "역할에 부여할 권한(authorization)"},
+        {"flag": "-K {{KEY}}={{VALUE}}", "desc": "user_attr 속성 지정"},
+        {"flag": "usermod -R {{ROLE}} {{USER}}", "desc": "사용자에게 역할 부여 (기존 목록을 대체하므로 여러 개는 쉼표로)"}
+      ],
+      "examples": [
+        {"title": "서비스 관리 역할 만들기", "steps": [
+          {"prompt": "#", "cmd": "roleadd -m -d /export/home/{{ROLE}} -P \"Service Management\" {{ROLE}}", "desc": "SMF 관리 권한 프로파일을 가진 역할 생성"},
+          {"prompt": "#", "cmd": "passwd {{ROLE}}", "desc": "역할 비밀번호 설정"},
+          {"prompt": "#", "cmd": "usermod -R {{ROLE}} {{USER}}", "desc": "사용자에게 역할 부여"},
+          {"prompt": "$", "cmd": "su - {{ROLE}}", "desc": "사용자로 로그인한 뒤 역할로 전환"},
+          {"prompt": "$", "cmd": "profiles", "desc": "역할이 가진 프로파일 확인"}
+        ]},
+        {"title": "사용자가 쓸 수 있는 역할 확인", "command": "roles {{USER}}"}
+      ],
+      "cautions": [
+        "usermod -R 은 기존 역할 목록을 덮어씁니다. 추가할 때는 roles 로 기존 역할을 확인하고 쉼표로 함께 지정하세요.",
+        "Solaris 11 에서 root 는 기본적으로 역할입니다. root 역할이 부여된 사용자 목록(roles 결과)을 정기적으로 점검하세요."
+      ],
+      "platformNotes": {"solaris": "설정 파일: /etc/user_attr(사용자·역할 속성), /etc/security/prof_attr(프로파일), /etc/security/exec_attr(프로파일별 명령), /etc/security/auth_attr(권한). Linux 의 sudo 와 개념이 다릅니다."},
+      "help": "man roleadd · man rbac",
+      "keywords": ["RBAC", "역할", "role", "roleadd", "권한 위임", "root 역할", "roles"],
+      "related": ["solaris-profiles", "solaris-pfexec", "solaris-auths", "sudo", "su", "usermod"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-profiles",
+      "name": "profiles",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "사용자·역할의 RBAC 권한 프로파일과 허용 명령 확인",
+      "description": "사용자나 역할에 부여된 권한 프로파일 목록을 보여 줍니다. -l 을 주면 각 프로파일이 어떤 명령을 어떤 권한(euid=0 등)으로 실행할 수 있게 하는지까지 나옵니다. 권한 부여 감사나 '왜 이 명령이 안 되는지' 확인할 때 씁니다.",
+      "syntax": ["profiles [-l] [{{USER}}]"],
+      "options": [
+        {"flag": "-l", "desc": "프로파일별 허용 명령과 실행 속성(euid, privs) 상세"},
+        {"flag": "usermod -P \"{{PROFILE}}\" {{USER}}", "desc": "사용자에게 프로파일 직접 부여 (기존 목록 대체)"}
+      ],
+      "examples": [
+        {"title": "내 권한 프로파일", "command": "profiles"},
+        {"title": "특정 사용자의 허용 명령 상세", "command": "profiles -l {{USER}}"},
+        {"title": "시스템에 정의된 프로파일 확인", "command": "grep -v '^#' /etc/security/prof_attr | cut -d: -f1 | sort | more"}
+      ],
+      "cautions": [],
+      "platformNotes": {"solaris": "프로파일에 있는 명령은 pfexec 나 프로파일 셸(pfsh, pfksh, Solaris 11 의 pfbash)로 실행해야 권한이 적용됩니다."},
+      "help": "man profiles",
+      "keywords": ["권한 프로파일", "RBAC", "profiles", "허용 명령", "권한 점검"],
+      "related": ["solaris-pfexec", "solaris-roleadd", "solaris-auths", "sudo"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-pfexec",
+      "name": "pfexec",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": false,
+      "summary": "RBAC 프로파일 권한으로 명령 실행 (sudo 유사)",
+      "description": "사용자에게 부여된 권한 프로파일에 정의된 권한(예: euid=0)으로 명령을 실행합니다. 비밀번호를 묻지 않으며, 프로파일에 없는 명령은 일반 권한으로 실행됩니다. 역할로 su 하는 대신 사용자 계정에 프로파일을 직접 줄 때 사용합니다.",
+      "syntax": ["pfexec {{COMMAND}} [{{ARGS}}]"],
+      "options": [],
+      "examples": [
+        {"title": "프로파일 권한으로 서비스 재시작", "command": "pfexec svcadm restart {{FMRI}}"},
+        {"title": "어떤 권한으로 실행되는지 미리 확인", "command": "profiles -l | more"}
+      ],
+      "cautions": [
+        "pfexec 는 실행 기록을 기본으로 남기지 않습니다. 감사가 필요하면 감사(audit) 클래스 ex 등을 설정하세요.",
+        "Solaris 10 의 'Primary Administrator' 프로파일은 사실상 root 와 같습니다 (Solaris 11 에서는 제거됨). 부여 대상을 엄격히 관리하세요."
+      ],
+      "platformNotes": {"solaris": "Solaris 11.4 는 sudo 도 기본 제공되므로 조직 표준에 맞춰 선택합니다."},
+      "help": "man pfexec",
+      "keywords": ["권한 상승", "RBAC", "pfexec", "sudo", "프로파일 실행"],
+      "related": ["solaris-profiles", "solaris-roleadd", "sudo", "su"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-auths",
+      "name": "auths",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.elevate",
+      "platforms": ["solaris"],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "사용자의 RBAC 권한(authorization) 목록 확인",
+      "description": "사용자에게 부여된 권한(authorization) 목록을 쉼표로 구분해 보여 줍니다. 권한은 solaris.smf.manage.* 처럼 이름으로 표시되며, 특정 관리 동작(SMF 서비스 관리, 장치 할당 등)을 허용하는 단위입니다.",
+      "syntax": ["auths [{{USER}}]"],
+      "options": [],
+      "examples": [
+        {"title": "내 권한", "command": "auths | tr ',' '\\n'"},
+        {"title": "특정 사용자 권한", "command": "auths {{USER}} | tr ',' '\\n' | sort"}
+      ],
+      "cautions": [],
+      "help": "man auths",
+      "keywords": ["권한", "authorization", "RBAC", "auths", "권한 점검"],
+      "related": ["solaris-profiles", "solaris-roleadd"],
+      "review": {"status": "ai-draft"}
+    }
+  ]
+}

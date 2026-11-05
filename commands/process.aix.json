@@ -1,0 +1,181 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "process",
+  "commands": [
+    {
+      "id": "aix-procstack",
+      "name": "procstack",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.dump",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "실행 중인 프로세스의 스레드별 호출 스택 출력",
+      "description": "실행 중인 프로세스의 모든 스레드 호출 스택을 출력합니다. 애플리케이션이 멈춤(hang)·무응답일 때 어느 함수에서 대기 중인지 확인하는 데 쓰며, Linux 의 pstack 에 해당합니다. 몇 초 간격으로 여러 번 떠서 비교하면 진짜 멈춘 위치를 찾기 쉽습니다.",
+      "syntax": [
+        "procstack {{PID}}"
+      ],
+      "options": [],
+      "examples": [
+        { "title": "무응답 프로세스 스택 3회 수집", "command": "for i in 1 2 3; do procstack {{PID}} > /tmp/procstack.{{PID}}.$i.txt; sleep 5; done" },
+        { "title": "Java 프로세스는 스레드 덤프를 함께", "command": "kill -3 {{PID}}\nprocstack {{PID}} > /tmp/procstack.{{PID}}.txt", "note": "kill -3 은 Java 를 종료하지 않고 javacore(스레드 덤프)를 남깁니다. 다른 프로그램에는 종료 신호가 될 수 있으므로 Java 에만 쓰세요." }
+      ],
+      "cautions": [
+        "수집 순간 프로세스가 잠깐 멈춥니다. 응답 시간에 민감한 프로세스는 짧게 여러 번 대신 필요한 만큼만 수집하세요."
+      ],
+      "help": "man procstack",
+      "keywords": ["스택 덤프", "procstack", "pstack", "hang 분석", "스레드 스택", "무응답"],
+      "related": ["pstack", "aix-gencore", "aix-procfiles", "aix-truss"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-gencore",
+      "name": "gencore",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.dump",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "실행 중인 프로세스의 코어 파일 생성 (종료 없음)",
+      "description": "실행 중인 프로세스를 종료하지 않고 코어 파일을 만듭니다. 벤더가 메모리 상태 분석을 요청할 때 씁니다. Linux 의 gcore 에 해당합니다.",
+      "syntax": [
+        "gencore {{PID}} {{CORE_FILE}}"
+      ],
+      "options": [],
+      "examples": [
+        { "title": "코어 파일 생성", "command": "df -g /tmp\ngencore {{PID}} /tmp/core.{{PID}}\nls -l /tmp/core.{{PID}}", "note": "프로세스 메모리 크기만큼 공간이 필요합니다. svmon -P {{PID}} -O unit=MB 로 크기를 먼저 보세요." }
+      ],
+      "cautions": [
+        "생성하는 동안 프로세스가 멈추며 큰 프로세스는 수십 초 이상 걸릴 수 있습니다.",
+        "코어 파일에는 메모리 속 비밀번호·개인정보가 들어 있을 수 있습니다. 권한을 제한하고 전달 후 삭제하세요.",
+        "공유 메모리까지 포함하려면 sys0 의 fullcore 속성 등 설정이 필요할 수 있습니다. 벤더 요청 사항을 확인하세요."
+      ],
+      "help": "man gencore",
+      "keywords": ["코어 덤프", "gencore", "gcore", "프로세스 덤프", "메모리 덤프"],
+      "related": ["gcore", "aix-procstack", "aix-svmon"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-procfiles",
+      "name": "procfiles",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.open-files",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "프로세스가 연 파일·소켓 목록과 파일 제한",
+      "description": "프로세스가 연 파일 디스크립터 목록과 현재 열린 파일 수 제한(rlimit)을 보여 줍니다. -n 을 붙이면 파일 이름까지 표시합니다. lsof 가 없는 AIX 에서 'Too many open files' 원인 확인이나 프로세스가 어떤 파일을 쓰는지 볼 때 씁니다.",
+      "syntax": [
+        "procfiles [-n] {{PID}}"
+      ],
+      "options": [
+        { "flag": "-n", "desc": "파일 이름(경로) 표시" }
+      ],
+      "commandGroups": [
+        {
+          "title": "같은 계열의 /proc 도구",
+          "type": "subcommand",
+          "items": [
+            { "cmd": "procwdx {{PID}}", "desc": "프로세스의 현재 작업 디렉토리" },
+            { "cmd": "procmap {{PID}}", "desc": "주소 공간 맵 (로드된 라이브러리)" },
+            { "cmd": "proccred {{PID}}", "desc": "실행 사용자·그룹 자격 증명" },
+            { "cmd": "procsig {{PID}}", "desc": "시그널 처리 설정" },
+            { "cmd": "procflags {{PID}}", "desc": "프로세스 플래그·대기 중인 시스템 콜" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "열린 파일 수와 제한 확인", "command": "procfiles {{PID}} | head -5\nprocfiles {{PID}} | grep -c ' S_IF'", "note": "첫 줄 근처의 Current rlimit 이 열 수 있는 최대 파일 수입니다." },
+        { "title": "열린 파일 경로 확인", "command": "procfiles -n {{PID}}" }
+      ],
+      "cautions": [],
+      "help": "man procfiles",
+      "keywords": ["열린 파일", "procfiles", "lsof", "파일 디스크립터", "Too many open files", "procwdx"],
+      "related": ["lsof", "fuser", "aix-rmsock", "aix-proctree"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-proctree",
+      "name": "proctree",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.search",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "프로세스 부모·자식 관계를 트리로 표시",
+      "description": "지정한 프로세스나 사용자의 프로세스를 부모·자식 관계 트리로 보여 줍니다. Linux 의 pstree 에 해당하며, 어떤 프로세스가 자식 프로세스를 띄웠는지, 좀비·고아 프로세스의 부모가 누구인지 볼 때 씁니다.",
+      "syntax": [
+        "proctree [{{PID}} | {{USER}}]"
+      ],
+      "options": [],
+      "examples": [
+        { "title": "특정 프로세스의 상하위 관계", "command": "proctree {{PID}}" },
+        { "title": "사용자 프로세스 트리", "command": "proctree {{USER}}" }
+      ],
+      "cautions": [],
+      "help": "man proctree",
+      "keywords": ["프로세스 트리", "proctree", "pstree", "부모 프로세스", "자식 프로세스"],
+      "related": ["pstree", "ps", "aix-procfiles"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-truss",
+      "name": "truss",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.trace",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "시스템 콜·시그널 추적 (AIX 의 strace)",
+      "description": "프로세스가 호출하는 시스템 콜과 받는 시그널을 추적합니다. Linux 의 strace 에 해당합니다. 프로그램이 어떤 파일을 열다가 실패하는지, 어디서 멈추는지, 어떤 시스템 콜에 시간을 쓰는지 확인할 때 씁니다. 실행 중인 프로세스에 붙거나(-p) 명령을 직접 실행하며 추적합니다.",
+      "syntax": [
+        "truss [-f] [-d] [-o {{OUT_FILE}}] {{COMMAND}}",
+        "truss [-f] -p {{PID}}",
+        "truss -c -p {{PID}}"
+      ],
+      "options": [
+        { "flag": "-p {{PID}}", "desc": "실행 중인 프로세스에 붙어서 추적" },
+        { "flag": "-f", "desc": "fork 된 자식 프로세스도 추적" },
+        { "flag": "-o {{OUT_FILE}}", "desc": "결과를 파일로 저장" },
+        { "flag": "-t {{SYSCALLS}}", "desc": "지정 시스템 콜만 추적 (예: -t open,kopen,statx). !를 붙이면 제외" },
+        { "flag": "-c", "desc": "시스템 콜별 횟수·시간 요약 (Ctrl+C 로 끝내면 출력)" },
+        { "flag": "-d", "desc": "각 줄에 추적 시작부터의 경과 시간 표시" },
+        { "flag": "-D", "desc": "각 줄에 이전 이벤트와의 시간 차 표시" },
+        { "flag": "-a", "desc": "exec 시 인자 표시" },
+        { "flag": "-e", "desc": "exec 시 환경 변수 표시" },
+        { "flag": "-l", "desc": "줄마다 스레드 ID 표시" },
+        { "flag": "-u {{LIB}}::{{FUNC}}", "desc": "사용자 라이브러리 함수 호출 추적" }
+      ],
+      "examples": [
+        { "title": "명령이 실패하는 원인(파일 못 찾음 등) 추적", "command": "truss -f -o /tmp/truss.out {{COMMAND}}\ngrep -i err /tmp/truss.out | head", "note": "AIX 에서 파일 열기는 open 대신 kopen·open 등으로 나올 수 있습니다." },
+        { "title": "실행 중인 프로세스가 어디서 멈췄는지", "command": "truss -d -p {{PID}}", "note": "Ctrl+C 로 분리하면 대상 프로세스는 계속 실행됩니다." },
+        { "title": "시스템 콜 횟수·시간 요약", "command": "truss -c -p {{PID}}" }
+      ],
+      "cautions": [
+        "추적 중에는 대상 프로세스가 크게 느려집니다. 운영 중인 핵심 프로세스는 짧게만 붙이세요.",
+        "-o 없이 -f 로 추적하면 출력이 매우 많습니다. 파일로 저장해 분석하세요.",
+        "추적 결과에 파일 내용·비밀번호 등 인자가 그대로 보일 수 있습니다."
+      ],
+      "help": "man truss",
+      "keywords": ["시스템 콜 추적", "truss", "strace", "디버깅", "파일 열기 실패", "hang 분석"],
+      "related": ["strace", "aix-procstack", "aix-procfiles"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}

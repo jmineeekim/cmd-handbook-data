@@ -1,0 +1,472 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "shell",
+  "commands": [
+    {
+      "id": "solaris-shutdown",
+      "name": "shutdown",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.power",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "Solaris 정상 종료·재부팅 (shutdown -y -g0 -i6)",
+      "description": "System V 방식의 종료 명령으로, 접속자에게 알리고 유예 시간 뒤 서비스를 정상 종료하며 지정한 실행 레벨로 전환합니다. Linux 의 shutdown -r now 문법은 동작하지 않으며, -i 로 목표 실행 레벨(6=재부팅, 0=정지, 5=전원 끄기, S=싱글 유저)을 지정합니다.",
+      "syntax": ["shutdown [-y] [-g {{SECONDS}}] [-i {{RUN_LEVEL}}] [\"{{MESSAGE}}\"]"],
+      "options": [
+        {"flag": "-y", "desc": "확인 질문에 자동으로 yes"},
+        {"flag": "-g {{SECONDS}}", "desc": "종료까지 유예 시간(초). 기본 60초, -g0 은 즉시"},
+        {"flag": "-i 6", "desc": "재부팅"},
+        {"flag": "-i 0", "desc": "OS 정지 (SPARC 는 ok 프롬프트로, x86 은 정지 상태)"},
+        {"flag": "-i 5", "desc": "OS 정지 후 전원 끄기"},
+        {"flag": "-i S", "desc": "싱글 유저 모드로 전환 (점검·패치용)"}
+      ],
+      "commandGroups": [
+        {"title": "실행 레벨", "type": "directive", "items": [
+          {"cmd": "0", "desc": "OS 정지 (SPARC 의 ok 프롬프트, 펌웨어 작업용)"},
+          {"cmd": "S / s", "desc": "싱글 유저 (로컬 파일시스템만, 콘솔 접속)"},
+          {"cmd": "2", "desc": "다중 사용자 (NFS 공유 제외)"},
+          {"cmd": "3", "desc": "다중 사용자 + NFS 공유 (기본 운영 상태)"},
+          {"cmd": "5", "desc": "전원 끄기"},
+          {"cmd": "6", "desc": "재부팅"}
+        ]}
+      ],
+      "examples": [
+        {"title": "즉시 재부팅", "command": "shutdown -y -g0 -i6"},
+        {"title": "5분 공지 후 전원 끄기", "command": "shutdown -y -g300 -i5 \"정기 점검으로 5분 후 종료합니다\""},
+        {"title": "싱글 유저 모드로 전환", "command": "shutdown -y -g0 -iS", "note": "네트워크가 끊기므로 콘솔(ILOM)에서 실행하세요."},
+        {"title": "재부팅 전 점검", "steps": [
+          {"prompt": "#", "cmd": "zonename", "desc": "글로벌 존인지 확인 (글로벌에서 종료하면 모든 Zone 종료)"},
+          {"prompt": "#", "cmd": "who", "desc": "접속 중인 사용자 확인"},
+          {"prompt": "#", "cmd": "beadm list", "desc": "다음 부팅 BE 확인 (Solaris 11. Solaris 10 Live Upgrade 는 lustatus)"},
+          {"prompt": "#", "cmd": "shutdown -y -g0 -i6", "desc": "재부팅"}
+        ]}
+      ],
+      "cautions": [
+        "글로벌 존에서 실행하면 모든 non-global zone 도 함께 내려갑니다.",
+        "reboot·halt 는 서비스 종료 절차를 생략하고 빠르게 내리므로 DB 등 운영 서비스가 있으면 shutdown 또는 init 을 쓰세요.",
+        "Live Upgrade(luactivate) 후에는 반드시 shutdown 또는 init 으로 재부팅해야 BE 가 전환됩니다."
+      ],
+      "platformNotes": {"solaris": "System V 문법 (/usr/sbin/shutdown). Linux 의 shutdown -r now 에 해당하는 것은 shutdown -y -g0 -i6."},
+      "help": "man shutdown",
+      "keywords": ["재부팅", "종료", "shutdown -i6", "전원 끄기", "싱글 유저", "실행 레벨"],
+      "related": ["solaris-init", "solaris-beadm", "solaris-luactivate", "shutdown", "reboot"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-init",
+      "name": "init",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.power",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "실행 레벨 전환으로 즉시 재부팅·정지 (init 6 / init 0)",
+      "description": "지정한 실행 레벨로 즉시 전환합니다. shutdown 과 달리 사용자 공지·유예 시간 없이 바로 서비스를 정상 종료하고 전환합니다. 운영 현장에서는 init 6(재부팅), init 0(정지), init 5(전원 끄기)를 가장 흔히 씁니다.",
+      "syntax": ["init {{RUN_LEVEL}}", "who -r"],
+      "options": [],
+      "examples": [
+        {"title": "재부팅", "command": "init 6"},
+        {"title": "OS 정지 (SPARC 는 ok 프롬프트)", "command": "init 0"},
+        {"title": "현재 실행 레벨 확인", "command": "who -r"}
+      ],
+      "cautions": [
+        "확인 없이 즉시 실행됩니다. 서버 이름을 확인하고(hostname, zonename) 실행하세요.",
+        "원격에서 init 0 을 실행하면 다시 켤 때 ILOM 등 원격 콘솔이 필요합니다."
+      ],
+      "platformNotes": {"solaris": "Solaris 10·11 모두 사용 가능 (SMF 가 실행 레벨을 마일스톤으로 대응)."},
+      "help": "man init",
+      "keywords": ["재부팅", "init 6", "init 0", "실행 레벨", "종료"],
+      "related": ["solaris-shutdown", "solaris-eeprom", "reboot"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-eeprom",
+      "name": "eeprom",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.boot",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "OBP(펌웨어) 부팅 변수 조회·변경 (부팅 장치·자동 부팅)",
+      "description": "OS 에서 펌웨어 부팅 변수를 조회·변경합니다. SPARC 에서는 OpenBoot PROM(OBP) 의 boot-device, auto-boot? 등을 바꿀 수 있고, ok 프롬프트에서 printenv/setenv 로 보는 값과 같습니다. x86 은 지원 변수가 제한적입니다.",
+      "syntax": ["eeprom [{{VARIABLE}}]", "eeprom {{VARIABLE}}={{VALUE}}"],
+      "options": [],
+      "commandGroups": [
+        {"title": "SPARC ok 프롬프트 명령 (init 0 후 콘솔)", "type": "interactive", "prompt": "ok", "items": [
+          {"cmd": "printenv [{{VARIABLE}}]", "desc": "펌웨어 변수 보기"},
+          {"cmd": "setenv auto-boot? false", "desc": "전원 켤 때 자동 부팅 끄기"},
+          {"cmd": "devalias", "desc": "장치 별칭 목록 (disk, disk1, net 등)"},
+          {"cmd": "boot", "desc": "boot-device 로 부팅"},
+          {"cmd": "boot {{DEVICE_ALIAS}}", "desc": "지정한 장치(예: disk1 미러 디스크)로 부팅"},
+          {"cmd": "boot -s", "desc": "싱글 유저 모드로 부팅"},
+          {"cmd": "boot -L", "desc": "ZFS 루트의 부팅 가능한 BE 목록 표시·선택"},
+          {"cmd": "probe-scsi-all", "desc": "SCSI·SAS 장치 검색 (실행 전 reset-all 필요한 기종 있음)"},
+          {"cmd": "reset-all", "desc": "시스템 리셋"}
+        ]}
+      ],
+      "examples": [
+        {"title": "모든 펌웨어 변수", "command": "eeprom"},
+        {"title": "부팅 장치·자동 부팅 확인", "command": "eeprom boot-device\neeprom 'auto-boot?'"},
+        {"title": "미러 디스크를 두 번째 부팅 장치로 등록 (SPARC)", "command": "eeprom 'boot-device=disk disk1'\neeprom boot-device", "note": "디스크 별칭은 ok 프롬프트의 devalias 로 확인합니다."}
+      ],
+      "cautions": [
+        "auto-boot? 처럼 ? 가 들어간 변수는 셸이 해석하지 않도록 따옴표로 감싸세요.",
+        "boot-device 를 잘못 바꾸면 재부팅 시 OS 가 올라오지 않습니다. 변경 전 값을 기록해 두세요."
+      ],
+      "platformNotes": {"solaris": "SPARC 는 OBP 변수, x86 은 /boot/solaris/bootenv.rc 의 일부 변수만 다룹니다. Solaris 11 x86 의 부팅 메뉴는 bootadm 으로 관리합니다."},
+      "help": "man eeprom",
+      "keywords": ["OBP", "ok 프롬프트", "부팅 장치", "boot-device", "eeprom", "펌웨어 변수", "auto-boot"],
+      "related": ["solaris-bootadm", "solaris-init", "solaris-prtconf"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-bootadm",
+      "name": "bootadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.boot",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "부트 아카이브 갱신·부팅 메뉴(GRUB) 관리",
+      "description": "부팅 시 커널이 먼저 읽는 부트 아카이브(boot archive)를 갱신하고, x86 의 GRUB 부팅 메뉴를 조회·변경합니다. 부팅 중 'boot archive is out of sync' 같은 메시지로 멈추거나 /etc/system·드라이버 설정을 바꾼 뒤 아카이브가 반영되지 않았을 때 update-archive 를 실행합니다.",
+      "syntax": ["bootadm update-archive [-R {{ALT_ROOT}}]", "bootadm list-archive", "bootadm list-menu", "bootadm set-menu default={{N}}"],
+      "options": [
+        {"flag": "-R {{ALT_ROOT}}", "desc": "다른 루트(복구 미디어에서 마운트한 루트 등)를 대상으로 실행"},
+        {"flag": "-v", "desc": "상세 출력"}
+      ],
+      "commandGroups": [
+        {"title": "서브 명령", "type": "subcommand", "items": [
+          {"cmd": "bootadm update-archive", "desc": "부트 아카이브 갱신"},
+          {"cmd": "bootadm list-archive", "desc": "부트 아카이브에 포함된 파일 목록"},
+          {"cmd": "bootadm list-menu", "desc": "부팅 메뉴 항목·기본 항목 (x86)"},
+          {"cmd": "bootadm set-menu default={{N}}", "desc": "기본 부팅 항목 변경 (Solaris 11.1 이상 x86)", "version": "Solaris 11.1 이상"}
+        ]}
+      ],
+      "examples": [
+        {"title": "부트 아카이브 갱신", "command": "bootadm update-archive -v"},
+        {"title": "복구 미디어로 부팅해 아카이브 수리", "command": "zpool import -R /a rpool\nbeadm mount {{BE}} /a\nbootadm update-archive -R /a", "note": "Solaris 11 ZFS 루트 기준. 환경(UFS/ZFS, BE 이름)에 따라 마운트 절차가 다릅니다."}
+      ],
+      "cautions": ["복구 절차는 OS 버전·루트 파일시스템 유형마다 다르므로 벤더 문서를 확인하고 진행하세요."],
+      "help": "man bootadm",
+      "keywords": ["부트 아카이브", "boot archive", "GRUB", "bootadm", "부팅 메뉴", "부팅 장애"],
+      "related": ["solaris-eeprom", "solaris-etc-system", "solaris-beadm", "grub2-mkconfig"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-etc-system",
+      "name": "/etc/system",
+      "kind": "file",
+      "category": "shell",
+      "task": "shell.kernel-tuning",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "커널 파라미터 영구 설정 파일 (재부팅 후 적용)",
+      "description": "부팅할 때 커널이 읽는 튜닝 파일입니다. set 모듈:변수=값 형식으로 커널 변수를 지정하며, 재부팅해야 적용됩니다. ZFS ARC 상한, 파일 디스크립터 기본 한도, 보안 설정(noexec_user_stack) 등을 지정하는 데 쓰였고, Solaris 10 이후 공유 메모리·세마포어 같은 IPC 값은 프로젝트(projmod, prctl) 자원 제어로 관리하는 것이 권장됩니다.",
+      "syntax": ["set {{MODULE}}:{{VARIABLE}} = {{VALUE}}", "set {{VARIABLE}} = {{VALUE}}", "* {{COMMENT}}"],
+      "options": [],
+      "commandGroups": [
+        {"title": "줄 형식과 자주 보는 항목", "type": "directive", "note": "주석은 * 로 시작합니다 (# 아님). 변경 후 재부팅해야 적용됩니다.", "items": [
+          {"cmd": "set zfs:zfs_arc_max = {{BYTES}}", "desc": "ZFS ARC(캐시) 최대 크기. DB 서버에서 메모리 확보용 (16진수 0x… 도 가능)"},
+          {"cmd": "set noexec_user_stack = 1", "desc": "사용자 스택 실행 금지 (보안 점검 항목)"},
+          {"cmd": "set noexec_user_stack_log = 1", "desc": "스택 실행 시도 기록"},
+          {"cmd": "set rlim_fd_cur = {{N}}", "desc": "프로세스 파일 디스크립터 기본(soft) 한도"},
+          {"cmd": "set rlim_fd_max = {{N}}", "desc": "파일 디스크립터 최대(hard) 한도"},
+          {"cmd": "forceload: drv/{{DRIVER}}", "desc": "부팅 시 드라이버 강제 로드"},
+          {"cmd": "exclude: drv/{{DRIVER}}", "desc": "드라이버 로드 제외"}
+        ]}
+      ],
+      "examples": [
+        {"title": "안전하게 변경하기", "steps": [
+          {"prompt": "#", "cmd": "cp -p /etc/system /etc/system.$(date +%Y%m%d)", "desc": "백업 (부팅 실패 시 이 파일로 부팅)"},
+          {"prompt": "#", "cmd": "beadm create {{BACKUP_BE}}", "desc": "Solaris 11 은 BE 도 만들어 두면 롤백이 쉬움"},
+          {"prompt": "#", "cmd": "vi /etc/system", "desc": "set 줄 추가·수정"},
+          {"prompt": "#", "cmd": "init 6", "desc": "재부팅해서 적용"},
+          {"prompt": "#", "cmd": "kstat -p zfs:0:arcstats:c_max", "desc": "적용 값 확인 (ZFS ARC 예시. 변수마다 확인 방법이 다름)"}
+        ]},
+        {"title": "현재 설정 확인", "command": "grep -v '^\\*' /etc/system | grep ."}
+      ],
+      "cautions": [
+        "문법 오류나 잘못된 값이 있으면 부팅이 실패할 수 있습니다. 이때 SPARC 는 ok 프롬프트에서 boot -a 로 부팅해 시스템 파일 질문에 백업 파일(/etc/system.백업일자)을 입력합니다.",
+        "Solaris 11.2 이상은 /etc/system.d/ 디렉토리에 파일을 따로 두는 방식이 권장됩니다.",
+        "Solaris 11.2 이상에서는 zfs_arc_max 대신 user_reserve_hint_pct 같은 새 튜닝 방식이 권장되는 경우가 있으므로 OS 버전별 Oracle 문서를 확인하세요."
+      ],
+      "platformNotes": {"solaris": "Linux 의 /etc/sysctl.conf 와 비슷하지만 재부팅해야 적용되고, 실행 중 값 변경 도구(sysctl -w)에 해당하는 일반 명령은 없습니다 (네트워크는 ndd/ipadm, 자원 제어는 prctl)."},
+      "keywords": ["커널 파라미터", "/etc/system", "zfs_arc_max", "튜닝", "noexec_user_stack", "rlim_fd_max"],
+      "related": ["solaris-ndd", "solaris-prctl", "solaris-projmod", "solaris-bootadm", "sysctl"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-ndd",
+      "name": "ndd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.kernel-tuning",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "TCP/IP 커널 파라미터 조회·변경 (Solaris 10, 재부팅 시 초기화)",
+      "description": "Solaris 10 에서 TCP/IP 드라이버 파라미터(tcp_time_wait_interval, 포트 범위, 연결 대기열 등)를 조회·변경합니다. 변경은 즉시 적용되지만 재부팅하면 사라지므로, 영구 적용하려면 부팅 시 실행되는 SMF 서비스나 rc 스크립트에 넣습니다. Solaris 11 에서는 ipadm set-prop 이 권장됩니다.",
+      "syntax": ["ndd -get /dev/{{DRIVER}} {{PARAMETER}}", "ndd -set /dev/{{DRIVER}} {{PARAMETER}} {{VALUE}}", "ndd /dev/{{DRIVER}} \\?"],
+      "options": [
+        {"flag": "-get", "desc": "값 조회 (생략 가능)"},
+        {"flag": "-set", "desc": "값 변경 (즉시 적용, 재부팅 시 초기화)"}
+      ],
+      "commandGroups": [
+        {"title": "자주 보는 파라미터 (/dev/tcp)", "type": "directive", "items": [
+          {"cmd": "tcp_time_wait_interval", "desc": "TIME_WAIT 유지 시간(ms). 기본 60000"},
+          {"cmd": "tcp_conn_req_max_q", "desc": "accept 대기열 최대 길이"},
+          {"cmd": "tcp_conn_req_max_q0", "desc": "SYN 수신(미완성 연결) 대기열 길이"},
+          {"cmd": "tcp_smallest_anon_port / tcp_largest_anon_port", "desc": "임시(클라이언트) 포트 범위"},
+          {"cmd": "tcp_keepalive_interval", "desc": "keepalive 시작까지 유휴 시간(ms)"},
+          {"cmd": "ip_forwarding (/dev/ip)", "desc": "IP 포워딩 (보안 점검: 0)"}
+        ]}
+      ],
+      "examples": [
+        {"title": "파라미터 목록과 값 확인", "command": "ndd /dev/tcp \\? | more\nndd -get /dev/tcp tcp_time_wait_interval"},
+        {"title": "TIME_WAIT 시간 변경 (즉시)", "command": "ndd -set /dev/tcp tcp_time_wait_interval 30000\nndd -get /dev/tcp tcp_time_wait_interval"},
+        {"title": "Solaris 11 에서 같은 설정 (영구)", "command": "ipadm set-prop -p _time_wait_interval=30000 tcp\nipadm show-prop -p _time_wait_interval tcp", "version": "Solaris 11 이상"}
+      ],
+      "cautions": [
+        "ndd -set 은 재부팅하면 원래 값으로 돌아갑니다. 영구 적용 방법을 함께 준비하세요.",
+        "값을 잘못 바꾸면 모든 네트워크 연결에 영향을 줍니다. 변경 전 값을 기록해 두세요."
+      ],
+      "platformNotes": {"solaris": "Solaris 10 의 주 도구. Solaris 11 에서도 동작하지만 ipadm set-prop(영구 저장)을 권장합니다. Linux 의 sysctl net.ipv4.* 에 해당."},
+      "help": "man ndd",
+      "keywords": ["TCP 파라미터", "ndd", "네트워크 튜닝", "time_wait", "커널 파라미터", "포트 범위"],
+      "related": ["solaris-ipadm", "solaris-etc-system", "sysctl"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-prctl",
+      "name": "prctl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.ulimit",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로세스·프로젝트·Zone 자원 제어(공유 메모리·FD 등) 조회·변경",
+      "description": "실행 중인 프로세스, 태스크, 프로젝트, Zone 에 걸린 자원 제어(resource control) 값을 조회하고 즉시 변경합니다. Oracle DB 의 공유 메모리 한도(project.max-shm-memory)나 파일 디스크립터 한도(process.max-file-descriptor)를 확인할 때 주로 씁니다. prctl 로 바꾼 값은 임시이며, 영구 설정은 projmod 로 /etc/project 에 저장합니다.",
+      "syntax": ["prctl [-n {{RCTL}}] [-i process | task | project | zone] {{ID}}", "prctl -n {{RCTL}} -r -v {{VALUE}} -i {{ID_TYPE}} {{ID}}"],
+      "options": [
+        {"flag": "-n {{RCTL}}", "desc": "자원 제어 이름 (예: project.max-shm-memory)"},
+        {"flag": "-i process | task | project | zone", "desc": "대상 ID 종류 (기본 process)"},
+        {"flag": "-v {{VALUE}}", "desc": "설정할 값 (예: 16gb)"},
+        {"flag": "-r", "desc": "기존 값을 교체"},
+        {"flag": "-t basic | privileged | system", "desc": "권한 수준 지정"},
+        {"flag": "-s", "desc": "값 설정 (-v 와 함께)"}
+      ],
+      "commandGroups": [
+        {"title": "자주 보는 자원 제어", "type": "directive", "items": [
+          {"cmd": "project.max-shm-memory", "desc": "프로젝트 전체 공유 메모리 최대 (Oracle SGA)"},
+          {"cmd": "project.max-shm-ids", "desc": "공유 메모리 세그먼트 수"},
+          {"cmd": "project.max-sem-ids / process.max-sem-nsems", "desc": "세마포어 식별자 수 / 세트당 세마포어 수"},
+          {"cmd": "process.max-file-descriptor", "desc": "프로세스당 파일 디스크립터 (ulimit -n)"},
+          {"cmd": "zone.max-swap / zone.cpu-shares", "desc": "Zone 스왑 한도 / CPU 배분 비율"}
+        ]}
+      ],
+      "examples": [
+        {"title": "현재 셸의 자원 제어 값", "command": "prctl $$"},
+        {"title": "Oracle 프로젝트 공유 메모리 한도 확인", "command": "prctl -n project.max-shm-memory -i project user.oracle"},
+        {"title": "임시로 한도 올리기 (재부팅·재로그인 시 원복)", "command": "prctl -n project.max-shm-memory -r -v {{SIZE}} -i project user.oracle", "note": "영구 적용은 projmod -sK 로 /etc/project 에 저장합니다."}
+      ],
+      "cautions": ["prctl 변경은 영구 저장되지 않습니다. 같은 값을 projmod 로도 반영하지 않으면 재부팅 후 DB 기동이 실패할 수 있습니다."],
+      "platformNotes": {"solaris": "Solaris 10 이상. Linux 의 ulimit, /etc/security/limits.conf, sysctl kernel.shm* 를 합친 역할."},
+      "help": "man prctl · man resource_controls",
+      "keywords": ["자원 제어", "공유 메모리", "max-shm-memory", "prctl", "파일 디스크립터", "ulimit"],
+      "related": ["solaris-projadd", "solaris-projmod", "ulimit", "etc-security-limits-conf"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-projadd",
+      "name": "projadd",
+      "aliases": ["projects"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.ulimit",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로젝트 생성과 자원 제어 영구 설정 (/etc/project)",
+      "description": "/etc/project 에 프로젝트를 추가합니다. 프로젝트는 사용자·그룹에 자원 제어(공유 메모리, 세마포어, FD 등)를 영구 적용하는 단위입니다. user.사용자명 이름의 프로젝트는 그 사용자의 기본 프로젝트가 되므로, Oracle DB 설치 전 user.oracle 을 만들어 공유 메모리 한도를 지정하는 방식이 일반적입니다.",
+      "syntax": ["projadd [-U {{USERS}}] [-G {{GROUPS}}] [-c \"{{COMMENT}}\"] [-K \"{{RCTL}}=({{PRIV}},{{VALUE}},{{ACTION}})\"] {{PROJECT}}", "projects -l [{{PROJECT}}]"],
+      "options": [
+        {"flag": "-U {{USERS}}", "desc": "프로젝트 멤버 사용자 (쉼표 구분)"},
+        {"flag": "-G {{GROUPS}}", "desc": "프로젝트 멤버 그룹"},
+        {"flag": "-c \"{{COMMENT}}\"", "desc": "설명"},
+        {"flag": "-K \"{{RCTL}}=(privileged,{{VALUE}},deny)\"", "desc": "자원 제어 속성"},
+        {"flag": "-p {{PROJID}}", "desc": "프로젝트 ID 지정"}
+      ],
+      "examples": [
+        {"title": "Oracle 사용자 프로젝트 생성", "command": "projadd -U oracle -K \"project.max-shm-memory=(privileged,{{SIZE}},deny)\" user.oracle\nprojects -l user.oracle"},
+        {"title": "사용자의 현재 프로젝트 확인", "command": "id -p {{USER}}"}
+      ],
+      "cautions": [
+        "새 값은 그 사용자가 다시 로그인하거나 프로세스를 다시 시작해야 적용됩니다. 실행 중인 DB 에는 prctl 로 함께 반영하세요.",
+        "/etc/project 를 직접 편집할 때는 형식(이름:ID:설명:사용자:그룹:속성)을 정확히 지켜야 합니다."
+      ],
+      "help": "man projadd · man project",
+      "keywords": ["프로젝트", "자원 제어", "/etc/project", "projadd", "Oracle 설치", "공유 메모리"],
+      "related": ["solaris-projmod", "solaris-prctl", "etc-security-limits-conf"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-projmod",
+      "name": "projmod",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.ulimit",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로젝트 자원 제어 값 변경 (영구)",
+      "description": "기존 프로젝트의 멤버나 자원 제어 속성을 변경해 /etc/project 에 저장합니다. 공유 메모리 한도 증설처럼 영구 변경이 필요할 때 projmod 로 저장하고, 실행 중인 프로세스에는 prctl 로 즉시 반영합니다.",
+      "syntax": ["projmod -s -K \"{{RCTL}}=({{PRIV}},{{VALUE}},{{ACTION}})\" {{PROJECT}}", "projmod -a | -r -K \"{{RCTL}}=...\" {{PROJECT}}", "projmod -U {{USERS}} {{PROJECT}}"],
+      "options": [
+        {"flag": "-K \"{{RCTL}}=...\"", "desc": "변경할 자원 제어 속성"},
+        {"flag": "-s", "desc": "-K 속성 값을 교체"},
+        {"flag": "-a", "desc": "-K 속성 값을 추가"},
+        {"flag": "-r", "desc": "-K 속성 값을 제거"},
+        {"flag": "-U {{USERS}}", "desc": "멤버 사용자 지정"},
+        {"flag": "-c \"{{COMMENT}}\"", "desc": "설명 변경"}
+      ],
+      "examples": [
+        {"title": "공유 메모리 한도 영구 증설 + 즉시 반영", "steps": [
+          {"prompt": "#", "cmd": "cp -p /etc/project /etc/project.$(date +%Y%m%d)", "desc": "백업"},
+          {"prompt": "#", "cmd": "projmod -s -K \"project.max-shm-memory=(privileged,{{SIZE}},deny)\" user.oracle", "desc": "영구 값 변경"},
+          {"prompt": "#", "cmd": "prctl -n project.max-shm-memory -r -v {{SIZE}} -i project user.oracle", "desc": "실행 중인 프로젝트에 즉시 반영"},
+          {"prompt": "#", "cmd": "projects -l user.oracle", "desc": "저장된 값 확인"}
+        ]}
+      ],
+      "cautions": ["-s 없이 -K 를 주면 지정하지 않은 다른 속성이 사라질 수 있습니다. 변경 전 /etc/project 를 백업하세요."],
+      "help": "man projmod",
+      "keywords": ["프로젝트 변경", "자원 제어", "projmod", "공유 메모리 증설", "/etc/project"],
+      "related": ["solaris-projadd", "solaris-prctl"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-explorer",
+      "name": "explorer",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.diag",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Oracle 지원 접수용 시스템 진단 자료 수집 (Explorer)",
+      "description": "Oracle Explorer Data Collector 로, 시스템 구성·패키지·로그·하드웨어·스토리지·네트워크 정보를 모아 하나의 압축 파일로 만듭니다. Oracle(또는 유지보수 벤더)에 하드웨어·OS 장애를 접수할 때 기본으로 요구되는 자료입니다. 결과는 /var/explorer/output 아래에 explorer.<hostid>.<호스트명>-<날짜>.tar.gz 형식으로 생성됩니다.",
+      "syntax": ["explorer"],
+      "options": [],
+      "examples": [
+        {"title": "진단 자료 수집", "command": "explorer\nls -l /var/explorer/output/", "note": "수집에 수 분 ~ 수십 분이 걸리며 처음 실행할 때 기본 설정을 묻는 경우가 있습니다."},
+        {"title": "설치 여부 확인", "command": "pkg list support/explorer", "version": "Solaris 11 이상"}
+      ],
+      "cautions": [
+        "결과 파일에는 호스트 설정, 계정 목록, 네트워크 구성 등 민감 정보가 들어 있습니다. 반출 시 내부 보안 절차를 따르세요.",
+        "수집 중 CPU·디스크 부하가 생기므로 업무 피크 시간을 피하세요."
+      ],
+      "install": {"solaris": {"package": "support/explorer (Solaris 11) / SUNWexplo (Solaris 10, Services Tools Bundle)", "preinstalled": false, "note": "Solaris 10 은 /opt/SUNWexplo/bin/explorer, Solaris 11 은 /usr/sbin/explorer 위치입니다."}},
+      "platformNotes": {"solaris": "Linux 의 sosreport, AIX 의 snap, HP-UX 의 nickel 에 해당합니다."},
+      "keywords": ["진단 자료", "Explorer", "장애 접수", "explorer", "로그 수집", "Oracle 지원"],
+      "related": ["solaris-fmadm", "solaris-prtdiag", "solaris-savecore", "sos"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-dumpadm",
+      "name": "dumpadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.diag",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "커널 크래시 덤프 장치·저장 위치·범위 설정",
+      "description": "시스템 패닉 시 커널 메모리를 저장할 덤프 장치, 재부팅 후 덤프를 저장할 디렉토리(savecore), 덤프 범위(kernel/all)를 설정합니다. 패닉 원인 분석에 덤프가 필수이므로, 덤프 장치 크기와 저장 위치 여유 공간을 사전에 점검해 두어야 합니다.",
+      "syntax": ["dumpadm", "dumpadm [-d {{DUMP_DEVICE}}] [-s {{SAVECORE_DIR}}] [-c kernel | all | curproc] [-y | -n]"],
+      "options": [
+        {"flag": "-d {{DUMP_DEVICE}}", "desc": "덤프 장치 (Solaris 11 기본 /dev/zvol/dsk/rpool/dump, swap 지정 가능)"},
+        {"flag": "-s {{DIR}}", "desc": "재부팅 후 savecore 가 덤프를 저장할 디렉토리"},
+        {"flag": "-c kernel | all | curproc", "desc": "덤프 범위 (기본 kernel. all 은 전체 메모리)"},
+        {"flag": "-y", "desc": "재부팅 시 savecore 자동 실행"},
+        {"flag": "-n", "desc": "재부팅 시 savecore 자동 실행 안 함"},
+        {"flag": "-z on | off", "desc": "저장 시 압축 (Solaris 11 이상)"},
+        {"flag": "-e", "desc": "현재 설정 기준 필요한 덤프 크기 추정 (Solaris 11 이상)"}
+      ],
+      "examples": [
+        {"title": "현재 설정 확인", "command": "dumpadm"},
+        {"title": "덤프 장치 크기 점검 (Solaris 11)", "command": "dumpadm -e\nzfs get volsize rpool/dump", "version": "Solaris 11 이상", "note": "추정치보다 작으면 zfs set volsize={{SIZE}} rpool/dump 로 늘립니다."},
+        {"title": "저장 위치를 여유 있는 파일시스템으로 변경", "command": "mkdir -p /{{FS}}/crash\ndumpadm -s /{{FS}}/crash -y"}
+      ],
+      "cautions": [
+        "덤프 장치가 작으면 패닉 덤프가 잘려 원인 분석이 불가능해집니다. 메모리 증설 후에는 dumpadm -e 로 다시 점검하세요.",
+        "-c all 은 메모리 전체를 저장하므로 덤프·저장 공간이 매우 커집니다."
+      ],
+      "help": "man dumpadm",
+      "keywords": ["크래시 덤프", "덤프 장치", "패닉", "dumpadm", "savecore", "vmcore"],
+      "related": ["solaris-savecore", "solaris-mdb", "solaris-coreadm", "solaris-swap"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-savecore",
+      "name": "savecore",
+      "kind": "command",
+      "shell": "sh",
+      "category": "shell",
+      "task": "shell.diag",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "크래시 덤프를 파일로 저장·라이브 덤프 생성",
+      "description": "덤프 장치에 남은 크래시 덤프를 dumpadm 의 저장 디렉토리로 꺼내 파일(vmdump.N 또는 unix.N/vmcore.N)로 저장합니다. 보통 재부팅 시 자동 실행되지만, 자동 실행이 꺼져 있거나 공간 부족으로 실패했을 때 수동으로 실행합니다. -L 은 시스템을 멈추지 않고 현재 커널 상태를 덤프합니다 (행 분석용).",
+      "syntax": ["savecore [-v] [{{DIR}}]", "savecore -L", "savecore -vf {{DIR}}/vmdump.{{N}}"],
+      "options": [
+        {"flag": "-v", "desc": "상세 출력"},
+        {"flag": "-L", "desc": "라이브 덤프: 실행 중인 시스템의 커널 메모리를 덤프 (전용 덤프 장치 필요)"},
+        {"flag": "-f {{DUMP_FILE}}", "desc": "압축된 vmdump.N 파일을 unix.N, vmcore.N 으로 풀기"},
+        {"flag": "-d", "desc": "덤프 헤더의 유효 표시를 무시하고 저장 시도"}
+      ],
+      "examples": [
+        {"title": "자동 저장이 안 된 덤프 수동 저장", "command": "dumpadm\nsavecore -v", "note": "저장 디렉토리의 여유 공간을 먼저 확인하세요."},
+        {"title": "시스템이 느려지거나 멈춘 듯할 때 라이브 덤프", "command": "savecore -L", "note": "벤더가 요청한 경우에 실행합니다."},
+        {"title": "압축 덤프 풀기 (mdb 분석 전)", "command": "cd /var/crash/{{HOSTNAME}}\nsavecore -vf vmdump.{{N}}"}
+      ],
+      "cautions": [
+        "덤프 장치로 swap 을 쓰는 경우 재부팅 후 스왑 사용이 시작되면 덤프가 덮어써질 수 있습니다. 빨리 저장하세요.",
+        "덤프 파일은 수 GB 이상입니다. 저장 디렉토리의 공간을 확인하세요."
+      ],
+      "help": "man savecore",
+      "keywords": ["크래시 덤프 저장", "라이브 덤프", "savecore", "vmdump", "vmcore", "패닉 분석"],
+      "related": ["solaris-dumpadm", "solaris-mdb", "solaris-explorer"],
+      "review": {"status": "ai-draft"}
+    }
+  ]
+}

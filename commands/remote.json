@@ -12,7 +12,10 @@
       "task": "remote.connect",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -34,7 +37,7 @@
         },
         {
           "flag": "-J {{USER}}@{{JUMP_HOST}}",
-          "desc": "점프 호스트(배스천)를 경유해 접속 (ProxyJump)"
+          "desc": "점프 호스트(배스천)를 경유해 접속 (ProxyJump) (OpenSSH 7.3 이상. 구형 Unix ssh 에는 없을 수 있음)"
         },
         {
           "flag": "-L {{LOCAL_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}}",
@@ -85,9 +88,33 @@
           "note": "내 PC 의 127.0.0.1:13306 으로 접속하면 {{HOST}} 를 거쳐 {{DB_HOST}}:3306 으로 연결됨"
         },
         {
-          "title": "SOCKS 프록시 터널을 백그라운드로 열기",
-          "command": "ssh -f -N -D 1080 {{USER}}@{{HOST}}",
-          "note": "브라우저 프록시를 SOCKS5 127.0.0.1:1080 으로 설정"
+          "title": "~/.ssh/config 에 접속 별칭 만들기",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "vi ~/.ssh/config",
+              "desc": "Host {{ALIAS}} 아래에 HostName, User, Port, IdentityFile (필요하면 ProxyJump) 작성"
+            },
+            {
+              "prompt": "$",
+              "cmd": "chmod 600 ~/.ssh/config",
+              "desc": "권한 설정 (그룹·기타 쓰기 권한이 있으면 거부됨)"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ssh -G {{ALIAS}} | grep -Ei '^(hostname|user|port|identityfile) '",
+              "desc": "실제로 적용될 값 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ssh {{ALIAS}}",
+              "desc": "별칭으로 접속 (scp·sftp·rsync 에서도 별칭 사용 가능)"
+            }
+          ],
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
@@ -124,7 +151,92 @@
         "ssh-keygen",
         "ssh-copy-id",
         "etc-ssh-sshd-config"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "연결 중 이스케이프 키 (~)",
+          "type": "keys",
+          "note": "Enter 를 친 직후, 줄 맨 앞에서 ~ 를 눌러야 인식됩니다. 화면에는 표시되지 않습니다.",
+          "items": [
+            {
+              "cmd": "~.",
+              "desc": "응답 없는(멈춘) 세션 강제 종료"
+            },
+            {
+              "cmd": "~?",
+              "desc": "사용할 수 있는 이스케이프 목록"
+            },
+            {
+              "cmd": "~#",
+              "desc": "현재 포워딩 연결 목록"
+            },
+            {
+              "cmd": "~C",
+              "desc": "ssh> 명령줄 열기: 접속을 유지한 채 -L {{LOCAL_PORT}}:{{TARGET_HOST}}:{{TARGET_PORT}} 로 포워딩 추가",
+              "note": "OpenSSH 9.2 이상은 기본으로 꺼져 있어 -o EnableEscapeCommandline=yes 또는 ~/.ssh/config 설정이 필요"
+            },
+            {
+              "cmd": "~^Z",
+              "desc": "~ 다음 Ctrl+Z: ssh 를 일시 중지하고 내 셸로 (fg 로 복귀)"
+            },
+            {
+              "cmd": "~~",
+              "desc": "~ 문자 자체를 보내기 (중첩 접속 시 안쪽 세션에 이스케이프 전달)"
+            }
+          ]
+        },
+        {
+          "title": "~/.ssh/config 항목",
+          "type": "directive",
+          "note": "같은 항목은 처음 일치한 값이 적용되므로 Host * 같은 공통 설정은 파일 맨 아래에 둡니다. 파일 권한은 600.",
+          "items": [
+            {
+              "cmd": "Host {{ALIAS}}",
+              "desc": "별칭 정의 시작. 아래 항목을 들여써서 적고 ssh {{ALIAS}} 로 접속"
+            },
+            {
+              "cmd": "HostName {{HOST}}",
+              "desc": "실제 접속할 주소·호스트명"
+            },
+            {
+              "cmd": "User {{USER}}",
+              "desc": "접속 계정"
+            },
+            {
+              "cmd": "Port {{PORT}}",
+              "desc": "SSH 포트"
+            },
+            {
+              "cmd": "IdentityFile ~/.ssh/{{KEY_FILE}}",
+              "desc": "사용할 개인키"
+            },
+            {
+              "cmd": "IdentitiesOnly yes",
+              "desc": "지정한 키만 시도 (Too many authentication failures 방지)"
+            },
+            {
+              "cmd": "ProxyJump {{USER}}@{{JUMP_HOST}}",
+              "desc": "점프 호스트 경유 (OpenSSH 7.3 이상)"
+            },
+            {
+              "cmd": "LocalForward {{LOCAL_PORT}} {{TARGET_HOST}}:{{TARGET_PORT}}",
+              "desc": "접속할 때마다 로컬 포트 포워딩"
+            },
+            {
+              "cmd": "ServerAliveInterval 60",
+              "desc": "60초마다 응답 확인 (방화벽 유휴 끊김 방지)"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "OpenSSH 를 openssh.base.client 파일셋으로 설치해 사용합니다 (lslpp -l openssh.base.client 로 확인). 설정은 /etc/ssh/ssh_config. 버전이 낮으면 -J·ed25519 가 없을 수 있으니 ssh -V 로 확인하세요.",
+        "hpux": "HP-UX Secure Shell 제품(OpenSSH 기반)으로 /opt/ssh/bin/ssh 에 설치되며 시스템 설정은 /opt/ssh/etc/ssh_config 입니다. -J 가 없는 버전은 -o ProxyCommand='ssh -W %h:%p {{USER}}@{{JUMP_HOST}}' 를 사용합니다.",
+        "solaris": "Solaris 10 은 SunSSH(OpenSSH 와 대부분 호환, -J·ed25519 미지원)이고 Solaris 11.4 는 OpenSSH 입니다. 설정은 /etc/ssh/ssh_config."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-ssh",
@@ -221,7 +333,31 @@
         "enter-pssession",
         "ssh-keygen",
         "scp"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "연결 중 이스케이프 키 (~)",
+          "type": "keys",
+          "note": "Enter 를 친 직후, 줄 맨 앞에서 ~ 를 눌러야 인식됩니다. 화면에는 표시되지 않습니다.",
+          "items": [
+            {
+              "cmd": "~.",
+              "desc": "응답 없는(멈춘) 세션 강제 종료"
+            },
+            {
+              "cmd": "~?",
+              "desc": "사용할 수 있는 이스케이프 목록"
+            },
+            {
+              "cmd": "~#",
+              "desc": "현재 포워딩 연결 목록"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "mstsc",
@@ -308,7 +444,10 @@
       "related": [
         "win-ssh",
         "enter-pssession"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "enter-pssession",
@@ -397,7 +536,43 @@
         "invoke-command",
         "winrm",
         "mstsc"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "세션 관련 cmdlet",
+          "type": "subcommand",
+          "note": "접속하면 프롬프트가 [{{HOST}}]: PS C:\\> 처럼 바뀝니다. 원격 세션에서는 GUI 프로그램과 대화형 프로그램(예: notepad, 대화형 nslookup)을 쓸 수 없습니다.",
+          "items": [
+            {
+              "cmd": "Exit-PSSession",
+              "desc": "원격 세션에서 나오기 (exit 도 같음)"
+            },
+            {
+              "cmd": "$s = New-PSSession -ComputerName {{HOST}}",
+              "desc": "재사용할 세션 만들기"
+            },
+            {
+              "cmd": "Enter-PSSession -Session $s",
+              "desc": "만들어 둔 세션에 들어가기 (변수·작업 상태 유지)"
+            },
+            {
+              "cmd": "Get-PSSession",
+              "desc": "열려 있는 세션 목록"
+            },
+            {
+              "cmd": "Copy-Item -Path {{LOCAL_FILE}} -Destination {{REMOTE_PATH}} -ToSession $s",
+              "desc": "세션을 통해 파일 보내기 (받기는 -FromSession)"
+            },
+            {
+              "cmd": "Remove-PSSession $s",
+              "desc": "세션 닫기"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "scp",
@@ -408,7 +583,10 @@
       "task": "remote.transfer",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -446,7 +624,7 @@
         },
         {
           "flag": "-J {{USER}}@{{JUMP_HOST}}",
-          "desc": "점프 호스트 경유"
+          "desc": "점프 호스트 경유 (OpenSSH 8.0 이상)"
         },
         {
           "flag": "-3",
@@ -454,7 +632,7 @@
         },
         {
           "flag": "-O",
-          "desc": "구식 SCP 프로토콜 강제 (SFTP 서버가 없는 구형 장비용)"
+          "desc": "구식 SCP 프로토콜 강제 (SFTP 서버가 없는 구형 장비용) (OpenSSH 8.7 이상에만 있음)"
         }
       ],
       "examples": [
@@ -491,7 +669,10 @@
       },
       "platformNotes": {
         "rhel": "RHEL 9 의 scp 는 내부적으로 SFTP 프로토콜을 기본 사용합니다. SFTP 서브시스템이 꺼진 서버로 보낼 때는 -O 를 붙이세요.",
-        "debian": "OpenSSH 9.0 이상(Ubuntu 24.04, Debian 12 등)은 SFTP 프로토콜이 기본입니다. Windows 내장 OpenSSH 에도 같은 scp 가 있습니다."
+        "debian": "OpenSSH 9.0 이상(Ubuntu 24.04, Debian 12 등)은 SFTP 프로토콜이 기본입니다. Windows 내장 OpenSSH 에도 같은 scp 가 있습니다.",
+        "aix": "openssh.base.client 파일셋에 포함되어 사용법이 같습니다. 구형 OpenSSH 는 SCP 프로토콜만 쓰므로 -O 옵션이 없습니다(필요 없음).",
+        "hpux": "HP-UX Secure Shell 의 /opt/ssh/bin/scp 입니다. PATH 에 /opt/ssh/bin 이 없으면 전체 경로로 실행합니다.",
+        "solaris": "Solaris 10 은 SunSSH, Solaris 11.4 는 OpenSSH 의 scp 로 기본 사용법은 같습니다."
       },
       "help": "man scp",
       "keywords": [
@@ -507,7 +688,59 @@
         "sftp",
         "rsync",
         "ssh"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "scp 와 rsync 자주 쓰는 패턴 비교",
+          "type": "subcommand",
+          "columns": [
+            "scp",
+            "rsync"
+          ],
+          "note": "상대 서버(AIX·HP-UX 등)에 rsync 가 없으면 scp 나 sftp 를 씁니다.",
+          "items": [
+            {
+              "desc": "파일 하나 업로드",
+              "left": "scp {{FILE}} {{USER}}@{{HOST}}:/tmp/",
+              "right": "rsync -av {{FILE}} {{USER}}@{{HOST}}:/tmp/"
+            },
+            {
+              "desc": "디렉토리째 복사 (권한·시간 보존)",
+              "left": "scp -rp {{DIR}} {{USER}}@{{HOST}}:/backup/",
+              "right": "rsync -av {{DIR}} {{USER}}@{{HOST}}:/backup/"
+            },
+            {
+              "desc": "SSH 포트 지정",
+              "left": "scp -P {{PORT}} {{FILE}} {{USER}}@{{HOST}}:/tmp/",
+              "right": "rsync -av -e \"ssh -p {{PORT}}\" {{FILE}} {{USER}}@{{HOST}}:/tmp/"
+            },
+            {
+              "desc": "대역폭 제한",
+              "left": "scp -l {{KBITS}} ...",
+              "right": "rsync --bwlimit={{KBPS}} ...",
+              "note": "scp 는 Kbit/s, rsync 는 KB/s 단위"
+            },
+            {
+              "desc": "끊긴 전송 이어받기",
+              "left": "지원 안 함 (sftp 의 reget 사용)",
+              "right": "rsync -avP {{SRC}} {{USER}}@{{HOST}}:{{DEST}}"
+            },
+            {
+              "desc": "바뀐 파일만 다시 보내기",
+              "left": "지원 안 함 (항상 전체 전송)",
+              "right": "rsync -av {{SRC_DIR}}/ {{USER}}@{{HOST}}:{{DEST_DIR}}/"
+            },
+            {
+              "desc": "필요 조건",
+              "left": "양쪽에 SSH 만 있으면 됨",
+              "right": "양쪽 서버 모두 rsync 설치 필요"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sftp",
@@ -518,7 +751,10 @@
       "task": "remote.transfer",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -835,7 +1071,10 @@
       ],
       "platformNotes": {
         "rhel": "openssh-clients 패키지에 포함되어 있습니다.",
-        "debian": "openssh-client 패키지에 포함되어 있습니다. Windows 10/11·Server 2019 이상도 OpenSSH 클라이언트에 sftp 가 들어 있어 명령이 같습니다 (lcd 에는 C:\\경로 사용)."
+        "debian": "openssh-client 패키지에 포함되어 있습니다. Windows 10/11·Server 2019 이상도 OpenSSH 클라이언트에 sftp 가 들어 있어 명령이 같습니다 (lcd 에는 C:\\경로 사용).",
+        "aix": "openssh.base.client 파일셋에 포함되어 사용법이 같습니다. 서버로 쓸 때는 sshd_config 의 Subsystem sftp 줄이 켜져 있어야 합니다.",
+        "hpux": "HP-UX Secure Shell 의 /opt/ssh/bin/sftp 입니다. 버전에 따라 reget·reput·-a 같은 이어받기 기능이 없을 수 있으니 접속 후 help 로 확인하세요.",
+        "solaris": "Solaris 10 의 SunSSH sftp 는 reget·reput·df 등 일부 명령이 없을 수 있습니다. Solaris 11.4 는 OpenSSH sftp 로 사용법이 같습니다."
       },
       "help": "man sftp · 접속 후 help",
       "keywords": [
@@ -857,7 +1096,10 @@
         "rsync",
         "ssh",
         "ssh-keygen"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "rsync",
@@ -868,7 +1110,9 @@
       "task": "remote.sync",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -919,6 +1163,10 @@
         {
           "flag": "--bwlimit={{KBPS}}",
           "desc": "대역폭 제한 (기본 단위 KB/s)"
+        },
+        {
+          "flag": "--rsync-path={{PATH}}",
+          "desc": "원격 서버의 rsync 실행 파일 경로 지정 (원격 PATH 에 rsync 가 없을 때)"
         }
       ],
       "examples": [
@@ -956,10 +1204,22 @@
           "package": "rsync",
           "preinstalled": true,
           "note": "Ubuntu Server 는 기본 포함. Debian 최소 설치에는 없을 수 있음"
+        },
+        "aix": {
+          "package": "rsync (AIX Toolbox)",
+          "preinstalled": false,
+          "note": "AIX Toolbox 에서 설치 (dnf install rsync). /opt/freeware/bin/rsync"
+        },
+        "solaris": {
+          "package": "network/rsync",
+          "preinstalled": false,
+          "note": "설치 그룹에 따라 기본 포함될 수 있음. 없으면 pkg install rsync"
         }
       },
       "platformNotes": {
-        "rhel": "Windows 에서는 robocopy 가 비슷한 역할(미러링 /MIR)을 합니다."
+        "rhel": "Windows 에서는 robocopy 가 비슷한 역할(미러링 /MIR)을 합니다.",
+        "aix": "기본 설치에는 없어 AIX Toolbox 에서 설치하며 /opt/freeware/bin 에 들어갑니다. 원격이 AIX 이면 원격 PATH 에 rsync 가 없어 실패할 수 있으므로 --rsync-path=/opt/freeware/bin/rsync 를 지정합니다.",
+        "solaris": "Solaris 11 은 pkg install rsync 로 설치합니다 (/usr/bin/rsync). Solaris 10 에는 기본 패키지가 없습니다."
       },
       "help": "man rsync",
       "keywords": [
@@ -977,7 +1237,34 @@
         "robocopy",
         "ssh",
         "tar"
-      ]
+      ],
+      "versions": {
+        "solaris": "11 이상"
+      },
+      "commandGroups": [
+        {
+          "title": "원본 경로 끝 / 에 따른 결과",
+          "type": "subcommand",
+          "note": "대상 경로 끝의 / 는 결과에 영향이 없고, 원본 경로 끝의 / 가 결과를 바꿉니다.",
+          "items": [
+            {
+              "cmd": "rsync -av /data/app/ {{HOST}}:/backup/app/",
+              "desc": "app 안의 내용이 /backup/app/ 아래로 복사 (권장: 양쪽 다 / 로 끝내기)"
+            },
+            {
+              "cmd": "rsync -av /data/app {{HOST}}:/backup/",
+              "desc": "app 디렉토리 자체가 /backup/app 으로 복사"
+            },
+            {
+              "cmd": "rsync -av /data/app {{HOST}}:/backup/app/",
+              "desc": "의도와 다르게 /backup/app/app 이 생기는 흔한 실수"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ssh-keygen",
@@ -988,7 +1275,10 @@
       "task": "remote.keys",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1089,7 +1379,15 @@
         "ssh-copy-id",
         "ssh",
         "etc-ssh-sshd-config"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "openssh.base.client 에 포함되어 있습니다. ed25519 는 OpenSSH 6.5 이상에서만 되므로 ssh -V 로 버전을 확인하고, 안 되면 -t rsa -b 4096 을 사용합니다.",
+        "hpux": "HP-UX Secure Shell 의 /opt/ssh/bin/ssh-keygen 입니다. 버전에 따라 ed25519 를 지원하지 않으면 -t rsa -b 4096 을 사용합니다.",
+        "solaris": "Solaris 10 의 SunSSH 는 ed25519 를 지원하지 않아 -t rsa 를 사용합니다. Solaris 11.4 의 OpenSSH 는 ed25519 를 지원합니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "ssh-copy-id",
@@ -1106,7 +1404,7 @@
       "risk": "safe",
       "requiresAdmin": false,
       "summary": "공개키를 원격 서버 authorized_keys 에 등록",
-      "description": "내 공개키를 원격 서버 사용자의 ~/.ssh/authorized_keys 에 추가해 비밀번호 없이 키로 접속할 수 있게 합니다. 디렉토리 생성과 권한 설정까지 자동으로 처리하며, 처음 한 번은 비밀번호 인증이 필요합니다.",
+      "description": "내 공개키를 원격 서버 사용자의 ~/.ssh/authorized_keys 에 추가해 비밀번호 없이 키로 접속할 수 있게 합니다. 디렉토리 생성과 권한 설정까지 자동으로 처리하며, 처음 한 번은 비밀번호 인증이 필요합니다. AIX·HP-UX·Solaris 에는 보통 없으므로 그 서버에서 키를 보낼 때는 공개키를 상대 authorized_keys 에 직접 추가합니다. 대상 서버가 Unix 여도 Linux 클라이언트에서 ssh-copy-id 로 등록하는 것은 됩니다.",
       "syntax": [
         "ssh-copy-id [-i {{KEY_FILE}}.pub] [-p {{PORT}}] {{USER}}@{{HOST}}"
       ],
@@ -1140,11 +1438,28 @@
         {
           "title": "특정 키를 다른 포트 서버에 등록",
           "command": "ssh-copy-id -i ~/.ssh/id_ed25519.pub -p {{PORT}} {{USER}}@{{HOST}}"
+        },
+        {
+          "title": "ssh-copy-id 가 없을 때 직접 등록 (Unix 클라이언트 등)",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "cat ~/.ssh/id_ed25519.pub | ssh {{USER}}@{{HOST}} 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'",
+              "desc": "공개키를 상대 authorized_keys 끝에 추가 (비밀번호 입력)"
+            },
+            {
+              "prompt": "$",
+              "cmd": "ssh -o PasswordAuthentication=no {{USER}}@{{HOST}} hostname",
+              "desc": "비밀번호 없이 키로만 접속되는지 확인"
+            }
+          ],
+          "note": "RSA 키를 쓰는 서버는 id_rsa.pub 로 바꿔 씁니다. >> 대신 > 를 쓰면 기존 키가 모두 지워지니 주의하세요."
         }
       ],
       "cautions": [
         "키를 등록해도 접속이 안 되면 서버의 ~/.ssh 권한(700), authorized_keys 권한(600), 홈 디렉토리 쓰기 권한, SELinux 컨텍스트(restorecon -Rv ~/.ssh)를 확인하세요.",
-        "서버가 PasswordAuthentication no 이면 ssh-copy-id 를 쓸 수 없어 콘솔 등 다른 방법으로 키를 넣어야 합니다."
+        "서버가 PasswordAuthentication no 이면 ssh-copy-id 를 쓸 수 없어 콘솔 등 다른 방법으로 키를 넣어야 합니다.",
+        "서버 sshd_config 의 AuthorizedKeysFile 이 기본값(.ssh/authorized_keys)과 다르면 그 경로에 넣어야 합니다."
       ],
       "install": {
         "rhel": {
@@ -1169,7 +1484,10 @@
         "ssh-keygen",
         "ssh",
         "etc-ssh-sshd-config"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-ssh-sshd-config",
@@ -1179,7 +1497,10 @@
       "task": "remote.keys",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1188,64 +1509,28 @@
       "description": "SSH 서버의 포트, root 로그인 허용 여부, 비밀번호·키 인증 방식, 접속 허용 사용자 등을 설정하는 파일입니다. 최근 배포판은 /etc/ssh/sshd_config.d/*.conf 를 먼저 Include 하므로 그쪽 파일 설정이 우선할 수 있습니다. 수정 후 sshd -t 로 문법을 검사하고 서비스를 reload 하세요.",
       "syntax": [
         "/etc/ssh/sshd_config",
-        "/etc/ssh/sshd_config.d/{{NAME}}.conf"
+        "/etc/ssh/sshd_config.d/{{NAME}}.conf",
+        "/opt/ssh/etc/sshd_config"
       ],
-      "options": [
-        {
-          "flag": "Port {{PORT}}",
-          "desc": "SSH 수신 포트 (기본 22)"
-        },
-        {
-          "flag": "ListenAddress {{IP}}",
-          "desc": "수신할 IP 주소 제한"
-        },
-        {
-          "flag": "PermitRootLogin no|prohibit-password|yes",
-          "desc": "root 직접 로그인 허용 여부 (prohibit-password = 키만 허용)"
-        },
-        {
-          "flag": "PasswordAuthentication yes|no",
-          "desc": "비밀번호 인증 허용 여부"
-        },
-        {
-          "flag": "PubkeyAuthentication yes",
-          "desc": "공개키 인증 허용 (기본 yes)"
-        },
-        {
-          "flag": "AllowUsers {{USER}} {{USER}}@{{CIDR}}",
-          "desc": "접속 허용 사용자 제한 (AllowGroups 도 가능)"
-        },
-        {
-          "flag": "ClientAliveInterval {{SECONDS}}",
-          "desc": "유휴 세션 확인 주기 (ClientAliveCountMax 와 함께 끊김 시간 결정)"
-        },
-        {
-          "flag": "MaxAuthTries {{N}}",
-          "desc": "접속당 최대 인증 시도 횟수"
-        },
-        {
-          "flag": "Include /etc/ssh/sshd_config.d/*.conf",
-          "desc": "추가 설정 파일 포함 (파일 맨 위에 있음)"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "실제 적용되는 설정값 확인",
-          "command": "sshd -T | grep -Ei 'port|permitrootlogin|passwordauthentication'"
+          "command": "sshd -T | grep -Ei 'port|permitrootlogin|passwordauthentication'",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix"
+          ]
         },
         {
-          "title": "문법 검사 후 반영",
+          "title": "문법 검사 후 반영 (Linux)",
           "command": "sshd -t && systemctl reload sshd",
           "platforms": [
-            "rhel"
-          ]
-        },
-        {
-          "title": "문법 검사 후 반영",
-          "command": "sshd -t && systemctl reload ssh",
-          "platforms": [
+            "rhel",
             "debian"
-          ]
+          ],
+          "note": "Ubuntu 는 서비스명이 ssh 입니다: sshd -t && systemctl reload ssh"
         },
         {
           "title": "포트 변경 시 SELinux·방화벽 허용 (RHEL)",
@@ -1261,16 +1546,58 @@
             "debian"
           ],
           "note": "Ubuntu 22.10 이후 ssh.socket 이 포트를 수신하므로 sshd_config 의 Port 변경 후 이 절차가 필요"
+        },
+        {
+          "title": "설정 변경 → 검사 → 재시작 → 확인 (AIX)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/ssh/sshd_config /etc/ssh/sshd_config.$(date +%Y%m%d)",
+              "desc": "원본 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/ssh/sshd_config",
+              "desc": "지시어 수정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "/usr/sbin/sshd -t",
+              "desc": "문법 검사 (출력이 없으면 정상)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "stopsrc -s sshd; startsrc -s sshd",
+              "desc": "재시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lssrc -s sshd",
+              "desc": "active 상태 확인 후 새 세션으로 접속 테스트"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/ssh/sshd_config.{{DATE}} /etc/ssh/sshd_config",
+              "desc": "(롤백) 접속이 안 되면 기존 세션에서 복원 후 재시작"
+            }
+          ],
+          "note": "HP-UX 는 /opt/ssh/etc/sshd_config 와 /sbin/init.d/secsh, Solaris 는 svcadm restart ssh 로 같은 순서를 따릅니다.",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
         "같은 항목이 여러 번 나오면 처음 읽힌 값이 적용됩니다. sshd_config.d/ 안의 파일(예: 50-cloud-init.conf)이 본 파일 설정을 덮을 수 있습니다.",
-        "원격으로 수정할 때는 기존 세션을 유지한 채 새 세션으로 접속을 시험하세요. 설정 오류 시 접속이 막힐 수 있습니다.",
+        "원격으로 수정할 때는 기존 세션을 유지한 채 새 세션으로 접속을 시험하세요. 설정 오류 시 접속이 막힐 수 있으니 Unix 서버는 콘솔(HMC, iLO/MP, ILOM) 경로도 확인해 두세요.",
         "PasswordAuthentication no 적용 전에 키 로그인이 되는지 반드시 확인하세요."
       ],
       "platformNotes": {
         "rhel": "서비스명은 sshd. RHEL 9 는 /etc/ssh/sshd_config.d/50-redhat.conf 를 기본 포함하며 PermitRootLogin 기본값이 prohibit-password 입니다. 포트 변경 시 SELinux(semanage port) 등록 필요.",
-        "debian": "서비스명은 ssh. Ubuntu 22.10 이후는 ssh.socket 소켓 활성화를 사용하며, 클라우드 이미지는 50-cloud-init.conf 에 PasswordAuthentication 이 들어 있는 경우가 많습니다."
+        "debian": "서비스명은 ssh. Ubuntu 22.10 이후는 ssh.socket 소켓 활성화를 사용하며, 클라우드 이미지는 50-cloud-init.conf 에 PasswordAuthentication 이 들어 있는 경우가 많습니다.",
+        "aix": "/etc/ssh/sshd_config (openssh.base.server). SRC 로 관리되어 stopsrc -s sshd; startsrc -s sshd 로 재시작하고 lssrc -s sshd 로 상태를 봅니다. 버전에 따라 sshd_config.d Include 가 없습니다.",
+        "hpux": "HP-UX Secure Shell 은 /opt/ssh/etc/sshd_config 를 사용합니다. 재시작은 /sbin/init.d/secsh stop 후 /sbin/init.d/secsh start, 문법 검사는 /opt/ssh/sbin/sshd -t.",
+        "solaris": "Solaris 10(SunSSH)·11 모두 /etc/ssh/sshd_config 이며 SMF 로 관리되어 svcadm restart ssh 로 재시작합니다. SunSSH 는 일부 OpenSSH 지시어를 지원하지 않으니 수정 후 svcs -x ssh 로 서비스 상태를 확인하세요."
       },
       "help": "man sshd_config",
       "keywords": [
@@ -1288,7 +1615,120 @@
         "ssh-copy-id",
         "systemctl",
         "firewall-cmd"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 지시어",
+          "type": "directive",
+          "note": "한 줄에 '지시어 값'. 같은 지시어가 여러 번 나오면 처음 읽힌 값이 적용됩니다.",
+          "items": [
+            {
+              "cmd": "Port {{PORT}}",
+              "desc": "SSH 수신 포트 (기본 22)"
+            },
+            {
+              "cmd": "ListenAddress {{IP}}",
+              "desc": "수신할 IP 주소 제한"
+            },
+            {
+              "cmd": "PermitRootLogin no|prohibit-password|yes",
+              "desc": "root 직접 로그인 허용 여부 (prohibit-password = 키만 허용)",
+              "note": "구형 OpenSSH·SunSSH 는 prohibit-password 대신 without-password"
+            },
+            {
+              "cmd": "PasswordAuthentication yes|no",
+              "desc": "비밀번호 인증 허용 여부"
+            },
+            {
+              "cmd": "PubkeyAuthentication yes",
+              "desc": "공개키 인증 허용 (기본 yes)"
+            },
+            {
+              "cmd": "AllowUsers {{USER}} {{USER}}@{{CIDR}}",
+              "desc": "접속 허용 사용자 제한 (AllowGroups 도 가능)"
+            },
+            {
+              "cmd": "ClientAliveInterval {{SECONDS}}",
+              "desc": "유휴 세션 확인 주기 (ClientAliveCountMax 와 함께 끊김 시간 결정)"
+            },
+            {
+              "cmd": "MaxAuthTries {{N}}",
+              "desc": "접속당 최대 인증 시도 횟수"
+            },
+            {
+              "cmd": "Include /etc/ssh/sshd_config.d/*.conf",
+              "desc": "추가 설정 파일 포함 (파일 맨 위에 있음) (OpenSSH 8.2 이상)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "Subsystem sftp {{SFTP_SERVER_PATH}}",
+              "desc": "sftp 서버 사용 (없으면 sftp·최신 scp 접속 실패)"
+            }
+          ]
+        },
+        {
+          "title": "OS 별 문법 검사·재시작",
+          "type": "subcommand",
+          "note": "재시작해도 이미 접속한 세션은 보통 유지됩니다. 기존 세션을 닫지 말고 새 세션으로 접속을 확인하세요.",
+          "items": [
+            {
+              "cmd": "sshd -t && systemctl reload sshd",
+              "desc": "문법 검사 후 반영 (RHEL, 서비스명 sshd)",
+              "platforms": [
+                "rhel"
+              ]
+            },
+            {
+              "cmd": "sshd -t && systemctl reload ssh",
+              "desc": "문법 검사 후 반영 (Ubuntu, 서비스명 ssh)",
+              "platforms": [
+                "debian"
+              ]
+            },
+            {
+              "cmd": "/usr/sbin/sshd -t",
+              "desc": "문법 검사 (AIX)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "stopsrc -s sshd; startsrc -s sshd",
+              "desc": "재시작 (AIX, SRC 관리). 상태는 lssrc -s sshd",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "/opt/ssh/sbin/sshd -t",
+              "desc": "문법 검사 (HP-UX)",
+              "platforms": [
+                "hpux"
+              ]
+            },
+            {
+              "cmd": "/sbin/init.d/secsh stop; /sbin/init.d/secsh start",
+              "desc": "재시작 (HP-UX)",
+              "platforms": [
+                "hpux"
+              ]
+            },
+            {
+              "cmd": "svcadm restart ssh",
+              "desc": "재시작 (Solaris, SMF). 상태는 svcs -l ssh",
+              "platforms": [
+                "solaris"
+              ]
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "netsh-interface-portproxy",
@@ -1311,10 +1751,6 @@
       ],
       "options": [
         {
-          "flag": "add v4tov4",
-          "desc": "IPv4 → IPv4 포워딩 추가 (v4tov6, v6tov4, v6tov6 도 있음)"
-        },
-        {
           "flag": "listenport={{PORT}}",
           "desc": "이 서버에서 수신할 포트"
         },
@@ -1329,18 +1765,6 @@
         {
           "flag": "connectaddress={{HOST}}",
           "desc": "전달할 대상 IP 또는 호스트명"
-        },
-        {
-          "flag": "show all",
-          "desc": "설정된 포트 프록시 목록 확인"
-        },
-        {
-          "flag": "delete v4tov4",
-          "desc": "포워딩 규칙 삭제"
-        },
-        {
-          "flag": "reset",
-          "desc": "모든 포트 프록시 설정 초기화"
         }
       ],
       "examples": [
@@ -1377,7 +1801,34 @@
         "ssh",
         "win-ssh",
         "mstsc"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "portproxy 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "netsh interface portproxy add v4tov4 listenport={{LISTEN_PORT}} connectaddress={{TARGET_HOST}} connectport={{TARGET_PORT}}",
+              "desc": "IPv4 → IPv4 포워딩 추가 (v4tov6, v6tov4, v6tov6 도 있음)"
+            },
+            {
+              "cmd": "netsh interface portproxy show all",
+              "desc": "설정된 포워딩 목록"
+            },
+            {
+              "cmd": "netsh interface portproxy delete v4tov4 listenport={{LISTEN_PORT}} listenaddress={{LISTEN_IP}}",
+              "desc": "포워딩 규칙 삭제"
+            },
+            {
+              "cmd": "netsh interface portproxy reset",
+              "desc": "모든 포트 프록시 설정 초기화"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "winrm",
@@ -1401,32 +1852,16 @@
       ],
       "options": [
         {
-          "flag": "quickconfig",
-          "desc": "WinRM 서비스 시작·자동 시작, HTTP 리스너, 방화벽 예외를 한 번에 설정 (줄여서 qc)"
-        },
-        {
           "flag": "-q",
-          "desc": "확인 질문 없이 실행"
+          "desc": "quickconfig: 확인 질문 없이 실행"
         },
         {
           "flag": "-transport:https",
-          "desc": "HTTPS(5986) 리스너 구성 (서버 인증서 필요)"
+          "desc": "quickconfig: HTTPS(5986) 리스너 구성 (서버 인증서 필요)"
         },
         {
-          "flag": "enumerate winrm/config/listener",
-          "desc": "리스너(주소·포트·전송 방식) 목록 확인"
-        },
-        {
-          "flag": "get winrm/config",
-          "desc": "WinRM 전체 설정 확인"
-        },
-        {
-          "flag": "set winrm/config/client @{TrustedHosts=\"{{HOST}}\"}",
-          "desc": "클라이언트의 TrustedHosts 설정 (워크그룹 접속용)"
-        },
-        {
-          "flag": "id -r:{{HOST}}",
-          "desc": "원격 서버 WinRM 응답 테스트"
+          "flag": "-r:{{HOST}}",
+          "desc": "명령을 원격 서버에 대해 실행 (예: winrm id -r:{{HOST}})"
         }
       ],
       "examples": [
@@ -1468,7 +1903,42 @@
       "related": [
         "enter-pssession",
         "invoke-command"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "winrm 하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "winrm quickconfig",
+              "desc": "WinRM 서비스 시작·자동 시작, HTTP 리스너, 방화벽 예외를 한 번에 구성"
+            },
+            {
+              "cmd": "winrm enumerate winrm/config/listener",
+              "desc": "리스너(주소·포트·전송 방식) 목록"
+            },
+            {
+              "cmd": "winrm get winrm/config",
+              "desc": "WinRM 전체 설정"
+            },
+            {
+              "cmd": "winrm set winrm/config/client @{TrustedHosts=\"{{HOST}}\"}",
+              "desc": "클라이언트 TrustedHosts 설정 (워크그룹 접속용, 기존 값을 덮어씀)"
+            },
+            {
+              "cmd": "winrm id -r:{{HOST}}",
+              "desc": "원격 서버 WinRM 응답 테스트"
+            },
+            {
+              "cmd": "winrm delete winrm/config/listener?Address=*+Transport=HTTP",
+              "desc": "HTTP 리스너 삭제"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "invoke-command",
@@ -1562,7 +2032,10 @@
       "related": [
         "enter-pssession",
         "winrm"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

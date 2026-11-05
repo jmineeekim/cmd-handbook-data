@@ -12,7 +12,10 @@
       "task": "archive.tar-gz",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -22,76 +25,129 @@
       "syntax": [
         "tar -czvf {{ARCHIVE}}.tar.gz {{DIR}}",
         "tar -xzvf {{ARCHIVE}}.tar.gz [-C {{DEST_DIR}}]",
-        "tar -tzvf {{ARCHIVE}}.tar.gz"
+        "tar -tzvf {{ARCHIVE}}.tar.gz",
+        "tar cvf - {{DIR}} | gzip > {{ARCHIVE}}.tar.gz"
       ],
       "options": [
         {
           "flag": "-c",
-          "desc": "아카이브 생성"
+          "desc": "아카이브 생성 (모든 OS 공통)"
         },
         {
           "flag": "-x",
-          "desc": "아카이브 풀기"
+          "desc": "아카이브 풀기 (모든 OS 공통)"
         },
         {
           "flag": "-t",
-          "desc": "아카이브 내용 목록 보기"
+          "desc": "아카이브 내용 목록 보기 (모든 OS 공통)"
         },
         {
           "flag": "-f {{ARCHIVE}}",
-          "desc": "아카이브 파일 이름 (옵션 묶음의 마지막에 위치)"
+          "desc": "아카이브 파일 이름, - 는 표준 입출력 (옵션 묶음의 마지막에 위치, 모든 OS 공통)"
         },
         {
           "flag": "-v",
-          "desc": "처리 중인 파일 목록 출력"
-        },
-        {
-          "flag": "-z / -j / -J",
-          "desc": "gzip / bzip2 / xz 압축 (풀 때는 GNU tar 가 자동 인식하므로 생략 가능)"
-        },
-        {
-          "flag": "-C {{DIR}}",
-          "desc": "지정한 디렉토리로 이동 후 작업 (풀 위치 지정)"
+          "desc": "처리 중인 파일 목록 출력 (모든 OS 공통)"
         },
         {
           "flag": "-p",
-          "desc": "권한 보존 (root 로 풀 때는 기본)"
-        },
-        {
-          "flag": "--exclude={{PATTERN}}",
-          "desc": "제외할 파일·디렉토리 패턴"
+          "desc": "권한 보존해서 풀기 (root 로 풀 때는 기본, 모든 OS 공통)"
         },
         {
           "flag": "-r",
-          "desc": "압축하지 않은 tar 에 파일 추가"
+          "desc": "압축하지 않은 tar 에 파일 추가 (모든 OS 공통)"
+        },
+        {
+          "flag": "-z / -j / -J",
+          "desc": "gzip / bzip2 / xz 압축 (GNU/Linux 전용. 풀 때는 GNU tar 가 자동 인식하므로 생략 가능)"
+        },
+        {
+          "flag": "-C {{DIR}}",
+          "desc": "지정한 디렉토리로 이동 후 작업, 풀 위치 지정 (GNU tar 기준. Unix 기본 tar 는 cd 후 풀기)"
+        },
+        {
+          "flag": "--exclude={{PATTERN}}",
+          "desc": "제외할 파일·디렉토리 패턴 (GNU/Linux 전용)"
+        },
+        {
+          "flag": "X {{EXCLUDE_FILE}}",
+          "desc": "(Solaris) 제외 목록 파일 지정 (tar cvfX {{ARCHIVE}}.tar {{EXCLUDE_FILE}} {{DIR}})"
         }
       ],
       "examples": [
         {
           "title": "디렉토리를 날짜 붙여 tar.gz 로 압축",
-          "command": "tar -czvf backup_$(date +%Y%m%d).tar.gz {{DIR}}"
+          "command": "tar -czvf backup_$(date +%Y%m%d).tar.gz {{DIR}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "지정 위치에 풀기",
-          "command": "tar -xzvf {{ARCHIVE}}.tar.gz -C {{DEST_DIR}}"
-        },
-        {
-          "title": "풀기 전에 내용 확인",
-          "command": "tar -tzvf {{ARCHIVE}}.tar.gz | head"
+          "title": "지정 위치에 풀기 (내용 먼저 확인)",
+          "command": "tar -tzvf {{ARCHIVE}}.tar.gz | head\ntar -xzvf {{ARCHIVE}}.tar.gz -C {{DEST_DIR}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "로그·캐시 제외하고 압축",
           "command": "tar -czvf app.tar.gz --exclude='*.log' --exclude='{{DIR}}/cache' {{DIR}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ],
           "note": "--exclude 는 대상 경로보다 앞에 두는 것이 안전"
         },
         {
           "title": "아카이브에서 특정 파일만 풀기",
-          "command": "tar -xzvf {{ARCHIVE}}.tar.gz {{DIR}}/conf/app.conf"
+          "command": "tar -xzvf {{ARCHIVE}}.tar.gz {{DIR}}/conf/app.conf",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "Unix 기본 tar 로 묶어 옮긴 뒤 풀기",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cd {{PARENT_DIR}}",
+              "desc": "묶을 디렉토리의 상위로 이동 (상대 경로로 묶기 위해)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tar cvf - ./{{DIR}} | gzip > /tmp/{{ARCHIVE}}.tar.gz",
+              "desc": "상대 경로로 묶고 gzip 압축"
+            },
+            {
+              "prompt": "#",
+              "cmd": "gzip -dc /tmp/{{ARCHIVE}}.tar.gz | tar tvf -",
+              "desc": "경로가 ./ 로 시작하는지 확인 (/ 로 시작하면 원래 위치에 덮어씀)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cd {{DEST_DIR}}",
+              "desc": "대상 서버에서 풀 위치로 이동"
+            },
+            {
+              "prompt": "#",
+              "cmd": "gzip -dc /tmp/{{ARCHIVE}}.tar.gz | tar xvf -",
+              "desc": "풀기"
+            }
+          ]
         }
       ],
       "cautions": [
-        "풀 때 같은 이름의 파일은 확인 없이 덮어씁니다. 먼저 -t 로 내용을 확인하고 -C 로 위치를 지정하세요.",
-        "절대 경로로 묶으면 기본적으로 앞의 / 가 제거된 상대 경로로 저장됩니다 (Removing leading '/' 메시지)."
+        "풀 때 같은 이름의 파일은 확인 없이 덮어씁니다. 먼저 -t 로 내용을 확인하고 풀 위치를 지정하세요.",
+        "GNU tar 는 절대 경로로 묶으면 앞의 / 를 떼고 저장합니다 (Removing leading '/' 메시지).",
+        "AIX·HP-UX·Solaris 기본 tar 는 앞의 / 를 떼지 않습니다. /etc 처럼 절대 경로로 묶은 아카이브를 풀면 어느 디렉토리에서 풀든 원래 위치의 파일을 덮어씁니다. 반드시 cd 후 상대 경로(./)로 묶고, 풀기 전에 tvf 로 경로를 확인하세요."
       ],
       "install": {
         "rhel": {
@@ -122,7 +178,49 @@
         "bzip2",
         "zip",
         "rsync"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "묶기·풀기·목록 (GNU tar 와 Unix 기본 tar 비교)",
+          "type": "subcommand",
+          "columns": [
+            "GNU tar (Linux)",
+            "Unix 기본 tar (AIX·HP-UX·Solaris)"
+          ],
+          "note": "Unix 기본 tar 는 압축 옵션이 없어 gzip 과 파이프로 연결합니다. 풀 때는 먼저 풀 위치로 cd 하세요.",
+          "items": [
+            {
+              "desc": "gzip 으로 묶기",
+              "left": "tar -czvf {{ARCHIVE}}.tar.gz {{DIR}}",
+              "right": "tar cvf - {{DIR}} | gzip > {{ARCHIVE}}.tar.gz"
+            },
+            {
+              "desc": "내용 목록 확인",
+              "left": "tar -tzvf {{ARCHIVE}}.tar.gz",
+              "right": "gzip -dc {{ARCHIVE}}.tar.gz | tar tvf -"
+            },
+            {
+              "desc": "지정 위치에 풀기",
+              "left": "tar -xzvf {{ARCHIVE}}.tar.gz -C {{DEST_DIR}}",
+              "right": "cd {{DEST_DIR}} && gzip -dc {{ARCHIVE_PATH}}.tar.gz | tar xvf -",
+              "note": "cd 후에는 아카이브를 절대 경로로 지정"
+            },
+            {
+              "desc": "압축 없이 묶기 / 풀기",
+              "left": "tar -cvf {{ARCHIVE}}.tar {{DIR}}",
+              "right": "tar cvf {{ARCHIVE}}.tar {{DIR}}"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "기본 tar 에는 -z·-j·--exclude 가 없어 gzip 과 파이프로 씁니다 (gzip 이 없으면 AIX Toolbox 에서 설치하거나 compress 사용). GNU tar 는 AIX Toolbox for Open Source 로 설치할 수 있습니다 (/opt/freeware/bin/tar).",
+        "hpux": "기본 tar 에는 -z·-j·--exclude 가 없습니다. gzip 은 /usr/contrib/bin/gzip 에 있을 수 있습니다 (PATH 확인).",
+        "solaris": "Solaris 10 기본 tar 는 -z 가 없어 gzip 과 파이프로 쓰며, GNU tar 가 /usr/sfw/bin/gtar 로 들어 있습니다. Solaris 11 은 GNU tar 를 gtar (/usr/gnu/bin/tar) 로 쓸 수 있어 -z·--exclude 를 사용할 수 있습니다. 기본 tar 의 제외 목록은 X 키를 씁니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "gzip",
@@ -137,7 +235,9 @@
       "task": "archive.tar-gz",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -146,8 +246,9 @@
       "description": "파일 하나를 .gz 로 압축하거나 풉니다. 기본 동작은 원본 파일을 압축 파일로 '바꾸는' 것이라 원본이 사라집니다. gunzip 은 gzip -d 와 같고, zcat 은 압축을 풀지 않고 내용을 화면에 출력합니다. 디렉토리를 묶으려면 tar 와 함께 사용합니다.",
       "syntax": [
         "gzip [-k] [-9] {{FILE}}",
+        "gzip -c {{FILE}} > {{FILE}}.gz",
         "gunzip {{FILE}}.gz",
-        "zcat {{FILE}}.gz"
+        "gzip -dc {{FILE}}.gz"
       ],
       "options": [
         {
@@ -156,7 +257,7 @@
         },
         {
           "flag": "-k",
-          "desc": "원본 파일 유지"
+          "desc": "원본 파일 유지 (gzip 1.6 이상. RHEL 7·Solaris 10·HP-UX 의 gzip 에는 없음 → -c 사용)"
         },
         {
           "flag": "-c",
@@ -186,7 +287,16 @@
       "examples": [
         {
           "title": "로그 파일 압축 (원본 유지)",
-          "command": "gzip -k {{FILE}}"
+          "command": "gzip -k {{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ],
+          "note": "RHEL 7 은 gzip -c {{FILE}} > {{FILE}}.gz 로 대신합니다."
+        },
+        {
+          "title": "원본 유지하며 압축 (모든 버전 호환)",
+          "command": "gzip -c {{FILE}} > {{FILE}}.gz"
         },
         {
           "title": "압축 해제",
@@ -195,7 +305,11 @@
         {
           "title": "압축된 로그를 풀지 않고 검색",
           "command": "zcat /var/log/messages-*.gz | grep -i error",
-          "note": "zgrep, zless 도 같은 용도로 사용 가능"
+          "platforms": [
+            "rhel",
+            "debian"
+          ],
+          "note": "zgrep, zless 도 같은 용도로 사용 가능. Unix 에서는 gzip -dc 파일 | grep 을 씁니다."
         },
         {
           "title": "압축률 확인",
@@ -204,7 +318,8 @@
       ],
       "cautions": [
         "-k 없이 실행하면 원본 파일이 삭제되고 .gz 파일만 남습니다.",
-        "이미 같은 이름의 .gz 파일이 있으면 덮어쓸지 묻습니다 (-f 는 묻지 않고 덮어씀)."
+        "이미 같은 이름의 .gz 파일이 있으면 덮어쓸지 묻습니다 (-f 는 묻지 않고 덮어씀).",
+        "Solaris·HP-UX 의 zcat 은 compress(.Z) 형식용입니다. .gz 파일 내용 보기는 gzip -dc 를 쓰세요 (Solaris 는 gzcat 도 가능)."
       ],
       "install": {
         "rhel": {
@@ -231,7 +346,14 @@
         "xz",
         "bzip2",
         "zip"
-      ]
+      ],
+      "platformNotes": {
+        "hpux": "/usr/contrib/bin 에 있어 PATH 에 없으면 전체 경로로 실행합니다. 버전이 오래되어 -k 가 없습니다.",
+        "solaris": "기본 포함되어 있습니다. Solaris 10 의 gzip 은 -k 가 없습니다. .gz 내용 보기는 gzcat 또는 gzip -dc 입니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-tar",
@@ -324,7 +446,10 @@
       "related": [
         "compress-archive",
         "expand-archive"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "zip",
@@ -335,7 +460,8 @@
       "task": "archive.zip",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -373,11 +499,19 @@
         },
         {
           "flag": "-s {{SIZE}}",
-          "desc": "분할 압축 (예: -s 100m)"
+          "desc": "분할 압축 (예: -s 100m) (zip 3.0 이상)"
         },
         {
           "flag": "-0 ~ -9",
           "desc": "압축 수준 (0 무압축 ~ 9 최고)"
+        },
+        {
+          "flag": "-T",
+          "desc": "압축 후 zip 파일 무결성 검사"
+        },
+        {
+          "flag": "-d",
+          "desc": "기존 zip 에서 항목 삭제 (예: zip -d {{ARCHIVE}}.zip '*.log')"
         }
       ],
       "examples": [
@@ -400,7 +534,8 @@
       ],
       "cautions": [
         "zip 기본 암호화(ZipCrypto)는 보안 강도가 약합니다. 민감 데이터는 별도 암호화를 고려하세요.",
-        "Linux 권한·소유자 정보는 완전히 보존되지 않으므로 서버 백업에는 tar 가 적합합니다."
+        "Linux 권한·소유자 정보는 완전히 보존되지 않으므로 서버 백업에는 tar 가 적합합니다.",
+        "AIX·HP-UX 에는 기본 포함되지 않습니다 (AIX Toolbox 등 별도 설치). AIX 에서 zip 을 풀기만 할 때는 Java 의 jar xf {{ARCHIVE}}.zip 으로 대신할 수 있습니다."
       ],
       "install": {
         "rhel": {
@@ -426,7 +561,46 @@
       "related": [
         "unzip",
         "tar"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "zip 과 unzip 짝으로 쓰기",
+          "type": "subcommand",
+          "columns": [
+            "만들기·수정 (zip)",
+            "풀기·확인 (unzip)"
+          ],
+          "items": [
+            {
+              "desc": "폴더 압축 / 풀기",
+              "left": "zip -r {{ARCHIVE}}.zip {{DIR}}",
+              "right": "unzip {{ARCHIVE}}.zip -d {{DEST_DIR}}"
+            },
+            {
+              "desc": "내용 목록",
+              "left": "zip -sf {{ARCHIVE}}.zip",
+              "right": "unzip -l {{ARCHIVE}}.zip",
+              "note": "zip -sf 는 zip 3.0 이상"
+            },
+            {
+              "desc": "무결성 검사",
+              "left": "zip -T {{ARCHIVE}}.zip",
+              "right": "unzip -t {{ARCHIVE}}.zip"
+            },
+            {
+              "desc": "일부 항목 삭제 / 일부만 풀기",
+              "left": "zip -d {{ARCHIVE}}.zip '*.log'",
+              "right": "unzip {{ARCHIVE}}.zip 'conf/*' -d {{DEST_DIR}}"
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "solaris": "기본 포함되어 있습니다. Solaris 10 의 zip 은 2.x 라 -s(분할)·-sf 가 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "unzip",
@@ -437,7 +611,8 @@
       "task": "archive.zip",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -475,7 +650,7 @@
         },
         {
           "flag": "-P {{PASSWORD}}",
-          "desc": "암호 지정 (명령 이력에 남으므로 주의)"
+          "desc": "암호 지정 (명령 이력·ps 에 남으므로 주의)"
         },
         {
           "flag": "-x {{PATTERN}}",
@@ -504,7 +679,8 @@
         }
       ],
       "cautions": [
-        "같은 이름 파일이 있으면 덮어쓸지 묻습니다. 스크립트에서는 -o 또는 -n 으로 동작을 명확히 하세요."
+        "같은 이름 파일이 있으면 덮어쓸지 묻습니다. 스크립트에서는 -o 또는 -n 으로 동작을 명확히 하세요.",
+        "AIX·HP-UX 에는 기본 포함되지 않습니다. AIX 는 jar xf {{ARCHIVE}}.zip 으로 풀 수 있습니다 (권한 정보는 보존되지 않음)."
       ],
       "install": {
         "rhel": {
@@ -520,7 +696,8 @@
       },
       "platformNotes": {
         "debian": "Debian/Ubuntu 의 unzip 은 파일명 인코딩 지정 옵션 -O 를 지원합니다.",
-        "rhel": "RHEL 의 unzip 은 -O 인코딩 옵션이 없을 수 있습니다. 한글 파일명이 깨지면 7-Zip(p7zip) 등 다른 도구를 고려하세요."
+        "rhel": "RHEL 의 unzip 은 -O 인코딩 옵션이 없을 수 있습니다. 한글 파일명이 깨지면 7-Zip(p7zip) 등 다른 도구를 고려하세요.",
+        "solaris": "기본 포함되어 있습니다. -O 인코딩 옵션은 없습니다."
       },
       "help": "man unzip",
       "keywords": [
@@ -533,7 +710,10 @@
       "related": [
         "zip",
         "tar"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "compress-archive",
@@ -608,7 +788,10 @@
       "related": [
         "expand-archive",
         "win-tar"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "expand-archive",
@@ -671,7 +854,10 @@
       "related": [
         "compress-archive",
         "win-tar"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "xz",
@@ -756,7 +942,8 @@
       ],
       "cautions": [
         "-k 없이 실행하면 원본이 삭제됩니다.",
-        "높은 압축 수준(-9, -e)과 멀티스레드를 함께 쓰면 메모리를 많이 사용합니다. 운영 서버에서는 부하를 고려하세요."
+        "높은 압축 수준(-9, -e)과 멀티스레드를 함께 쓰면 메모리를 많이 사용합니다. 운영 서버에서는 부하를 고려하세요.",
+        "AIX·HP-UX 에는 기본 설치되어 있지 않습니다. Unix 서버와 주고받을 파일은 gzip 형식이 호환성이 가장 좋습니다."
       ],
       "install": {
         "rhel": {
@@ -782,7 +969,10 @@
         "tar",
         "gzip",
         "bzip2"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "bzip2",
@@ -797,7 +987,8 @@
       "task": "archive.high",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -850,11 +1041,22 @@
         },
         {
           "title": "tar.bz2 풀기",
-          "command": "tar -xjvf {{ARCHIVE}}.tar.bz2 -C {{DEST_DIR}}"
+          "command": "tar -xjvf {{ARCHIVE}}.tar.bz2 -C {{DEST_DIR}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "풀지 않고 내용 보기",
           "command": "bzcat {{FILE}}.bz2 | less"
+        },
+        {
+          "title": "tar.bz2 풀기 (Solaris 기본 tar)",
+          "command": "cd {{DEST_DIR}}\nbzip2 -dc {{ARCHIVE_PATH}}.tar.bz2 | tar xvf -",
+          "platforms": [
+            "solaris"
+          ]
         }
       ],
       "cautions": [
@@ -885,7 +1087,13 @@
         "tar",
         "xz",
         "gzip"
-      ]
+      ],
+      "platformNotes": {
+        "solaris": "기본 포함되어 있습니다 (bzip2, bunzip2, bzcat). 기본 tar 는 -j 가 없어 bzip2 -dc 와 파이프로 씁니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

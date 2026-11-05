@@ -12,7 +12,10 @@
       "task": "time.date",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -21,16 +24,17 @@
       "description": "시스템의 현재 날짜와 시간을 출력합니다. +형식 지정으로 파일 이름용 타임스탬프를 만들거나, -d 로 특정 날짜·상대 날짜를 계산하고 epoch 시간을 변환할 수 있습니다. 시간 설정(-s)도 가능하지만 NTP 동기화 중이면 곧 덮어써집니다.",
       "syntax": [
         "date [+{{FORMAT}}]",
-        "date -d '{{DATE_STRING}}' [+{{FORMAT}}]"
+        "date -d '{{DATE_STRING}}' [+{{FORMAT}}]",
+        "date {{MMDDHHMM}}"
       ],
       "options": [
         {
           "flag": "+{{FORMAT}}",
-          "desc": "출력 형식 (%Y 연, %m 월, %d 일, %H 시, %M 분, %S 초, %s epoch)"
+          "desc": "출력 형식 (%Y 연, %m 월, %d 일, %H 시, %M 분, %S 초, %Z 타임존). %s(epoch)는 GNU/Linux 전용"
         },
         {
           "flag": "-d '{{DATE_STRING}}'",
-          "desc": "지정한 날짜 표시·계산 (예: 'yesterday', '7 days ago', '2025-01-01 09:00')"
+          "desc": "지정한 날짜 표시·계산 (예: 'yesterday', '7 days ago', '2025-01-01 09:00') (GNU/Linux 전용)"
         },
         {
           "flag": "-u",
@@ -38,19 +42,76 @@
         },
         {
           "flag": "-I[seconds]",
-          "desc": "ISO 8601 형식 출력"
+          "desc": "ISO 8601 형식 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-R",
-          "desc": "RFC 5322(메일 헤더) 형식 출력"
+          "desc": "RFC 5322(메일 헤더) 형식 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-s '{{DATE_STRING}}'",
-          "desc": "시스템 시간 설정 (root 필요)"
+          "desc": "시스템 시간 설정 (root 필요) (GNU/Linux 전용)"
         },
         {
           "flag": "-r {{FILE}}",
-          "desc": "파일의 마지막 수정 시간 출력"
+          "desc": "파일의 마지막 수정 시간 출력 (GNU/Linux 전용)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 형식 지정자",
+          "type": "directive",
+          "note": "+ 뒤 문자열에 공백이 있으면 따옴표로 감쌉니다: date '+%Y-%m-%d %H:%M:%S'",
+          "items": [
+            {
+              "cmd": "+%Y%m%d_%H%M%S",
+              "desc": "파일 이름용 타임스탬프 (20261105_143000)"
+            },
+            {
+              "cmd": "+%Y-%m-%d %H:%M:%S",
+              "desc": "로그용 일시"
+            },
+            {
+              "cmd": "+%T",
+              "desc": "%H:%M:%S 의 축약"
+            },
+            {
+              "cmd": "+%F",
+              "desc": "%Y-%m-%d 의 축약",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "+%j",
+              "desc": "올해의 몇 번째 날 (001~366)"
+            },
+            {
+              "cmd": "+%a / +%u",
+              "desc": "요일 이름 / 요일 번호 (1=월요일)"
+            },
+            {
+              "cmd": "+%Z",
+              "desc": "타임존 이름 (KST)"
+            },
+            {
+              "cmd": "+%z",
+              "desc": "UTC 오프셋 (+0900)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "+%s",
+              "desc": "1970-01-01 이후 초 (epoch)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            }
+          ]
         }
       ],
       "examples": [
@@ -66,16 +127,50 @@
         {
           "title": "epoch 시간을 날짜로 변환",
           "command": "date -d @1700000000",
-          "note": "반대로 현재 epoch 는 date +%s"
+          "note": "반대로 현재 epoch 는 date +%s",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "어제 날짜 구하기 (로그 파일명 등)",
-          "command": "date -d 'yesterday' +%Y-%m-%d"
+          "command": "date -d 'yesterday' +%Y-%m-%d",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "시스템 시간 수동 설정 (Unix)",
+          "command": "date {{MMDDHHMM}}",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "note": "월일시분 순서입니다 (예: 11051430 = 11월 5일 14:30). NTP 를 쓰는 서버는 먼저 NTP 동기화 상태를 확인하세요."
+        },
+        {
+          "title": "epoch 시간을 날짜로 변환 (Unix)",
+          "command": "perl -le 'print scalar localtime 1700000000'",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "note": "Unix date 에는 -d @{{EPOCH}} 가 없어 perl 로 변환합니다."
         }
       ],
       "cautions": [
-        "date -s 로 바꾼 시간은 chronyd·timesyncd 동기화 중이면 다시 맞춰지고, 하드웨어 시계(RTC)에는 자동 반영되지 않을 수 있습니다. 수동 설정은 timedatectl set-time 을 권장합니다."
+        "date -s 로 바꾼 시간은 chronyd·timesyncd 동기화 중이면 다시 맞춰지고, 하드웨어 시계(RTC)에는 자동 반영되지 않을 수 있습니다. 수동 설정은 timedatectl set-time 을 권장합니다.",
+        "GNU date 의 -d 로 날짜를 계산하는 스크립트는 AIX·HP-UX·Solaris 에서 그대로 동작하지 않습니다. Solaris 11 은 /usr/gnu/bin/date 를 쓰면 GNU 옵션을 사용할 수 있습니다."
       ],
+      "platformNotes": {
+        "aix": "형식 지정(+%Y 등)과 -u 는 같습니다. -d, -s, -r, -I 는 없습니다. 설정은 date {{MMDDHHMM}} 이며 -n 을 붙이면 timed 네트워크 시간 갱신을 하지 않습니다.",
+        "hpux": "형식 지정과 -u 는 같습니다. GNU 옵션(-d, -s, -r, -I)은 없습니다. 설정은 date {{MMDDHHMM}} 입니다.",
+        "solaris": "형식 지정과 -u 는 같습니다. /usr/bin/date 에는 GNU 옵션이 없고, Solaris 11 은 /usr/gnu/bin/date 로 -d 등을 쓸 수 있습니다. 설정은 date {{MMDDHHMM}} 입니다."
+      },
       "help": "man date, date --help",
       "keywords": [
         "시간 확인",
@@ -89,7 +184,10 @@
         "timedatectl",
         "hwclock",
         "chronyc"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-date",
@@ -120,14 +218,26 @@
         {
           "flag": "time /t",
           "desc": "현재 시간(시:분)만 출력"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "date / time",
-          "desc": "인자 없이 실행하면 현재 값 출력 후 새 값 입력 대기 (Enter 로 유지)"
-        },
-        {
-          "flag": "%date% %time%",
-          "desc": "배치 파일에서 쓰는 현재 날짜·시간 변수 (초·1/100초 포함)"
+          "title": "배치 파일 변수",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "%date%",
+              "desc": "현재 날짜 (형식은 지역 설정에 따름)"
+            },
+            {
+              "cmd": "%time%",
+              "desc": "현재 시간 (시:분:초.1/100초)"
+            },
+            {
+              "cmd": "%date:~0,4%",
+              "desc": "문자열 잘라 쓰기 (시작 위치, 길이). 지역 설정이 바뀌면 결과가 달라짐"
+            }
+          ]
         }
       ],
       "examples": [
@@ -158,7 +268,10 @@
         "get-date",
         "w32tm",
         "tzutil"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-date",
@@ -199,10 +312,6 @@
         {
           "flag": "-AsUTC",
           "desc": "UTC 로 반환 (PowerShell 7.1 이상)"
-        },
-        {
-          "flag": ".ToUniversalTime()",
-          "desc": "UTC 로 변환하는 메서드 (5.1 에서도 사용 가능)"
         }
       ],
       "examples": [
@@ -222,6 +331,10 @@
         {
           "title": "epoch 시간 구하기",
           "command": "Get-Date -UFormat %s"
+        },
+        {
+          "title": "UTC 로 변환 (PowerShell 5.1)",
+          "command": "(Get-Date).ToUniversalTime()"
         }
       ],
       "cautions": [],
@@ -238,7 +351,10 @@
         "win-date",
         "set-timezone",
         "w32tm"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "timedatectl",
@@ -263,32 +379,65 @@
       ],
       "options": [
         {
-          "flag": "status",
-          "desc": "현재 시간·타임존·NTP 동기화 상태 (기본 동작)"
+          "flag": "-H {{USER}}@{{HOST}}",
+          "desc": "SSH 로 원격 서버의 시간 설정 조회·변경"
         },
         {
-          "flag": "list-timezones",
-          "desc": "설정 가능한 타임존 목록"
+          "flag": "--adjust-system-clock",
+          "desc": "set-local-rtc 와 함께: RTC 값을 기준으로 시스템 시간도 맞춤"
         },
         {
-          "flag": "set-timezone {{TIMEZONE}}",
-          "desc": "타임존 변경 (예: Asia/Seoul)"
+          "flag": "--no-pager",
+          "desc": "list-timezones 등 출력을 페이저 없이 표시"
         },
         {
-          "flag": "set-ntp true|false",
-          "desc": "NTP 동기화 서비스 켜기·끄기"
-        },
+          "flag": "--no-ask-password",
+          "desc": "권한 확인 비밀번호를 묻지 않음 (스크립트용)"
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "set-time '{{DATETIME}}'",
-          "desc": "시간 수동 설정 (NTP 를 먼저 꺼야 함)"
-        },
-        {
-          "flag": "set-local-rtc 0|1",
-          "desc": "하드웨어 시계를 UTC(0, 권장) 또는 로컬 시간(1)으로"
-        },
-        {
-          "flag": "timesync-status",
-          "desc": "systemd-timesyncd 동기화 상세 (Ubuntu 기본 환경)"
+          "title": "서브 명령",
+          "type": "subcommand",
+          "note": "'System clock synchronized: yes' 와 'NTP service: active' 가 함께 나와야 정상입니다.",
+          "items": [
+            {
+              "cmd": "timedatectl [status]",
+              "desc": "현재 시간·타임존·NTP 동기화·RTC 상태 (기본 동작)"
+            },
+            {
+              "cmd": "timedatectl show",
+              "desc": "상태를 KEY=VALUE 형식으로 (스크립트용)"
+            },
+            {
+              "cmd": "timedatectl list-timezones",
+              "desc": "설정 가능한 타임존 목록"
+            },
+            {
+              "cmd": "timedatectl set-timezone {{TIMEZONE}}",
+              "desc": "타임존 변경 (예: Asia/Seoul)"
+            },
+            {
+              "cmd": "timedatectl set-ntp true|false",
+              "desc": "NTP 동기화 서비스 켜기·끄기 (RHEL chronyd, Ubuntu systemd-timesyncd)"
+            },
+            {
+              "cmd": "timedatectl set-time '{{DATETIME}}'",
+              "desc": "시간 수동 설정 (NTP 를 먼저 꺼야 함)"
+            },
+            {
+              "cmd": "timedatectl set-local-rtc 0|1",
+              "desc": "하드웨어 시계를 UTC(0, 권장) 또는 로컬 시간(1)으로"
+            },
+            {
+              "cmd": "timedatectl timesync-status",
+              "desc": "systemd-timesyncd 동기화 상세 (서버, 오프셋, 폴링 주기)"
+            },
+            {
+              "cmd": "timedatectl show-timesync",
+              "desc": "systemd-timesyncd 설정 값 (KEY=VALUE)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -312,7 +461,8 @@
       ],
       "cautions": [
         "타임존 변경은 이미 실행 중인 일부 프로세스(DB, Java 앱 등)에 재시작 전까지 반영되지 않을 수 있습니다.",
-        "System clock synchronized: no 이면 NTP 서버 연결 상태를 chronyc sources 등으로 확인하세요."
+        "System clock synchronized: no 이면 NTP 서버 연결 상태를 chronyc sources 등으로 확인하세요.",
+        "AIX·HP-UX·Solaris 에는 timedatectl 이 없습니다. 타임존은 AIX 는 /etc/environment 의 TZ(chtz), HP-UX 는 /etc/TIMEZONE, Solaris 10 은 /etc/default/init, Solaris 11 은 svccfg -s timezone:default 로 설정합니다."
       ],
       "platformNotes": {
         "rhel": "set-ntp true 는 chronyd 를 활성화합니다.",
@@ -333,7 +483,10 @@
         "etc-chrony-conf",
         "date",
         "hwclock"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tzutil",
@@ -402,7 +555,10 @@
       "related": [
         "set-timezone",
         "w32tm"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "set-timezone",
@@ -435,10 +591,6 @@
         {
           "flag": "-PassThru",
           "desc": "변경된 시간대 정보 출력"
-        },
-        {
-          "flag": "Get-TimeZone -ListAvailable",
-          "desc": "설정 가능한 시간대 목록"
         }
       ],
       "examples": [
@@ -468,7 +620,10 @@
         "tzutil",
         "get-date",
         "w32tm"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "chronyc",
@@ -487,37 +642,115 @@
       "summary": "chrony NTP 동기화 상태·시간 소스 확인",
       "description": "chronyd 의 상태를 조회하고 제어하는 클라이언트입니다. 어떤 NTP 서버와 동기화 중인지(sources), 현재 시간 오차와 동기화 상태(tracking)를 확인하며, 시간 차이가 클 때 즉시 맞추기(makestep)도 할 수 있습니다.",
       "syntax": [
+        "chronyc [-n] {{SUBCOMMAND}}",
+        "chronyc",
         "chronyc tracking",
         "chronyc sources [-v]"
       ],
       "options": [
         {
-          "flag": "tracking",
-          "desc": "현재 동기화 상태: 기준 서버, 시간 오차(System time), stratum, Leap status"
-        },
-        {
-          "flag": "sources [-v]",
-          "desc": "NTP 소스 목록과 상태 (-v 는 기호 설명 포함)"
-        },
-        {
-          "flag": "sourcestats",
-          "desc": "소스별 오프셋·편차 통계"
-        },
-        {
-          "flag": "activity",
-          "desc": "온라인·오프라인 소스 수"
-        },
-        {
-          "flag": "makestep",
-          "desc": "점진 보정 대신 시간을 즉시 맞춤 (root)"
-        },
-        {
-          "flag": "clients",
-          "desc": "이 서버를 NTP 서버로 쓰는 클라이언트 목록 (root)"
-        },
-        {
           "flag": "-n",
           "desc": "IP 를 호스트명으로 변환하지 않음 (DNS 문제 시 빠름)"
+        },
+        {
+          "flag": "-c",
+          "desc": "CSV 형식 출력 (모니터링 스크립트용)"
+        },
+        {
+          "flag": "-h {{HOST}}",
+          "desc": "다른 서버의 chronyd 에 접속 (기본 localhost)"
+        },
+        {
+          "flag": "-a",
+          "desc": "모든 명령에 인증 사용 (구버전 호환용)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "조회",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "chronyc tracking",
+              "desc": "현재 동기화 상태: Reference ID(기준 서버), Stratum, System time(시간 오차), Leap status"
+            },
+            {
+              "cmd": "chronyc sources -v",
+              "desc": "NTP 소스 목록과 상태 (-v 는 기호 설명 포함). ^* 는 현재 동기화 중인 서버"
+            },
+            {
+              "cmd": "chronyc sourcestats -v",
+              "desc": "소스별 오프셋·편차 통계"
+            },
+            {
+              "cmd": "chronyc activity",
+              "desc": "온라인·오프라인 소스 수"
+            },
+            {
+              "cmd": "chronyc ntpdata",
+              "desc": "소스별 NTP 패킷 상세 (응답 여부 진단)"
+            },
+            {
+              "cmd": "chronyc clients",
+              "desc": "이 서버를 NTP 서버로 쓰는 클라이언트 목록 (root)"
+            }
+          ]
+        },
+        {
+          "title": "변경",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "chronyc makestep",
+              "desc": "점진 보정 대신 시간을 즉시 맞춤 (root)"
+            },
+            {
+              "cmd": "chronyc burst 4/4",
+              "desc": "모든 소스에 측정 요청을 빠르게 여러 번 보냄 (설정 직후 빠른 확인)"
+            },
+            {
+              "cmd": "chronyc online / offline",
+              "desc": "소스를 온라인 / 오프라인으로 표시"
+            },
+            {
+              "cmd": "chronyc reload sources",
+              "desc": "sourcedir 의 소스 파일 다시 읽기 (chrony 4.0 이상)"
+            }
+          ]
+        },
+        {
+          "title": "sources 출력 기호",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "^ / =",
+              "desc": "서버 / 피어"
+            },
+            {
+              "cmd": "*",
+              "desc": "현재 동기화 기준으로 선택된 소스"
+            },
+            {
+              "cmd": "+",
+              "desc": "함께 결합해 쓰는 양호한 소스"
+            },
+            {
+              "cmd": "-",
+              "desc": "결합에서 제외된 소스"
+            },
+            {
+              "cmd": "?",
+              "desc": "연결 안 됨 또는 측정값 부족 (방화벽·DNS 확인)"
+            },
+            {
+              "cmd": "x",
+              "desc": "시간이 다른 소스와 맞지 않는 소스 (falseticker)"
+            },
+            {
+              "cmd": "~",
+              "desc": "변동이 너무 큰 소스"
+            }
+          ]
         }
       ],
       "examples": [
@@ -536,6 +769,39 @@
         {
           "title": "시간 차이가 클 때 즉시 맞추기",
           "command": "chronyc makestep"
+        },
+        {
+          "title": "NTP 서버 변경 후 동기화 확인",
+          "platforms": [
+            "rhel"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "chronyc sources -v",
+              "desc": "변경 전 상태 기록"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/chrony.conf",
+              "desc": "server {{NTP_SERVER}} iburst 로 수정 (기존 파일은 미리 백업)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "systemctl restart chronyd",
+              "desc": "서비스 재시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chronyc sources",
+              "desc": "새 서버 앞에 ^* 가 붙는지 확인 (수십 초 소요)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chronyc tracking",
+              "desc": "System time 오차와 Leap status: Normal 확인"
+            }
+          ]
         }
       ],
       "cautions": [
@@ -571,7 +837,10 @@
         "etc-chrony-conf",
         "timedatectl",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-chrony-conf",
@@ -592,53 +861,158 @@
         "/etc/chrony.conf",
         "/etc/chrony/chrony.conf"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "server {{NTP_SERVER}} iburst",
-          "desc": "NTP 서버 지정 (iburst: 시작 시 빠른 동기화)"
+          "title": "시간 소스",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "server {{NTP_SERVER}} iburst",
+              "desc": "NTP 서버 지정 (iburst: 시작 시 빠른 동기화)"
+            },
+            {
+              "cmd": "server {{NTP_SERVER}} iburst prefer",
+              "desc": "여러 서버 중 우선 사용"
+            },
+            {
+              "cmd": "pool {{NTP_POOL}} iburst",
+              "desc": "여러 주소를 가진 NTP 풀 지정"
+            },
+            {
+              "cmd": "server {{NTP_SERVER}} minpoll 4 maxpoll 6",
+              "desc": "폴링 주기 지정 (2의 거듭제곱 초: 4=16초, 6=64초)"
+            },
+            {
+              "cmd": "sourcedir {{DIR}}",
+              "desc": "추가 소스 파일(*.sources) 디렉토리"
+            }
+          ]
         },
         {
-          "flag": "pool {{NTP_POOL}} iburst",
-          "desc": "여러 주소를 가진 NTP 풀 지정"
+          "title": "보정 방식",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "makestep 1.0 3",
+              "desc": "시작 후 3회까지 1초 이상 차이는 즉시 맞춤 (그 뒤로는 천천히 보정)"
+            },
+            {
+              "cmd": "rtcsync",
+              "desc": "하드웨어 시계(RTC)를 주기적으로 동기화"
+            },
+            {
+              "cmd": "driftfile {{FILE}}",
+              "desc": "시계 오차율 저장 파일"
+            },
+            {
+              "cmd": "maxupdateskew 100.0",
+              "desc": "오차 추정이 이 값(ppm)보다 크면 갱신 무시"
+            }
+          ]
         },
         {
-          "flag": "makestep 1.0 3",
-          "desc": "시작 후 3회까지 1초 이상 차이는 즉시 맞춤"
+          "title": "NTP 서버 역할",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "allow {{CIDR}}",
+              "desc": "이 대역의 클라이언트에 NTP 서비스 제공"
+            },
+            {
+              "cmd": "deny {{CIDR}}",
+              "desc": "특정 대역 거부"
+            },
+            {
+              "cmd": "local stratum 10",
+              "desc": "외부 동기화가 안 돼도 로컬 시계로 시간 제공 (폐쇄망 NTP 서버)"
+            },
+            {
+              "cmd": "bindaddress {{IP}}",
+              "desc": "NTP 요청을 받을 주소 제한"
+            }
+          ]
         },
         {
-          "flag": "rtcsync",
-          "desc": "하드웨어 시계(RTC)를 주기적으로 동기화"
-        },
-        {
-          "flag": "driftfile {{FILE}}",
-          "desc": "시계 오차율 저장 파일"
-        },
-        {
-          "flag": "allow {{CIDR}}",
-          "desc": "이 대역의 클라이언트에 NTP 서비스 제공 (NTP 서버 역할)"
-        },
-        {
-          "flag": "local stratum 10",
-          "desc": "외부 동기화가 안 돼도 로컬 시계로 시간 제공 (폐쇄망 NTP 서버)"
-        },
-        {
-          "flag": "sourcedir {{DIR}}",
-          "desc": "추가 소스 파일(*.sources) 디렉토리"
+          "title": "로그",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "logdir /var/log/chrony",
+              "desc": "로그 디렉토리"
+            },
+            {
+              "cmd": "log measurements statistics tracking",
+              "desc": "측정·통계·추적 로그 기록 (장애 분석용)"
+            }
+          ]
         }
       ],
       "examples": [
         {
           "title": "사내 NTP 서버로 변경 후 반영 (RHEL)",
-          "command": "sed -i 's/^pool /#pool /' /etc/chrony.conf\necho 'server {{NTP_SERVER}} iburst' >> /etc/chrony.conf\nsystemctl restart chronyd\nchronyc sources",
           "platforms": [
             "rhel"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/chrony.conf /etc/chrony.conf.bak.$(date +%Y%m%d)",
+              "desc": "변경 전 백업 (롤백: 백업 파일 복사 후 재시작)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "sed -i 's/^pool /#pool /' /etc/chrony.conf",
+              "desc": "기본 pool 줄 주석 처리"
+            },
+            {
+              "prompt": "#",
+              "cmd": "echo 'server {{NTP_SERVER}} iburst' >> /etc/chrony.conf",
+              "desc": "사내 NTP 서버 추가"
+            },
+            {
+              "prompt": "#",
+              "cmd": "systemctl restart chronyd",
+              "desc": "서비스 재시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chronyc sources -v",
+              "desc": "새 서버가 ^* 로 선택됐는지 확인"
+            }
           ]
         },
         {
           "title": "사내 NTP 서버로 변경 후 반영 (Ubuntu)",
-          "command": "sed -i 's/^pool /#pool /' /etc/chrony/chrony.conf\necho 'server {{NTP_SERVER}} iburst' >> /etc/chrony/chrony.conf\nsystemctl restart chrony\nchronyc sources",
           "platforms": [
             "debian"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/chrony/chrony.conf /etc/chrony/chrony.conf.bak.$(date +%Y%m%d)",
+              "desc": "변경 전 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "sed -i 's/^pool /#pool /' /etc/chrony/chrony.conf",
+              "desc": "기본 pool 줄 주석 처리"
+            },
+            {
+              "prompt": "#",
+              "cmd": "echo 'server {{NTP_SERVER}} iburst' >> /etc/chrony/chrony.conf",
+              "desc": "사내 NTP 서버 추가"
+            },
+            {
+              "prompt": "#",
+              "cmd": "systemctl restart chrony",
+              "desc": "서비스 재시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chronyc sources -v",
+              "desc": "새 서버가 ^* 로 선택됐는지 확인"
+            }
           ]
         },
         {
@@ -671,7 +1045,10 @@
         "timedatectl",
         "firewall-cmd",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "w32tm",
@@ -695,44 +1072,83 @@
       ],
       "options": [
         {
-          "flag": "/query /status",
-          "desc": "동기화 상태, 마지막 동기화 시간, 원본, stratum"
+          "flag": "/computer:{{COMPUTER}}",
+          "desc": "/query, /resync 를 원격 컴퓨터에 실행"
         },
         {
-          "flag": "/query /source",
-          "desc": "현재 시간 원본"
+          "flag": "/verbose",
+          "desc": "/query /status 등에서 상세 출력"
         },
         {
-          "flag": "/query /peers",
-          "desc": "설정된 NTP 피어와 상태"
+          "flag": "/update",
+          "desc": "/config 로 바꾼 설정을 서비스에 알림"
         },
         {
-          "flag": "/query /configuration",
-          "desc": "W32Time 설정 값"
+          "flag": "/force",
+          "desc": "/resync 시 누적 오차를 무시하고 바로 맞춤"
         },
         {
-          "flag": "/config /manualpeerlist:\"{{NTP_SERVER}},0x8\"",
-          "desc": "NTP 서버 지정 (여러 개는 공백으로 구분, 0x8 = 클라이언트 모드)"
+          "flag": "/nowait",
+          "desc": "/resync 를 요청만 하고 완료를 기다리지 않음"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "조회",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "w32tm /query /status [/verbose]",
+              "desc": "동기화 상태, 마지막 동기화 시간, 원본, stratum, 오프셋"
+            },
+            {
+              "cmd": "w32tm /query /source",
+              "desc": "현재 시간 원본 (Local CMOS Clock 이면 동기화 안 되는 상태)"
+            },
+            {
+              "cmd": "w32tm /query /peers",
+              "desc": "설정된 NTP 피어와 상태"
+            },
+            {
+              "cmd": "w32tm /query /configuration",
+              "desc": "W32Time 설정 값 (NtpServer, Type 등)"
+            },
+            {
+              "cmd": "w32tm /stripchart /computer:{{NTP_SERVER}} /samples:5 /dataonly",
+              "desc": "대상 서버와의 시간 차이 측정 (방화벽·응답 확인)"
+            },
+            {
+              "cmd": "w32tm /monitor",
+              "desc": "도메인 DC 들의 시간 차이 확인"
+            }
+          ]
         },
         {
-          "flag": "/config /syncfromflags:manual|domhier",
-          "desc": "수동 피어 목록 / 도메인 계층에서 동기화"
-        },
-        {
-          "flag": "/config /reliable:yes",
-          "desc": "신뢰할 수 있는 시간 원본으로 알림 (PDC 에뮬레이터용)"
-        },
-        {
-          "flag": "/config ... /update",
-          "desc": "변경한 설정을 서비스에 알림"
-        },
-        {
-          "flag": "/resync [/force]",
-          "desc": "즉시 다시 동기화"
-        },
-        {
-          "flag": "/stripchart /computer:{{NTP_SERVER}} /samples:5 /dataonly",
-          "desc": "대상 서버와의 시간 차이 측정"
+          "title": "설정·동기화",
+          "type": "subcommand",
+          "note": "설정 변경 후 반영이 안 되면 net stop w32time && net start w32time 으로 서비스를 재시작합니다.",
+          "items": [
+            {
+              "cmd": "w32tm /config /manualpeerlist:\"{{NTP_SERVER}},0x8\" /syncfromflags:manual /update",
+              "desc": "NTP 서버 직접 지정 (여러 개는 공백 구분, 0x8 = 클라이언트 모드)"
+            },
+            {
+              "cmd": "w32tm /config /syncfromflags:domhier /update",
+              "desc": "도메인 계층(DC)에서 동기화 (도메인 멤버 기본값)"
+            },
+            {
+              "cmd": "w32tm /config /reliable:yes /update",
+              "desc": "신뢰할 수 있는 시간 원본으로 알림 (PDC 에뮬레이터용)"
+            },
+            {
+              "cmd": "w32tm /resync [/force]",
+              "desc": "즉시 다시 동기화"
+            },
+            {
+              "cmd": "w32tm /tz",
+              "desc": "현재 시간대 정보"
+            }
+          ]
         }
       ],
       "examples": [
@@ -772,7 +1188,10 @@
         "tzutil",
         "get-date",
         "win-date"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "hwclock",
@@ -862,7 +1281,10 @@
         "timedatectl",
         "date",
         "chronyc"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

@@ -1,0 +1,1133 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "disk",
+  "commands": [
+    {
+      "id": "aix-lspv",
+      "name": "lspv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "물리 볼륨(hdisk) 목록·PVID·소속 VG·여유 PP 확인",
+      "description": "AIX LVM 의 물리 볼륨(PV, hdiskN)을 조회합니다. 인자 없이 실행하면 디스크별 PVID, 소속 VG, 활성 상태가 나오고, 디스크 이름을 주면 PP 크기·전체/여유 PP 수를 보여 줍니다. 새 디스크를 VG 에 넣기 전 'None'(VG 미할당) 상태인지 확인할 때 가장 먼저 씁니다.",
+      "syntax": [
+        "lspv",
+        "lspv {{HDISK}}",
+        "lspv -l {{HDISK}}",
+        "lspv -p {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-l", "desc": "해당 디스크에 올라가 있는 LV 목록과 사용 PP 수·마운트 포인트" },
+        { "flag": "-p", "desc": "디스크의 PP 구간별 사용 현황(어느 LV 가 어느 영역을 쓰는지)" },
+        { "flag": "-M", "desc": "PP 단위 상세 매핑 (LV:LP 대응)" },
+        { "flag": "-u", "desc": "UDID·UUID 등 고유 식별자까지 표시 (멀티패스 디스크 대조용)" }
+      ],
+      "examples": [
+        { "title": "전체 디스크와 VG 소속 확인", "command": "lspv", "note": "두 번째 열이 none 이면 PVID 미할당, 세 번째 열이 None 이면 어느 VG 에도 속하지 않은 디스크입니다." },
+        { "title": "특정 디스크의 여유 공간(FREE PPs) 확인", "command": "lspv {{HDISK}}" },
+        { "title": "디스크 위의 LV 목록 (디스크 교체·제거 전 확인)", "command": "lspv -l {{HDISK}}" }
+      ],
+      "cautions": [
+        "같은 LUN 이 여러 서버에 매핑된 경우 다른 서버에서 쓰는 디스크도 None 으로 보일 수 있습니다. 스토리지 담당자와 PVID·LUN ID 를 반드시 대조하세요."
+      ],
+      "help": "man lspv",
+      "keywords": ["물리 볼륨", "디스크 목록", "PVID", "hdisk", "physical volume", "LVM", "여유 PP"],
+      "related": ["aix-lsvg", "aix-lsdev", "aix-cfgmgr", "aix-extendvg", "pvs"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-lsvg",
+      "name": "lsvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "볼륨 그룹(VG) 목록·크기·여유 PP·LV 목록 확인",
+      "description": "AIX 볼륨 그룹을 조회합니다. VG 이름을 주면 PP SIZE, TOTAL/FREE PPs, STALE PPs, QUORUM 등이 나와 파일시스템을 얼마나 늘릴 수 있는지 판단할 수 있습니다. -l 로 VG 안의 LV·마운트 포인트, -p 로 구성 디스크를 봅니다.",
+      "syntax": [
+        "lsvg [-o]",
+        "lsvg {{VG}}",
+        "lsvg -l {{VG}}",
+        "lsvg -p {{VG}}",
+        "lsvg -o | lsvg -i -l"
+      ],
+      "options": [
+        { "flag": "-o", "desc": "현재 활성(varyon) 상태인 VG 만 표시" },
+        { "flag": "-l", "desc": "VG 안의 LV 목록 (TYPE, LPs, PPs, PVs, LV STATE, MOUNT POINT)" },
+        { "flag": "-p", "desc": "VG 를 이루는 PV 목록과 디스크별 TOTAL/FREE PPs" },
+        { "flag": "-i", "desc": "VG 이름을 표준입력에서 읽음 (lsvg -o 와 파이프로 연결)" },
+        { "flag": "-M", "desc": "VG 의 PP 매핑 상세" }
+      ],
+      "examples": [
+        {
+          "title": "파일시스템을 늘릴 여유가 있는지 계산",
+          "steps": [
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "PP SIZE 와 FREE PPs 확인. 여유 용량 = FREE PPs × PP SIZE (괄호 안에 MB 로도 표시)" },
+            { "prompt": "#", "cmd": "lsvg -l {{VG}}", "desc": "늘릴 파일시스템의 LV 이름 확인" },
+            { "prompt": "#", "cmd": "lsvg -p {{VG}}", "desc": "미러 LV 라면 디스크마다 여유가 있는지 확인 (미러는 2배 PP 필요)" }
+          ]
+        },
+        { "title": "활성 VG 전체의 LV·마운트 포인트 한 번에 보기", "command": "lsvg -o | lsvg -i -l" },
+        { "title": "미러 동기화가 깨진 PP(STALE) 확인", "command": "lsvg {{VG}} | grep -i stale", "note": "STALE PPs 가 0 이 아니면 syncvg 로 동기화합니다." }
+      ],
+      "cautions": [
+        "미러(copies=2) LV 를 늘릴 때는 늘리는 크기의 2배 PP 가 서로 다른 디스크에 필요합니다."
+      ],
+      "help": "man lsvg",
+      "keywords": ["볼륨 그룹", "VG 조회", "여유 공간", "FREE PPs", "volume group", "LVM", "PP SIZE"],
+      "related": ["aix-lspv", "aix-lslv", "aix-chfs", "aix-syncvg", "vgs"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mkvg",
+      "name": "mkvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 볼륨 그룹(VG) 생성",
+      "description": "하나 이상의 hdisk 로 새 볼륨 그룹을 만듭니다. 현재는 디스크·LV 수 제한이 큰 Scalable VG(-S)로 만드는 것이 일반적이며, PP 크기(-s)는 생성 후 바꿀 수 없으므로 향후 증설 규모를 고려해 정합니다.",
+      "syntax": [
+        "mkvg -S -y {{VG}} -s {{PP_SIZE_MB}} {{HDISK}} [{{HDISK2}} ...]"
+      ],
+      "options": [
+        { "flag": "-y {{VG}}", "desc": "VG 이름 지정 (생략하면 vg00 등 자동 이름)" },
+        { "flag": "-S", "desc": "Scalable VG 로 생성 (디스크 최대 1024개, LV 4096개)" },
+        { "flag": "-B", "desc": "Big VG 로 생성 (디스크 최대 128개)" },
+        { "flag": "-s {{PP_SIZE_MB}}", "desc": "PP 크기(MB, 2의 거듭제곱). 생성 후 변경 불가" },
+        { "flag": "-V {{MAJOR}}", "desc": "VG major number 지정 (클러스터·NFS 서버에서 노드 간 맞출 때)" },
+        { "flag": "-n", "desc": "부팅 시 자동 varyon 하지 않음 (클러스터 공유 VG)" },
+        { "flag": "-C", "desc": "Enhanced Concurrent Capable VG 로 생성 (PowerHA 공유 VG)" },
+        { "flag": "-f", "desc": "디스크에 이전 VG 흔적이 있어도 강제 생성" }
+      ],
+      "examples": [
+        {
+          "title": "새 LUN 으로 데이터 VG 만들기",
+          "steps": [
+            { "prompt": "#", "cmd": "cfgmgr", "desc": "새로 매핑된 LUN 을 인식" },
+            { "prompt": "#", "cmd": "lspv", "desc": "새 hdisk 가 None(VG 미소속)인지 확인" },
+            { "prompt": "#", "cmd": "mkvg -S -y {{VG}} -s 256 {{HDISK}}", "desc": "Scalable VG 생성 (PP 256MB 예시)" },
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "생성 결과와 TOTAL PPs 확인" }
+          ]
+        },
+        { "title": "클러스터 노드 간 major number 를 맞춰 생성", "command": "lvlstmajor\nmkvg -S -V {{MAJOR}} -n -y {{VG}} {{HDISK}}", "note": "lvlstmajor 로 양쪽 노드에서 비어 있는 major 번호를 확인한 뒤 같은 값을 씁니다." }
+      ],
+      "cautions": [
+        "-f 는 디스크에 남아 있던 다른 VG 정보를 덮어씁니다. 다른 서버가 쓰는 공유 LUN 이 아닌지 반드시 확인하세요.",
+        "PP 크기는 나중에 바꿀 수 없습니다. 너무 작으면 디스크당 PP 수 제한에 걸릴 수 있습니다."
+      ],
+      "help": "man mkvg",
+      "keywords": ["VG 생성", "볼륨 그룹 만들기", "scalable VG", "PP 크기", "mkvg", "LVM"],
+      "related": ["aix-lspv", "aix-lsvg", "aix-mklv", "aix-crfs", "vgcreate"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-extendvg",
+      "name": "extendvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "기존 VG 에 새 디스크(hdisk) 추가",
+      "description": "이미 있는 볼륨 그룹에 새 물리 볼륨을 추가해 VG 의 여유 PP 를 늘립니다. 파일시스템 용량이 부족한데 VG 여유 PP 가 없을 때 새 LUN 을 할당받아 이 명령으로 붙인 뒤 chfs 로 늘리는 것이 표준 절차입니다.",
+      "syntax": [
+        "extendvg [-f] {{VG}} {{HDISK}} [{{HDISK2}} ...]"
+      ],
+      "options": [
+        { "flag": "-f", "desc": "디스크에 이전 VG 흔적이 있어도 강제로 추가" }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크를 추가해 파일시스템 확장",
+          "steps": [
+            { "prompt": "#", "cmd": "cfgmgr", "desc": "새로 매핑된 LUN 인식" },
+            { "prompt": "#", "cmd": "lspv", "desc": "새 hdisk 가 None 상태인지 확인 (PVID 가 none 이어도 extendvg 가 할당)" },
+            { "prompt": "#", "cmd": "lsattr -El {{HDISK}} -a reserve_policy -a queue_depth", "desc": "멀티패스·클러스터 환경이면 디스크 속성이 기존 디스크와 같은지 확인" },
+            { "prompt": "#", "cmd": "extendvg {{VG}} {{HDISK}}", "desc": "VG 에 디스크 추가" },
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "FREE PPs 가 늘었는지 확인" },
+            { "prompt": "#", "cmd": "chfs -a size=+{{SIZE}}G {{MOUNT_POINT}}", "desc": "파일시스템 확장" },
+            { "prompt": "#", "cmd": "df -g {{MOUNT_POINT}}", "desc": "늘어난 용량 확인 (GB 단위)" }
+          ]
+        }
+      ],
+      "cautions": [
+        "-f 는 디스크의 기존 VG 정보를 덮어씁니다. 다른 서버의 디스크가 아닌지 확인한 뒤에만 쓰세요.",
+        "Scalable 이 아닌 일반(Original) VG 는 디스크 수·디스크당 PP 수 제한에 걸릴 수 있습니다. 이 경우 chvg -t 또는 chvg -G 를 검토합니다."
+      ],
+      "help": "man extendvg",
+      "keywords": ["VG 확장", "디스크 추가", "새 LUN", "extendvg", "용량 증설", "LVM"],
+      "related": ["aix-cfgmgr", "aix-lspv", "aix-lsvg", "aix-chfs", "aix-chvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-reducevg",
+      "name": "reducevg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "VG 에서 디스크 제거",
+      "description": "볼륨 그룹에서 물리 볼륨을 뺍니다. 디스크 위에 LV 가 남아 있으면 실패하므로 먼저 migratepv 로 데이터를 다른 디스크로 옮기거나 미러 사본을 해제해야 합니다. VG 의 마지막 디스크를 빼면 VG 자체가 삭제됩니다.",
+      "syntax": [
+        "reducevg [-d] [-f] {{VG}} {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-d", "desc": "디스크 위의 LV(PP)를 할당 해제하고 제거 (데이터 삭제)" },
+        { "flag": "-f", "desc": "-d 와 함께 확인 질문 없이 진행" }
+      ],
+      "examples": [
+        {
+          "title": "스토리지 교체: 데이터를 새 디스크로 옮기고 옛 디스크 제거",
+          "steps": [
+            { "prompt": "#", "cmd": "extendvg {{VG}} {{NEW_HDISK}}", "desc": "새 디스크를 같은 VG 에 추가" },
+            { "prompt": "#", "cmd": "migratepv {{OLD_HDISK}} {{NEW_HDISK}}", "desc": "옛 디스크의 모든 PP 를 새 디스크로 온라인 이동" },
+            { "prompt": "#", "cmd": "lspv -l {{OLD_HDISK}}", "desc": "옛 디스크에 LV 가 하나도 없는지 확인" },
+            { "prompt": "#", "cmd": "reducevg {{VG}} {{OLD_HDISK}}", "desc": "VG 에서 제거" },
+            { "prompt": "#", "cmd": "rmdev -dl {{OLD_HDISK}}", "desc": "장치 정의 삭제 후 스토리지에서 LUN 매핑 해제" }
+          ]
+        }
+      ],
+      "cautions": [
+        "-d 는 디스크 위에 있던 LV 를 지웁니다. LV 가 여러 디스크에 걸쳐 있으면 해당 LV 전체가 손상됩니다.",
+        "rootvg 디스크를 뺄 때는 부트 디스크인지(bootlist -m normal -o) 확인하고, 필요하면 chpv -c 와 bootlist 정리 후 진행하세요."
+      ],
+      "help": "man reducevg",
+      "keywords": ["디스크 제거", "VG 축소", "reducevg", "스토리지 교체", "LVM"],
+      "related": ["aix-migratepv", "aix-lspv", "aix-rmdev", "aix-unmirrorvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-migratepv",
+      "name": "migratepv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "디스크의 데이터(PP)를 다른 디스크로 온라인 이동",
+      "description": "같은 VG 안에서 한 물리 볼륨의 PP 를 다른 물리 볼륨으로 옮깁니다. 파일시스템을 마운트한 채로 진행할 수 있어 스토리지 교체·이관 때 많이 씁니다. -l 로 특정 LV 만 옮길 수 있습니다.",
+      "syntax": [
+        "migratepv [-l {{LV}}] {{SOURCE_HDISK}} {{DEST_HDISK}} [{{DEST_HDISK2}} ...]"
+      ],
+      "options": [
+        { "flag": "-l {{LV}}", "desc": "지정한 LV 의 PP 만 이동" }
+      ],
+      "examples": [
+        { "title": "디스크 전체 이동", "command": "migratepv {{OLD_HDISK}} {{NEW_HDISK}}", "note": "대상 디스크는 같은 VG 에 미리 extendvg 로 추가되어 있어야 하며, 옮길 PP 이상의 FREE PPs 가 필요합니다." },
+        { "title": "특정 LV 만 이동", "command": "migratepv -l {{LV}} {{OLD_HDISK}} {{NEW_HDISK}}" }
+      ],
+      "cautions": [
+        "이동 중 I/O 부하가 커집니다. 업무 시간을 피해 수행하세요.",
+        "rootvg 에서 hd5(부트 LV)를 옮겼다면 새 디스크에 bosboot -ad 와 bootlist 를 다시 설정해야 합니다."
+      ],
+      "help": "man migratepv",
+      "keywords": ["데이터 이동", "디스크 이관", "스토리지 교체", "migratepv", "온라인 이동", "LVM"],
+      "related": ["aix-extendvg", "aix-reducevg", "aix-lspv", "aix-bosboot"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-chvg",
+      "name": "chvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 속성 변경 (LUN 크기 증가 반영, quorum, 자동 활성)",
+      "description": "볼륨 그룹의 속성을 바꿉니다. 스토리지에서 기존 LUN 크기를 늘린 경우 chvg -g 로 늘어난 크기를 VG 에 반영하는 것이 가장 흔한 용도입니다. 그 밖에 quorum 해제, 부팅 시 자동 varyon, VG 형식(Big·Scalable) 변환에 씁니다.",
+      "syntax": [
+        "chvg -g {{VG}}",
+        "chvg -Q n|y {{VG}}",
+        "chvg -a y|n {{VG}}"
+      ],
+      "options": [
+        { "flag": "-g", "desc": "VG 안 디스크들의 크기 증가를 감지해 PP 를 추가" },
+        { "flag": "-Q n|y", "desc": "quorum 끄기/켜기 (미러 VG 에서 디스크 하나 장애 시에도 유지하려면 n)" },
+        { "flag": "-a y|n", "desc": "부팅 시 자동 varyon 여부" },
+        { "flag": "-t {{FACTOR}}", "desc": "Original VG 의 디스크당 최대 PP 수를 1016×FACTOR 로 늘림 (최대 디스크 수는 줄어듦)" },
+        { "flag": "-G", "desc": "Scalable VG 로 변환 (VG 를 varyoff 한 상태에서 수행)" },
+        { "flag": "-B", "desc": "Big VG 로 변환" }
+      ],
+      "examples": [
+        {
+          "title": "스토리지에서 LUN 크기를 늘린 뒤 반영",
+          "steps": [
+            { "prompt": "#", "cmd": "lspv {{HDISK}}", "desc": "현재 TOTAL PPs 기록" },
+            { "prompt": "#", "cmd": "chvg -g {{VG}}", "desc": "늘어난 디스크 크기를 VG 에 반영" },
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "FREE PPs 가 늘었는지 확인" },
+            { "prompt": "#", "cmd": "chfs -a size=+{{SIZE}}G {{MOUNT_POINT}}", "desc": "파일시스템 확장" }
+          ]
+        },
+        { "title": "부팅 시 자동 활성 끄기 (클러스터 공유 VG)", "command": "chvg -a n {{VG}}" }
+      ],
+      "cautions": [
+        "chvg -g 는 rootvg 나 concurrent 모드로 활성화된 VG 에서는 제한이 있습니다. 대상 VG 상태를 먼저 확인하세요.",
+        "-G/-B 변환은 VG 비활성화가 필요하고 디스크에 여유 공간이 있어야 합니다. 변경 전 savevg 등으로 백업하세요."
+      ],
+      "help": "man chvg",
+      "keywords": ["LUN 확장 반영", "VG 속성", "quorum", "자동 varyon", "chvg -g", "scalable 변환"],
+      "related": ["aix-lsvg", "aix-extendvg", "aix-chfs", "aix-varyonvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-varyonvg",
+      "name": "varyonvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "볼륨 그룹 활성화(varyon)",
+      "description": "비활성 상태의 VG 를 활성화해 LV·파일시스템을 쓸 수 있게 합니다. importvg 직후나 클러스터 수동 전환, 자동 varyon 이 꺼진 VG 를 올릴 때 씁니다. 활성화 후 파일시스템은 별도로 mount 해야 합니다.",
+      "syntax": [
+        "varyonvg [-f] {{VG}}",
+        "varyonvg -c {{VG}}"
+      ],
+      "options": [
+        { "flag": "-f", "desc": "quorum 이 맞지 않아도 강제로 활성화 (디스크 일부 장애 시)" },
+        { "flag": "-c", "desc": "Enhanced Concurrent 모드로 활성화 (PowerHA)" },
+        { "flag": "-s", "desc": "시스템 관리 모드로 활성화 (LV 를 열 수 없고 관리 명령만 가능)" }
+      ],
+      "examples": [
+        { "title": "VG 활성화 후 파일시스템 마운트", "command": "varyonvg {{VG}}\nlsvg -l {{VG}}\nmount {{MOUNT_POINT}}" },
+        { "title": "활성 상태인 VG 목록 확인", "command": "lsvg -o" }
+      ],
+      "cautions": [
+        "같은 VG 를 두 서버에서 동시에 일반 모드로 varyon 하면 데이터가 손상될 수 있습니다. 공유 디스크 환경에서는 다른 노드가 varyoffvg 했는지 확인하세요.",
+        "-f 는 디스크 일부가 없는 상태로 VG 를 올립니다. 장애 원인을 확인한 뒤에만 쓰세요."
+      ],
+      "help": "man varyonvg",
+      "keywords": ["VG 활성화", "varyon", "볼륨 그룹 켜기", "importvg 후", "클러스터 전환"],
+      "related": ["aix-varyoffvg", "aix-importvg", "aix-lsvg", "mount"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-varyoffvg",
+      "name": "varyoffvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "볼륨 그룹 비활성화(varyoff)",
+      "description": "VG 를 비활성화해 디스크 접근을 끊습니다. VG 의 모든 파일시스템을 먼저 umount 하고, 열린 raw LV 가 없어야 합니다. exportvg 나 다른 서버로 VG 를 넘기기 전에 수행합니다.",
+      "syntax": [
+        "varyoffvg [-s] {{VG}}"
+      ],
+      "options": [
+        { "flag": "-s", "desc": "완전히 끄지 않고 시스템 관리 모드로 전환" }
+      ],
+      "examples": [
+        { "title": "파일시스템 해제 후 VG 비활성화", "command": "lsvg -l {{VG}}\numount {{MOUNT_POINT}}\nvaryoffvg {{VG}}", "note": "umount 가 busy 로 실패하면 fuser -cu {{MOUNT_POINT}} 로 사용 중인 프로세스를 확인합니다." }
+      ],
+      "cautions": [
+        "DB 가 raw LV 를 쓰고 있으면 varyoff 가 실패하거나 서비스가 중단됩니다. 애플리케이션을 먼저 정상 종료하세요."
+      ],
+      "help": "man varyoffvg",
+      "keywords": ["VG 비활성화", "varyoff", "볼륨 그룹 끄기", "exportvg 전"],
+      "related": ["aix-varyonvg", "aix-exportvg", "umount", "fuser"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-importvg",
+      "name": "importvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "디스크에 있는 VG 정의를 시스템에 등록(import)",
+      "description": "다른 서버에서 넘어온 디스크나 exportvg 한 디스크의 VGDA 를 읽어 VG·LV 정의를 ODM 과 /etc/filesystems 에 등록합니다. 기본적으로 import 후 바로 varyon 됩니다. 클러스터 노드 간 정의 동기화에는 -L 을 씁니다.",
+      "syntax": [
+        "importvg -y {{VG}} [-V {{MAJOR}}] {{HDISK}}",
+        "importvg -L {{VG}} {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-y {{VG}}", "desc": "등록할 VG 이름" },
+        { "flag": "-V {{MAJOR}}", "desc": "VG major number 지정 (NFS·클러스터 노드 간 일치)" },
+        { "flag": "-n", "desc": "import 후 varyon 하지 않음" },
+        { "flag": "-L", "desc": "이미 정의된 VG 의 변경 사항(LV 추가 등)을 디스크에서 다시 읽어 반영" }
+      ],
+      "examples": [
+        {
+          "title": "다른 서버에서 옮겨온 디스크의 VG 가져오기",
+          "steps": [
+            { "prompt": "#", "cmd": "cfgmgr", "desc": "디스크 인식" },
+            { "prompt": "#", "cmd": "lspv", "desc": "PVID 로 대상 디스크 확인 (VG 는 None 으로 보임)" },
+            { "prompt": "#", "cmd": "importvg -y {{VG}} {{HDISK}}", "desc": "VG 등록 및 활성화" },
+            { "prompt": "#", "cmd": "lsvg -l {{VG}}", "desc": "LV·마운트 포인트 확인" },
+            { "prompt": "#", "cmd": "mount {{MOUNT_POINT}}", "desc": "파일시스템 마운트" }
+          ]
+        }
+      ],
+      "cautions": [
+        "같은 이름의 LV 나 마운트 포인트가 이미 있으면 LV 이름이 자동으로 바뀔 수 있습니다. import 결과 메시지를 확인하세요.",
+        "원래 서버에서 아직 VG 가 활성 상태라면 import 하지 마세요. 양쪽에서 동시에 쓰면 데이터가 손상됩니다."
+      ],
+      "help": "man importvg",
+      "keywords": ["VG 가져오기", "import", "디스크 이관", "importvg", "클러스터 동기화"],
+      "related": ["aix-exportvg", "aix-varyonvg", "aix-lspv", "aix-cfgmgr"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-exportvg",
+      "name": "exportvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 정의를 시스템에서 제거 (디스크 데이터는 유지)",
+      "description": "비활성(varyoff) 상태의 VG 정의를 ODM 과 /etc/filesystems 에서 지웁니다. 디스크의 데이터와 VGDA 는 그대로 남으므로 다른 서버에서 importvg 로 가져갈 수 있습니다.",
+      "syntax": [
+        "exportvg {{VG}}"
+      ],
+      "options": [],
+      "examples": [
+        { "title": "다른 서버로 넘기기 위해 VG 내보내기", "command": "umount {{MOUNT_POINT}}\nvaryoffvg {{VG}}\nexportvg {{VG}}\nlspv" }
+      ],
+      "cautions": [
+        "/etc/filesystems 의 해당 stanza 가 삭제되므로 마운트 옵션을 따로 바꿔 두었다면 export 전에 백업해 두세요."
+      ],
+      "help": "man exportvg",
+      "keywords": ["VG 내보내기", "export", "디스크 이관", "exportvg"],
+      "related": ["aix-importvg", "aix-varyoffvg", "aix-etc-filesystems"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mirrorvg",
+      "name": "mirrorvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 의 모든 LV 를 다른 디스크로 미러링",
+      "description": "VG 안의 모든 LV 에 사본을 만들어 지정한 디스크로 미러링합니다. rootvg 이중화에 표준으로 쓰며, rootvg 를 미러링한 뒤에는 새 디스크에 부트 이미지를 만들고 bootlist 에 추가해야 해당 디스크로도 부팅할 수 있습니다.",
+      "syntax": [
+        "mirrorvg [-S] [-m] [-c {{COPIES}}] {{VG}} {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-S", "desc": "동기화를 백그라운드로 진행하고 바로 반환" },
+        { "flag": "-m", "desc": "원본과 똑같은 PP 위치로 미러 (exact map)" },
+        { "flag": "-c {{COPIES}}", "desc": "사본 수 (2 또는 3, 기본 2)" }
+      ],
+      "examples": [
+        {
+          "title": "rootvg 미러링 (부트 디스크 이중화)",
+          "steps": [
+            { "prompt": "#", "cmd": "extendvg rootvg {{HDISK2}}", "desc": "두 번째 디스크를 rootvg 에 추가" },
+            { "prompt": "#", "cmd": "mirrorvg rootvg {{HDISK2}}", "desc": "rootvg 미러링 (quorum 은 자동으로 꺼짐)" },
+            { "prompt": "#", "cmd": "bosboot -ad /dev/{{HDISK2}}", "desc": "새 디스크에 부트 이미지 생성" },
+            { "prompt": "#", "cmd": "bootlist -m normal {{HDISK}} {{HDISK2}}", "desc": "두 디스크 모두 부트 목록에 등록" },
+            { "prompt": "#", "cmd": "lsvg -l rootvg", "desc": "모든 LV 의 PPs 가 LPs 의 2배이고 STALE 이 없는지 확인" }
+          ]
+        }
+      ],
+      "cautions": [
+        "미러링 중 디스크 I/O 가 많이 발생합니다.",
+        "dump device(lg_dumplv 등)는 미러링 대상에서 문제가 될 수 있어 일부 환경에서는 제외하거나 별도로 구성합니다."
+      ],
+      "help": "man mirrorvg",
+      "keywords": ["미러링", "rootvg 이중화", "mirror", "mirrorvg", "부트 디스크", "RAID1"],
+      "related": ["aix-unmirrorvg", "aix-syncvg", "aix-bosboot", "aix-bootlist", "aix-extendvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-unmirrorvg",
+      "name": "unmirrorvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "VG 미러 해제 (지정 디스크의 사본 제거)",
+      "description": "VG 의 미러 사본을 지정한 디스크에서 제거합니다. 장애 디스크 교체 전에 장애 디스크의 사본을 빼거나 미러 구성을 해제할 때 씁니다.",
+      "syntax": [
+        "unmirrorvg [-c {{COPIES}}] {{VG}} {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-c {{COPIES}}", "desc": "남길 사본 수 (기본 1)" }
+      ],
+      "examples": [
+        {
+          "title": "rootvg 장애 디스크 교체 준비",
+          "steps": [
+            { "prompt": "#", "cmd": "unmirrorvg rootvg {{BAD_HDISK}}", "desc": "장애 디스크에서 미러 사본 제거" },
+            { "prompt": "#", "cmd": "chpv -c {{BAD_HDISK}}", "desc": "디스크의 부트 레코드 삭제" },
+            { "prompt": "#", "cmd": "bootlist -m normal {{HDISK}}", "desc": "남은 디스크만 부트 목록에 남김" },
+            { "prompt": "#", "cmd": "reducevg rootvg {{BAD_HDISK}}", "desc": "rootvg 에서 디스크 제거" },
+            { "prompt": "#", "cmd": "rmdev -dl {{BAD_HDISK}}", "desc": "장치 정의 삭제 후 물리 교체" }
+          ]
+        }
+      ],
+      "cautions": [
+        "미러 해제 후에는 단일 디스크 상태가 됩니다. 남은 디스크에 STALE PP 가 없는지 lsvg -l 로 먼저 확인하세요."
+      ],
+      "help": "man unmirrorvg",
+      "keywords": ["미러 해제", "unmirror", "디스크 교체", "rootvg", "unmirrorvg"],
+      "related": ["aix-mirrorvg", "aix-reducevg", "aix-bootlist", "aix-rmdev"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-syncvg",
+      "name": "syncvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "미러 사본 중 STALE 상태인 PP 동기화",
+      "description": "미러 LV 에서 동기화가 깨진(stale) PP 를 정상 사본 기준으로 다시 맞춥니다. 디스크 일시 장애·경로 장애가 복구된 뒤 lsvg 의 STALE PPs 가 0 이 아니면 실행합니다.",
+      "syntax": [
+        "syncvg -v {{VG}}",
+        "syncvg -l {{LV}}",
+        "syncvg -p {{HDISK}}"
+      ],
+      "options": [
+        { "flag": "-v", "desc": "VG 단위 동기화" },
+        { "flag": "-l", "desc": "LV 단위 동기화" },
+        { "flag": "-p", "desc": "PV(디스크) 단위 동기화" },
+        { "flag": "-P {{THREADS}}", "desc": "병렬로 동기화할 LP 수 (속도 향상, 부하 증가)" }
+      ],
+      "examples": [
+        {
+          "title": "경로 장애 복구 후 미러 동기화",
+          "steps": [
+            { "prompt": "#", "cmd": "lsvg {{VG}} | grep -i stale", "desc": "STALE PPs 수 확인" },
+            { "prompt": "#", "cmd": "lsvg -p {{VG}}", "desc": "모든 PV 가 active 상태인지 확인 (missing 이면 varyonvg {{VG}} 로 다시 붙임)" },
+            { "prompt": "#", "cmd": "nohup syncvg -P 4 -v {{VG}} &", "desc": "백그라운드로 동기화" },
+            { "prompt": "#", "cmd": "lsvg {{VG}} | grep -i stale", "desc": "0 이 될 때까지 반복 확인" }
+          ]
+        }
+      ],
+      "cautions": [
+        "동기화 중에는 디스크 I/O 부하가 큽니다. -P 값을 크게 주면 업무 I/O 에 영향을 줍니다."
+      ],
+      "help": "man syncvg",
+      "keywords": ["미러 동기화", "stale PP", "syncvg", "resync", "미러 복구"],
+      "related": ["aix-lsvg", "aix-mirrorvg", "aix-varyonvg", "nohup"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-lslv",
+      "name": "lslv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "논리 볼륨(LV) 속성·디스크 배치 확인",
+      "description": "LV 의 상세 속성(TYPE, COPIES, LPs/PPs, MAX LPs, 마운트 포인트, 상태)을 보여 줍니다. 파일시스템 확장이 MAX LPs 제한에 걸렸는지, 미러 사본이 어느 디스크에 있는지 확인할 때 씁니다.",
+      "syntax": [
+        "lslv {{LV}}",
+        "lslv -l {{LV}}",
+        "lslv -m {{LV}}"
+      ],
+      "options": [
+        { "flag": "-l", "desc": "LV 가 쓰는 PV 목록과 디스크별 사용 PP 수" },
+        { "flag": "-m", "desc": "LP 별 PP 매핑 (사본별 디스크 위치)" }
+      ],
+      "examples": [
+        { "title": "LV 의 최대 LP 수(MAX LPs)와 현재 크기 확인", "command": "lslv {{LV}}", "note": "확장 후 LPs 가 MAX LPs 를 넘으면 chfs 가 실패합니다. 이때 chlv -x {{NEW_MAX}} {{LV}} 로 최대값을 올립니다." },
+        { "title": "LV 가 어느 디스크에 있는지 확인", "command": "lslv -l {{LV}}" }
+      ],
+      "cautions": [],
+      "help": "man lslv",
+      "keywords": ["논리 볼륨", "LV 조회", "MAX LPs", "lslv", "logical volume", "미러 배치"],
+      "related": ["aix-lsvg", "aix-mklv", "aix-extendlv", "lvs"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mklv",
+      "name": "mklv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 논리 볼륨(LV) 생성",
+      "description": "VG 안에 새 LV 를 만듭니다. 크기는 LP 개수로 지정합니다. 보통 파일시스템은 crfs 가 LV 까지 함께 만들기 때문에 mklv 는 LV 이름을 직접 정해야 할 때, DB 용 raw LV, 미러·배치 정책을 지정할 때 주로 씁니다.",
+      "syntax": [
+        "mklv -y {{LV}} -t jfs2 [-c {{COPIES}}] {{VG}} {{LPS}} [{{HDISK}} ...]"
+      ],
+      "options": [
+        { "flag": "-y {{LV}}", "desc": "LV 이름" },
+        { "flag": "-t {{TYPE}}", "desc": "LV 유형 (jfs2, jfs2log, paging, raw 등)" },
+        { "flag": "-c {{COPIES}}", "desc": "미러 사본 수 (1~3)" },
+        { "flag": "-x {{MAX_LPS}}", "desc": "LV 최대 LP 수" },
+        { "flag": "-u {{UPPERBOUND}}", "desc": "LV 가 걸칠 수 있는 최대 PV 수" },
+        { "flag": "-e x", "desc": "가능한 많은 디스크에 분산 배치 (inter-policy maximum)" },
+        { "flag": "-s y", "desc": "미러 사본을 반드시 서로 다른 디스크에 배치 (strict, 기본값)" }
+      ],
+      "examples": [
+        {
+          "title": "LV 를 만들고 그 위에 JFS2 파일시스템 생성",
+          "steps": [
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "PP SIZE 와 FREE PPs 확인 → 필요한 LP 수 계산" },
+            { "prompt": "#", "cmd": "mklv -y {{LV}} -t jfs2 {{VG}} {{LPS}}", "desc": "LV 생성" },
+            { "prompt": "#", "cmd": "crfs -v jfs2 -d {{LV}} -m {{MOUNT_POINT}} -A yes -a logname=INLINE", "desc": "LV 위에 파일시스템 생성 (inline log)" },
+            { "prompt": "#", "cmd": "mount {{MOUNT_POINT}}", "desc": "마운트" }
+          ]
+        },
+        { "title": "두 디스크에 미러된 LV 생성", "command": "mklv -y {{LV}} -t jfs2 -c 2 {{VG}} {{LPS}} {{HDISK}} {{HDISK2}}" }
+      ],
+      "cautions": [
+        "LV 이름은 시스템 전체(모든 VG)에서 유일해야 합니다. 15자를 넘지 않게 정하세요."
+      ],
+      "help": "man mklv",
+      "keywords": ["LV 생성", "논리 볼륨 만들기", "mklv", "raw LV", "미러 LV", "LVM"],
+      "related": ["aix-crfs", "aix-lslv", "aix-lsvg", "aix-extendlv", "lvcreate"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-extendlv",
+      "name": "extendlv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "논리 볼륨(LV) 크기 확장 (LP 추가)",
+      "description": "LV 에 LP 를 추가해 크기를 늘립니다. 파일시스템이 올라간 LV 는 chfs 로 늘리면 LV 와 파일시스템이 함께 늘어나므로, extendlv 는 주로 raw LV(DB 용)나 파일시스템이 아닌 LV 에 씁니다.",
+      "syntax": [
+        "extendlv {{LV}} {{LPS}} [{{HDISK}} ...]"
+      ],
+      "options": [
+        { "flag": "-u {{UPPERBOUND}}", "desc": "LV 가 걸칠 수 있는 최대 PV 수 변경" }
+      ],
+      "examples": [
+        { "title": "raw LV 에 LP 10개 추가", "command": "extendlv {{LV}} 10\nlslv {{LV}}" }
+      ],
+      "cautions": [
+        "JFS2 파일시스템 LV 를 extendlv 로 늘리면 LV 만 커지고 파일시스템 크기는 그대로입니다. 파일시스템은 chfs 로 늘리세요.",
+        "MAX LPs 를 넘으면 실패합니다. chlv -x 로 최대값을 먼저 올리세요."
+      ],
+      "help": "man extendlv",
+      "keywords": ["LV 확장", "extendlv", "raw LV", "LP 추가", "용량 증설"],
+      "related": ["aix-chfs", "aix-lslv", "aix-mklv", "lvextend"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-rmlv",
+      "name": "rmlv",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.lvm",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "논리 볼륨(LV) 삭제",
+      "description": "LV 를 삭제하고 PP 를 VG 에 반환합니다. LV 위의 데이터는 복구할 수 없습니다. 파일시스템이 있는 LV 는 rmfs 로 지우면 /etc/filesystems 정리까지 함께 됩니다.",
+      "syntax": [
+        "rmlv [-f] {{LV}}"
+      ],
+      "options": [
+        { "flag": "-f", "desc": "확인 질문 없이 삭제" }
+      ],
+      "examples": [
+        { "title": "사용하지 않는 raw LV 삭제", "command": "lslv {{LV}}\nrmlv {{LV}}", "note": "lslv 로 LV STATE 가 closed 이고 마운트 포인트가 없는지 확인한 뒤 삭제합니다." }
+      ],
+      "cautions": [
+        "삭제한 LV 의 데이터는 되돌릴 수 없습니다. DB raw device 로 쓰는 LV 인지 DBA 와 확인하세요.",
+        "파일시스템 LV 를 rmlv 로 지우면 /etc/filesystems 에 stanza 가 남습니다. 파일시스템은 rmfs 를 쓰세요."
+      ],
+      "help": "man rmlv",
+      "keywords": ["LV 삭제", "rmlv", "논리 볼륨 제거", "raw LV 삭제"],
+      "related": ["aix-rmfs", "aix-lslv", "aix-mklv"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-crfs",
+      "name": "crfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "JFS2 파일시스템 생성 (LV·/etc/filesystems 등록 포함)",
+      "description": "파일시스템을 만들고 /etc/filesystems 에 등록합니다. -g 로 VG 를 지정하면 LV 까지 자동으로 만들고, -d 로 기존 LV 를 지정할 수도 있습니다. 마운트 포인트 디렉토리도 만들어 주지만 마운트는 따로 해야 합니다.",
+      "syntax": [
+        "crfs -v jfs2 -g {{VG}} -m {{MOUNT_POINT}} -a size={{SIZE}}G -A yes",
+        "crfs -v jfs2 -d {{LV}} -m {{MOUNT_POINT}} -A yes"
+      ],
+      "options": [
+        { "flag": "-v jfs2", "desc": "파일시스템 유형 (현재는 jfs2 사용)" },
+        { "flag": "-g {{VG}}", "desc": "LV 를 새로 만들 VG" },
+        { "flag": "-d {{LV}}", "desc": "이미 만든 LV 에 파일시스템 생성" },
+        { "flag": "-m {{MOUNT_POINT}}", "desc": "마운트 포인트" },
+        { "flag": "-a size={{SIZE}}", "desc": "크기 (M, G, T 접미사 또는 512바이트 블록 수). PP 단위로 올림" },
+        { "flag": "-a logname=INLINE", "desc": "별도 jfs2log LV 대신 파일시스템 안에 로그를 둠" },
+        { "flag": "-A yes|no", "desc": "부팅 시 자동 마운트 여부 (/etc/filesystems 의 mount = true)" },
+        { "flag": "-p rw|ro", "desc": "마운트 권한" },
+        { "flag": "-u {{GROUP}}", "desc": "마운트 그룹 지정 (mount -t {{GROUP}} 으로 묶어서 마운트)" }
+      ],
+      "examples": [
+        {
+          "title": "새 파일시스템 만들고 소유자 지정",
+          "steps": [
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "여유 PP 확인" },
+            { "prompt": "#", "cmd": "crfs -v jfs2 -g {{VG}} -m {{MOUNT_POINT}} -a size={{SIZE}}G -a logname=INLINE -A yes", "desc": "LV 와 파일시스템 생성, 부팅 시 자동 마운트" },
+            { "prompt": "#", "cmd": "mount {{MOUNT_POINT}}", "desc": "마운트" },
+            { "prompt": "#", "cmd": "chown {{USER}}:{{GROUP}} {{MOUNT_POINT}}", "desc": "마운트한 뒤 최상위 디렉토리 소유자 지정 (마운트 전에 바꾸면 가려짐)" },
+            { "prompt": "#", "cmd": "df -g {{MOUNT_POINT}}", "desc": "크기 확인" }
+          ]
+        }
+      ],
+      "cautions": [
+        "-d 로 지정한 LV 에 기존 데이터가 있으면 덮어씁니다.",
+        "LV 이름은 자동으로 fslv00 처럼 붙습니다. 이름을 정하고 싶으면 mklv 로 먼저 만들고 -d 를 쓰세요."
+      ],
+      "help": "man crfs",
+      "keywords": ["파일시스템 생성", "JFS2", "crfs", "mkfs", "파일시스템 만들기", "inline log"],
+      "related": ["aix-mklv", "aix-chfs", "aix-lsfs", "aix-etc-filesystems", "mount", "mkfs"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-chfs",
+      "name": "chfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.extend",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "파일시스템 크기 확장·축소 및 속성 변경",
+      "description": "JFS2 파일시스템의 크기와 속성을 바꿉니다. -a size=+NG 로 마운트된 상태에서 LV 와 파일시스템을 함께 온라인 확장하는 것이 AIX 에서 가장 많이 하는 작업입니다. JFS2 는 축소(size=-NG)도 지원하지만 사용 중인 블록 배치에 따라 실패할 수 있습니다.",
+      "syntax": [
+        "chfs -a size=+{{SIZE}}G {{MOUNT_POINT}}",
+        "chfs -a size={{SIZE}}G {{MOUNT_POINT}}",
+        "chfs -m {{NEW_MOUNT_POINT}} {{MOUNT_POINT}}"
+      ],
+      "options": [
+        { "flag": "-a size=+{{SIZE}}", "desc": "현재 크기에서 늘림 (M, G 접미사). + 없이 쓰면 지정 크기로 설정" },
+        { "flag": "-a size=-{{SIZE}}", "desc": "JFS2 축소" },
+        { "flag": "-m {{NEW_MOUNT_POINT}}", "desc": "마운트 포인트 변경 (/etc/filesystems 수정)" },
+        { "flag": "-A yes|no", "desc": "부팅 시 자동 마운트 여부 변경" },
+        { "flag": "-p rw|ro", "desc": "마운트 권한 변경" }
+      ],
+      "examples": [
+        {
+          "title": "파일시스템 용량 확장 (가장 흔한 작업)",
+          "steps": [
+            { "prompt": "#", "cmd": "df -g {{MOUNT_POINT}}", "desc": "현재 크기·사용률 확인" },
+            { "prompt": "#", "cmd": "lsfs {{MOUNT_POINT}}", "desc": "LV 이름·VG 확인 (Device 열)" },
+            { "prompt": "#", "cmd": "lsvg {{VG}}", "desc": "FREE PPs × PP SIZE 로 여유 용량 확인" },
+            { "prompt": "#", "cmd": "chfs -a size=+{{SIZE}}G {{MOUNT_POINT}}", "desc": "마운트 상태로 확장" },
+            { "prompt": "#", "cmd": "df -g {{MOUNT_POINT}}", "desc": "늘어난 용량 확인" }
+          ]
+        },
+        { "title": "파일시스템 축소", "command": "chfs -a size=-{{SIZE}}G {{MOUNT_POINT}}", "note": "JFS2 만 가능하며 사용량·단편화에 따라 실패할 수 있습니다." },
+        { "title": "부팅 시 자동 마운트 켜기", "command": "chfs -A yes {{MOUNT_POINT}}" }
+      ],
+      "cautions": [
+        "VG 여유 PP 가 부족하면 'not enough free partitions' 로 실패합니다. extendvg 또는 chvg -g 로 먼저 늘리세요.",
+        "LV 의 MAX LPs 를 넘으면 실패합니다. lslv 로 확인하고 chlv -x 로 올리세요.",
+        "확장은 PP 단위로 올림됩니다. 미러 LV 는 사본 수만큼 PP 가 더 필요합니다.",
+        "축소는 되돌리기 어렵습니다. 운영 중 축소보다는 백업 후 재생성을 우선 검토하세요."
+      ],
+      "help": "man chfs",
+      "keywords": ["파일시스템 확장", "용량 증설", "chfs", "size=+", "온라인 확장", "축소", "JFS2"],
+      "related": ["aix-lsvg", "aix-lsfs", "aix-extendvg", "aix-chvg", "df", "lvextend"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-rmfs",
+      "name": "rmfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.format",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "파일시스템 삭제 (LV·/etc/filesystems 함께 제거)",
+      "description": "파일시스템과 그 아래 LV, /etc/filesystems 의 stanza 를 한 번에 삭제합니다. 파일시스템을 먼저 umount 해야 합니다. 데이터는 복구할 수 없습니다.",
+      "syntax": [
+        "rmfs [-r] {{MOUNT_POINT}}"
+      ],
+      "options": [
+        { "flag": "-r", "desc": "마운트 포인트 디렉토리도 삭제" }
+      ],
+      "examples": [
+        { "title": "파일시스템 삭제", "command": "umount {{MOUNT_POINT}}\nrmfs -r {{MOUNT_POINT}}" }
+      ],
+      "cautions": [
+        "LV 와 데이터가 모두 삭제됩니다. 삭제 전 백업 여부와 마운트 포인트 이름을 두 번 확인하세요.",
+        "삭제할 대상이 맞는지 lsfs {{MOUNT_POINT}} 로 LV 이름까지 확인하세요."
+      ],
+      "help": "man rmfs",
+      "keywords": ["파일시스템 삭제", "rmfs", "LV 삭제", "마운트 포인트 제거"],
+      "related": ["aix-lsfs", "aix-rmlv", "umount", "aix-etc-filesystems"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-lsfs",
+      "name": "lsfs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.fs-info",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "/etc/filesystems 에 등록된 파일시스템 속성 확인",
+      "description": "/etc/filesystems 에 정의된 파일시스템의 장치(LV), 마운트 포인트, 유형, 크기, 자동 마운트 여부를 표로 보여 줍니다. 마운트 포인트로 LV 이름을 찾을 때 편합니다.",
+      "syntax": [
+        "lsfs [-q] [{{MOUNT_POINT}}]",
+        "lsfs -v jfs2"
+      ],
+      "options": [
+        { "flag": "-q", "desc": "LV 크기·블록 크기·inline log 여부 등 상세 정보 추가" },
+        { "flag": "-v {{VFS}}", "desc": "특정 유형(jfs2, nfs 등)만 표시" },
+        { "flag": "-c", "desc": "콜론(:) 구분 출력 (스크립트용)" }
+      ],
+      "examples": [
+        { "title": "마운트 포인트로 LV·크기 확인", "command": "lsfs -q {{MOUNT_POINT}}" },
+        { "title": "NFS 마운트 정의만 보기", "command": "lsfs -v nfs" }
+      ],
+      "cautions": [],
+      "help": "man lsfs",
+      "keywords": ["파일시스템 목록", "lsfs", "마운트 정의", "LV 이름 찾기", "filesystems"],
+      "related": ["aix-etc-filesystems", "aix-chfs", "df", "mount"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-etc-filesystems",
+      "name": "/etc/filesystems",
+      "kind": "file",
+      "category": "disk",
+      "task": "disk.mount",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "AIX 파일시스템 마운트 정의 파일 (fstab 역할)",
+      "description": "AIX 에서 Linux 의 /etc/fstab 역할을 하는 파일로, 마운트 포인트별 stanza 형식으로 장치·유형·자동 마운트 여부를 적습니다. crfs, chfs, mknfsmnt, importvg 가 자동으로 고치므로 직접 편집보다 명령 사용이 권장됩니다. mount {{MOUNT_POINT}} 처럼 마운트 포인트만으로 마운트할 수 있는 것도 이 파일 덕분입니다.",
+      "syntax": [
+        "{{MOUNT_POINT}}:\n        dev             = /dev/{{LV}}\n        vfs             = jfs2\n        log             = INLINE\n        mount           = true\n        account         = false"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "stanza 항목",
+          "type": "directive",
+          "note": "첫 줄은 '마운트포인트:' 로 시작하고 아래 줄은 들여쓰기 후 '속성 = 값'. stanza 사이는 빈 줄로 구분합니다.",
+          "items": [
+            { "cmd": "dev = /dev/{{LV}}", "desc": "로컬 파일시스템의 LV 장치. NFS 는 원격 경로 (예: /export/data)" },
+            { "cmd": "vfs = jfs2", "desc": "파일시스템 유형 (jfs2, jfs, nfs, cdrfs 등)" },
+            { "cmd": "log = INLINE", "desc": "JFS2 로그 위치 (INLINE 또는 /dev/loglv00 같은 jfs2log LV)" },
+            { "cmd": "mount = true", "desc": "true: 부팅 시 자동 마운트, false: 수동, automatic: 시스템 파일시스템(/, /usr 등)" },
+            { "cmd": "options = rw", "desc": "마운트 옵션 (rw, ro, cio, dio, nosuid 등)" },
+            { "cmd": "check = false", "desc": "fsck 기본 대상 여부" },
+            { "cmd": "account = false", "desc": "프로세스 accounting 대상 여부" },
+            { "cmd": "type = {{GROUP}}", "desc": "마운트 그룹 이름 (mount -t {{GROUP}} 으로 일괄 마운트)" },
+            { "cmd": "nodename = {{NFS_SERVER}}", "desc": "NFS 서버 호스트명 (NFS stanza 에서 사용)" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "NFS 마운트 stanza 예시", "command": "{{MOUNT_POINT}}:\n        dev             = {{REMOTE_PATH}}\n        vfs             = nfs\n        nodename        = {{NFS_SERVER}}\n        mount           = true\n        options         = bg,hard,intr,vers=3", "note": "직접 편집보다 mknfsmnt 또는 smitty nfs 사용을 권장합니다." },
+        { "title": "변경 전 백업과 확인", "command": "cp -p /etc/filesystems /etc/filesystems.$(date +%Y%m%d)\nlsfs" }
+      ],
+      "cautions": [
+        "/, /usr, /var 등 시스템 stanza 를 잘못 고치면 부팅에 실패할 수 있습니다. 편집 전 반드시 백업하세요.",
+        "같은 마운트 포인트 stanza 가 두 번 있으면 의도와 다른 장치가 마운트될 수 있습니다."
+      ],
+      "help": "man filesystems",
+      "keywords": ["fstab", "마운트 설정", "자동 마운트", "filesystems", "stanza", "부팅 마운트"],
+      "related": ["aix-lsfs", "aix-crfs", "aix-chfs", "etc-fstab", "mount"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-lsps",
+      "name": "lsps",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "paging space(스왑) 크기·사용률 확인",
+      "description": "AIX 의 paging space(스왑 영역) 목록과 크기, 사용률, 활성·자동 활성 여부를 보여 줍니다. 메모리 부족 의심 시 vmstat 의 pi/po 와 함께 확인합니다.",
+      "syntax": [
+        "lsps -a",
+        "lsps -s"
+      ],
+      "options": [
+        { "flag": "-a", "desc": "paging space 별 볼륨 그룹·크기·사용률·활성 여부" },
+        { "flag": "-s", "desc": "전체 합계 크기와 사용률 요약" }
+      ],
+      "examples": [
+        { "title": "paging space 요약", "command": "lsps -s" },
+        { "title": "paging space 별 상세", "command": "lsps -a" }
+      ],
+      "cautions": [
+        "paging space 사용률이 높게 유지되면 메모리 부족 상태입니다. 단순 증설보다 svmon·vmstat 로 원인 프로세스를 먼저 확인하세요."
+      ],
+      "help": "man lsps",
+      "keywords": ["스왑", "paging space", "페이징", "lsps", "swap 사용률", "메모리 부족"],
+      "related": ["aix-mkps", "aix-chps", "aix-svmon", "vmstat", "swapon"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mkps",
+      "name": "mkps",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 paging space(스왑) 추가",
+      "description": "VG 안에 새 paging space LV 를 만듭니다. 크기는 LP 개수로 지정하며, -a 로 부팅 시 자동 활성, -n 으로 즉시 활성화합니다.",
+      "syntax": [
+        "mkps -a -n -s {{LPS}} {{VG}} [{{HDISK}}]"
+      ],
+      "options": [
+        { "flag": "-s {{LPS}}", "desc": "크기 (LP 개수)" },
+        { "flag": "-a", "desc": "부팅 시 자동 활성화 (/etc/swapspaces 에 등록)" },
+        { "flag": "-n", "desc": "만들자마자 바로 활성화" }
+      ],
+      "examples": [
+        { "title": "rootvg 에 paging space 추가", "command": "lsvg rootvg\nmkps -a -n -s {{LPS}} rootvg {{HDISK}}\nlsps -a", "note": "기존 paging space 와 같은 크기로, 가능하면 다른 디스크에 두는 것이 좋습니다." }
+      ],
+      "cautions": [
+        "크기가 서로 크게 다른 paging space 를 섞으면 작은 쪽이 먼저 차서 경고가 날 수 있습니다."
+      ],
+      "help": "man mkps",
+      "keywords": ["스왑 추가", "paging space 생성", "mkps", "swap"],
+      "related": ["aix-lsps", "aix-chps", "mkswap"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-chps",
+      "name": "chps",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.swap",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "paging space 크기 증설·축소, 자동 활성 변경",
+      "description": "기존 paging space 의 크기를 늘리거나 줄이고, 부팅 시 자동 활성 여부를 바꿉니다. hd6 증설에 가장 많이 씁니다. 늘리기는 온라인으로 즉시 반영됩니다.",
+      "syntax": [
+        "chps -s {{LPS}} {{PAGING_SPACE}}",
+        "chps -d {{LPS}} {{PAGING_SPACE}}",
+        "chps -a y|n {{PAGING_SPACE}}"
+      ],
+      "options": [
+        { "flag": "-s {{LPS}}", "desc": "지정한 LP 수만큼 늘림" },
+        { "flag": "-d {{LPS}}", "desc": "지정한 LP 수만큼 줄임 (사용 중인 페이지를 옮기며 진행)" },
+        { "flag": "-a y|n", "desc": "부팅 시 자동 활성 여부" }
+      ],
+      "examples": [
+        {
+          "title": "hd6 paging space 증설",
+          "steps": [
+            { "prompt": "#", "cmd": "lsps -a", "desc": "현재 paging space 이름·크기 확인" },
+            { "prompt": "#", "cmd": "lsvg rootvg", "desc": "PP SIZE 와 FREE PPs 확인 → 늘릴 LP 수 계산" },
+            { "prompt": "#", "cmd": "chps -s {{LPS}} hd6", "desc": "LP 단위로 증설" },
+            { "prompt": "#", "cmd": "lsps -s", "desc": "전체 크기 확인" }
+          ]
+        },
+        { "title": "필요 없는 paging space 제거", "command": "swapoff /dev/{{PAGING_SPACE}}\nrmps {{PAGING_SPACE}}", "note": "swapoff 는 다른 paging space 에 옮길 여유가 있어야 성공합니다. hd6 는 제거하지 않습니다." }
+      ],
+      "cautions": [
+        "축소(-d)·swapoff 는 메모리 압박이 심할 때 실패하거나 성능 저하를 일으킬 수 있습니다. 한가한 시간에 수행하세요."
+      ],
+      "help": "man chps",
+      "keywords": ["스왑 증설", "paging space 확장", "chps", "hd6", "swap 늘리기", "rmps"],
+      "related": ["aix-lsps", "aix-mkps", "aix-lsvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mksysb",
+      "name": "mksysb",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.os-backup",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "rootvg 전체 OS 백업 이미지 생성",
+      "description": "rootvg 의 마운트된 파일시스템 전체를 부팅·복원 가능한 백업 이미지로 만듭니다. TL/SP 업데이트, 커널 튜닝, 대규모 변경 전 필수 백업이며 NIM 서버나 테이프로 복원할 수 있습니다. 데이터 VG 는 포함되지 않으므로 savevg 로 따로 백업합니다.",
+      "syntax": [
+        "mksysb -i [-e] [-X] {{BACKUP_FILE}}",
+        "mksysb -i /dev/rmt0"
+      ],
+      "options": [
+        { "flag": "-i", "desc": "image.data 파일을 새로 생성 (항상 붙이는 것을 권장)" },
+        { "flag": "-e", "desc": "/etc/exclude.rootvg 에 적힌 경로를 백업에서 제외" },
+        { "flag": "-X", "desc": "/tmp 공간이 부족하면 자동으로 늘림" },
+        { "flag": "-p", "desc": "압축(packing) 하지 않음 (속도 우선)" }
+      ],
+      "examples": [
+        {
+          "title": "업데이트 전 NFS 에 mksysb 백업",
+          "steps": [
+            { "prompt": "#", "cmd": "df -g {{BACKUP_DIR}}", "desc": "백업 위치(rootvg 밖, 예: NFS)에 rootvg 사용량 이상 여유가 있는지 확인" },
+            { "prompt": "#", "cmd": "cat /etc/exclude.rootvg", "desc": "제외할 경로(덤프·임시 파일) 확인. 정규식 형식 (예: ^./tmp/)" },
+            { "prompt": "#", "cmd": "mksysb -i -e -X {{BACKUP_DIR}}/$(hostname).$(date +%Y%m%d).mksysb", "desc": "백업 생성" },
+            { "prompt": "#", "cmd": "lsmksysb -lf {{BACKUP_DIR}}/{{BACKUP_FILE}}", "desc": "백업 이미지의 OS 레벨·VG 정보 확인" },
+            { "prompt": "#", "cmd": "lsmksysb -f {{BACKUP_DIR}}/{{BACKUP_FILE}} | grep /etc/hosts", "desc": "파일 목록에서 주요 파일이 들어갔는지 확인" }
+          ]
+        },
+        { "title": "mksysb 이미지에서 파일 하나만 꺼내기", "command": "cd /tmp\nrestore -xqvf {{BACKUP_FILE}} ./etc/{{FILE}}", "note": "경로는 ./ 로 시작하는 상대 경로로 지정합니다. 현재 디렉토리 아래에 풀립니다." }
+      ],
+      "cautions": [
+        "백업 파일을 rootvg 안의 파일시스템에 두면 자기 자신을 백업하려 하고 공간도 부족해집니다. NFS 나 다른 VG 에 저장하세요.",
+        "마운트되지 않은 rootvg 파일시스템·raw LV 는 백업되지 않습니다.",
+        "mksysb 는 rootvg 만 백업합니다. 데이터 VG 는 savevg 나 백업 솔루션으로 별도 백업하세요."
+      ],
+      "help": "man mksysb · man lsmksysb",
+      "keywords": ["OS 백업", "rootvg 백업", "mksysb", "시스템 백업", "lsmksysb", "복구 이미지", "NIM"],
+      "related": ["aix-savevg", "aix-restvg", "aix-bootlist", "aix-oslevel"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-savevg",
+      "name": "savevg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.os-backup",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "데이터 VG(rootvg 외) 전체 백업",
+      "description": "rootvg 가 아닌 볼륨 그룹의 구조(LV·파일시스템 정의)와 마운트된 파일시스템 데이터를 하나의 백업 파일이나 테이프로 저장합니다. restvg 로 VG 구조째 복원할 수 있습니다.",
+      "syntax": [
+        "savevg -i -f {{BACKUP_FILE}} {{VG}}"
+      ],
+      "options": [
+        { "flag": "-f {{BACKUP_FILE}}", "desc": "백업 파일 또는 장치 (/dev/rmt0)" },
+        { "flag": "-i", "desc": "VG 구조 파일(vgname.data) 새로 생성" },
+        { "flag": "-e", "desc": "/etc/exclude.{{VG}} 에 적힌 경로 제외" },
+        { "flag": "-X", "desc": "/tmp 공간 자동 확장" }
+      ],
+      "examples": [
+        { "title": "데이터 VG 를 NFS 에 백업", "command": "savevg -i -f {{BACKUP_DIR}}/{{VG}}.$(date +%Y%m%d).savevg {{VG}}" }
+      ],
+      "cautions": [
+        "마운트된 JFS2 파일시스템만 데이터가 들어갑니다. DB raw LV 는 백업되지 않습니다.",
+        "백업 중 변경되는 파일(운영 DB 파일 등)은 일관성이 보장되지 않습니다. DB 는 DB 백업 도구를 쓰세요."
+      ],
+      "help": "man savevg",
+      "keywords": ["VG 백업", "savevg", "데이터 백업", "볼륨 그룹 백업"],
+      "related": ["aix-restvg", "aix-mksysb", "aix-lsvg"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-restvg",
+      "name": "restvg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "disk",
+      "task": "disk.os-backup",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "savevg 백업으로 VG 를 지정 디스크에 복원",
+      "description": "savevg 로 만든 백업에서 볼륨 그룹을 다시 만들고 데이터를 복원합니다. 지정한 디스크에 새 VG 를 만들기 때문에 대상 디스크의 기존 내용은 사라집니다.",
+      "syntax": [
+        "restvg [-q] [-s] -f {{BACKUP_FILE}} {{HDISK}} [{{HDISK2}} ...]"
+      ],
+      "options": [
+        { "flag": "-f {{BACKUP_FILE}}", "desc": "savevg 백업 파일 또는 장치" },
+        { "flag": "-q", "desc": "확인 질문 없이 진행" },
+        { "flag": "-s", "desc": "LV 를 사용량에 맞게 최소 크기로 만들어 복원 (shrink)" },
+        { "flag": "-l", "desc": "백업에 들어 있는 VG 정보만 표시 (복원하지 않음)" }
+      ],
+      "examples": [
+        { "title": "복원 전 백업 내용 확인", "command": "restvg -l -f {{BACKUP_FILE}}" },
+        { "title": "빈 디스크에 VG 복원", "command": "lspv\nrestvg -f {{BACKUP_FILE}} {{HDISK}}" }
+      ],
+      "cautions": [
+        "대상 디스크의 기존 데이터·VG 정보가 모두 지워집니다. lspv 로 None 상태의 빈 디스크인지 반드시 확인하세요.",
+        "같은 이름의 VG 가 이미 활성 상태면 실패합니다."
+      ],
+      "help": "man restvg",
+      "keywords": ["VG 복원", "restvg", "savevg 복원", "데이터 복구"],
+      "related": ["aix-savevg", "aix-lspv", "aix-mksysb"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}

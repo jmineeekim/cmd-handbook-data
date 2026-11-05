@@ -1,0 +1,48 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "process",
+  "commands": [
+    {
+      "id": "hpux-tusc",
+      "name": "tusc",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.trace",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "HP-UX 시스템 콜 추적 (strace 대응, 별도 설치)",
+      "description": "프로세스가 호출하는 시스템 콜과 시그널을 추적합니다. Linux 의 strace 에 해당하며, 실행 중인 PID 에 붙거나 명령을 tusc 아래에서 실행해 추적합니다. HP-UX 기본 설치에는 없고 HPE 에서 무료로 배포하는 도구를 따로 설치해야 합니다.",
+      "syntax": [
+        "tusc [-f] [-p] [-o {{OUTPUT_FILE}}] {{PID}}",
+        "tusc [-f] {{COMMAND}} [{{ARGS}}]"
+      ],
+      "options": [
+        { "flag": "-f", "desc": "fork 된 자식 프로세스까지 추적" },
+        { "flag": "-p", "desc": "줄마다 PID 표시" },
+        { "flag": "-o {{OUTPUT_FILE}}", "desc": "결과를 파일로 저장" },
+        { "flag": "-c", "desc": "추적 대신 시스템 콜별 횟수·시간 요약" },
+        { "flag": "-T {{TIME_FORMAT}}", "desc": "줄마다 시각 표시 (예: -T \"%H:%M:%S\")" },
+        { "flag": "-a", "desc": "exec 인자 표시" },
+        { "flag": "-v", "desc": "자세히 (구조체 내용 등)" }
+      ],
+      "examples": [
+        { "title": "멈춘 것 같은 프로세스가 무엇을 하는지 보기", "command": "tusc -f -p -o /var/tmp/tusc_{{PID}}.txt {{PID}}", "note": "Ctrl+C 로 추적을 끝내면 대상 프로세스는 계속 실행됩니다." },
+        { "title": "명령이 어떤 파일을 열다 실패하는지 확인", "command": "tusc {{COMMAND}} 2>&1 | grep -E 'open|ERR'" },
+        { "title": "시스템 콜 통계", "command": "tusc -c {{PID}}" }
+      ],
+      "cautions": [
+        "추적 중에는 대상 프로세스가 느려집니다. 운영 DB·거래 프로세스에는 짧게만 붙이세요.",
+        "출력에 데이터 일부(평문 비밀번호, 고객 정보)가 포함될 수 있으니 결과 파일 관리에 주의하세요."
+      ],
+      "install": { "hpux": { "package": "tusc", "preinstalled": false, "note": "HPE 에서 배포하는 무료 도구를 별도로 받아 설치 (swinstall)" } },
+      "help": "tusc -h",
+      "keywords": ["시스템 콜 추적", "tusc", "strace", "프로세스 추적", "행업 분석", "HP-UX 디버깅"],
+      "related": ["strace", "hpux-glance", "ps", "pstack"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}

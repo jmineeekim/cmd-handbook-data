@@ -12,7 +12,10 @@
       "task": "users.whoami",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -25,11 +28,11 @@
       "options": [
         {
           "flag": "--help",
-          "desc": "도움말 출력"
+          "desc": "도움말 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "--version",
-          "desc": "버전 출력"
+          "desc": "버전 출력 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -42,9 +45,19 @@
           "title": "sudo 로 실행될 때 사용자 확인",
           "command": "sudo whoami",
           "output": "root"
+        },
+        {
+          "title": "whoami 가 없는 환경에서 같은 결과 (POSIX)",
+          "command": "id -un",
+          "note": "Solaris 10 처럼 whoami 가 /usr/ucb 에만 있는 환경에서 씁니다. Solaris 10 은 /usr/xpg4/bin/id -un"
         }
       ],
       "cautions": [],
+      "platformNotes": {
+        "aix": "/usr/bin/whoami 로 기본 제공됩니다. 옵션 없이 사용합니다.",
+        "hpux": "/usr/bin/whoami 로 기본 제공됩니다. 옵션 없이 사용합니다.",
+        "solaris": "Solaris 11 은 /usr/bin/whoami 가 있습니다. Solaris 10 은 /usr/ucb/whoami 에만 있어 PATH 에 /usr/ucb 가 없으면 '찾을 수 없음'이 나옵니다. 이때 /usr/xpg4/bin/id -un 을 사용하세요."
+      },
       "help": "man whoami",
       "keywords": [
         "현재 사용자",
@@ -60,7 +73,10 @@
         "w",
         "sudo",
         "su"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "id",
@@ -71,7 +87,10 @@
       "task": "users.whoami",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -100,7 +119,11 @@
         },
         {
           "flag": "-Z",
-          "desc": "SELinux 보안 컨텍스트만 출력"
+          "desc": "SELinux 보안 컨텍스트만 출력 (Linux 전용)"
+        },
+        {
+          "flag": "-a",
+          "desc": "모든 그룹 표시 (Solaris 10 /usr/bin/id 에서 보조 그룹을 보려면 필요)"
         }
       ],
       "examples": [
@@ -119,12 +142,31 @@
         },
         {
           "title": "root 로 실행 중인지 스크립트에서 확인",
-          "command": "[ \"$(id -u)\" -eq 0 ] && echo root"
+          "command": "[ \"$(id -u)\" -eq 0 ] && echo root",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix",
+            "hpux"
+          ]
+        },
+        {
+          "title": "root 로 실행 중인지 확인 (Solaris 10)",
+          "command": "[ \"$(/usr/xpg4/bin/id -u)\" -eq 0 ] && echo root",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "Solaris 11 은 /usr/bin/id -u 도 됩니다."
         }
       ],
       "cautions": [
         "usermod -aG 로 그룹을 추가해도 이미 로그인한 세션에는 반영되지 않습니다. 재로그인하거나 newgrp 를 사용하세요. (id {{USER}} 로 조회하면 새 그룹이 보임)"
       ],
+      "platformNotes": {
+        "aix": "-u, -g, -G, -n, -r 을 지원합니다. 인자 없이 실행하면 uid·gid·groups 를 모두 보여 줍니다.",
+        "hpux": "-u, -g, -G, -n, -r 을 지원합니다 (POSIX 형식).",
+        "solaris": "Solaris 10 의 /usr/bin/id 는 -a, -p 만 지원하므로 -u·-g·-G·-n 은 /usr/xpg4/bin/id 를 사용하세요. Solaris 11 은 /usr/bin/id 도 POSIX 옵션을 지원합니다."
+      },
       "help": "man id",
       "keywords": [
         "UID",
@@ -138,7 +180,10 @@
         "whoami",
         "groups",
         "usermod"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "groups",
@@ -149,7 +194,10 @@
       "task": "users.whoami",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -157,14 +205,10 @@
       "summary": "사용자가 속한 그룹 이름 목록 출력",
       "description": "현재 사용자 또는 지정한 사용자가 속한 그룹 이름을 공백으로 구분해 출력합니다. id -Gn 과 같은 결과이며, sudo 권한 그룹(wheel/sudo) 소속 여부를 빠르게 확인할 때 씁니다.",
       "syntax": [
-        "groups [{{USER}}...]"
+        "groups",
+        "groups {{USER}}..."
       ],
-      "options": [
-        {
-          "flag": "{{USER}}",
-          "desc": "조회할 사용자 (여러 명 지정 가능, 생략 시 현재 세션)"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "현재 세션의 그룹",
@@ -179,6 +223,11 @@
       "cautions": [
         "인자 없이 실행하면 현재 세션 기준이라, 새로 추가된 그룹은 재로그인 전까지 보이지 않습니다."
       ],
+      "platformNotes": {
+        "aix": "/usr/bin/groups 로 제공됩니다. 사용자 이름을 주면 /etc/group 기준으로 조회합니다. 사용자 속성은 lsuser -a groups {{USER}} 로도 확인합니다.",
+        "hpux": "/usr/bin/groups 로 제공됩니다. 사용자 지정 시 /etc/group 기준입니다.",
+        "solaris": "/usr/bin/groups 로 제공됩니다. 사용자 지정 시 /etc/group(네임 서비스 포함) 기준입니다."
+      },
       "help": "man groups",
       "keywords": [
         "그룹 목록",
@@ -190,7 +239,10 @@
         "id",
         "whoami",
         "usermod"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-whoami",
@@ -280,7 +332,10 @@
         "net-user",
         "get-localuser",
         "gpresult"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sudo",
@@ -291,7 +346,10 @@
       "task": "users.elevate",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -354,16 +412,20 @@
           "title": "root 권한으로 파일에 쓰기 (리다이렉션 주의)",
           "command": "echo '{{TEXT}}' | sudo tee -a {{FILE}}",
           "note": "sudo echo ... > file 은 리다이렉션이 일반 사용자 권한으로 처리되어 실패함"
+        },
+        {
+          "title": "Solaris RBAC 로 관리 명령 실행",
+          "command": "profiles\npfexec {{COMMAND}}",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "profiles 로 부여된 권한 프로필을 확인한 뒤, pfexec 로 해당 프로필 권한으로 실행합니다."
         }
       ],
       "cautions": [
         "sudo {{COMMAND}} > {{FILE}} 의 리다이렉션은 sudo 밖(현재 사용자)에서 처리됩니다. sudo tee 또는 sudo sh -c '...' 를 사용하세요.",
         "sudo -s 는 현재 사용자의 환경(PATH, HOME 일부)을 유지하므로 root 의 원래 환경이 필요하면 sudo -i 를 쓰세요."
       ],
-      "platformNotes": {
-        "rhel": "관리자 그룹은 wheel 입니다 (%wheel ALL=(ALL) ALL). usermod -aG wheel {{USER}} 로 권한 부여.",
-        "debian": "관리자 그룹은 sudo 입니다 (%sudo ALL=(ALL:ALL) ALL). Ubuntu 는 root 비밀번호가 잠겨 있어 기본적으로 sudo 를 사용합니다. Debian 최소 설치에서는 sudo 패키지가 없을 수 있습니다."
-      },
       "install": {
         "rhel": {
           "package": "sudo",
@@ -373,7 +435,29 @@
           "package": "sudo",
           "preinstalled": true,
           "note": "Debian 설치 시 root 비밀번호를 지정하면 sudo 가 설치되지 않을 수 있음"
+        },
+        "aix": {
+          "package": "sudo",
+          "preinstalled": false,
+          "note": "AIX Toolbox for Open Source Software 의 sudo RPM 을 설치 (dnf install sudo 또는 rpm -ivh)"
+        },
+        "hpux": {
+          "package": "sudo",
+          "preinstalled": false,
+          "note": "HP-UX Internet Express 또는 별도 sudo depot 를 swinstall 로 설치"
+        },
+        "solaris": {
+          "package": "security/sudo",
+          "preinstalled": false,
+          "note": "Solaris 11 은 대부분 설치되어 있음 (없으면 pkg install sudo). Solaris 10 은 기본 미포함"
         }
+      },
+      "platformNotes": {
+        "rhel": "관리자 그룹은 wheel 입니다 (%wheel ALL=(ALL) ALL). usermod -aG wheel {{USER}} 로 권한 부여.",
+        "debian": "관리자 그룹은 sudo 입니다 (%sudo ALL=(ALL:ALL) ALL). Ubuntu 는 root 비밀번호가 잠겨 있어 기본적으로 sudo 를 사용합니다. Debian 최소 설치에서는 sudo 패키지가 없을 수 있습니다.",
+        "aix": "기본 OS 에는 없고 AIX Toolbox 패키지로 설치합니다. 설정 파일은 /etc/sudoers 입니다. AIX 자체 권한 위임은 RBAC(swrole, rolelist)로도 합니다. wheel·sudo 같은 기본 관리자 그룹 규칙은 없으므로 직접 추가해야 합니다.",
+        "hpux": "기본 OS 에는 없고 별도 depot 로 설치합니다. 설치 경로(/usr/local/bin/sudo 등)와 sudoers 위치는 패키지에 따라 다르므로 sudo -V 로 확인하세요. HP-UX 자체 권한 위임 도구는 RBAC(privrun) 입니다.",
+        "solaris": "Solaris 11 은 OS 저장소에서 sudo 를 제공하며(대부분 기본 설치) /etc/sudoers 를 사용합니다. Solaris 고유 방식은 RBAC 입니다: 권한 프로필이 부여된 사용자는 pfexec {{COMMAND}} 로 실행하고, profiles 로 내 프로필을 확인합니다. Solaris 11 의 root 는 기본적으로 role 이라 직접 로그인할 수 없습니다."
       },
       "help": "man sudo",
       "keywords": [
@@ -390,7 +474,10 @@
         "etc-sudoers",
         "whoami",
         "usermod"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "su",
@@ -401,7 +488,10 @@
       "task": "users.elevate",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -415,7 +505,7 @@
       "options": [
         {
           "flag": "-, -l, --login",
-          "desc": "로그인 셸로 전환 (대상 사용자의 환경·홈 디렉토리 적용)"
+          "desc": "로그인 셸로 전환 (대상 사용자의 환경·홈 디렉토리 적용). Unix 에서는 - 만 사용 (-l, --login 은 Linux)"
         },
         {
           "flag": "-c '{{COMMAND}}'",
@@ -423,11 +513,11 @@
         },
         {
           "flag": "-s {{SHELL}}",
-          "desc": "사용할 셸 지정 (nologin 계정 확인 시 -s /bin/bash)"
+          "desc": "사용할 셸 지정 (nologin 계정 확인 시 -s /bin/bash) (GNU/Linux 전용)"
         },
         {
           "flag": "-m, -p",
-          "desc": "현재 환경 변수 유지"
+          "desc": "현재 환경 변수 유지 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -441,7 +531,21 @@
         },
         {
           "title": "nologin 계정으로 명령 실행",
-          "command": "su -s /bin/bash -c '{{COMMAND}}' {{USER}}"
+          "command": "su -s /bin/bash -c '{{COMMAND}}' {{USER}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "su 사용 기록 확인",
+          "command": "tail -20 /var/adm/sulog",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "note": "+ 는 성공, - 는 실패입니다."
         }
       ],
       "cautions": [
@@ -450,7 +554,10 @@
       ],
       "platformNotes": {
         "rhel": "pam_wheel 설정(/etc/pam.d/su)으로 wheel 그룹만 su 를 허용하도록 제한할 수 있습니다.",
-        "debian": "Ubuntu 는 root 비밀번호가 설정되어 있지 않아 su - 가 실패합니다. sudo -i 를 사용하세요."
+        "debian": "Ubuntu 는 root 비밀번호가 설정되어 있지 않아 su - 가 실패합니다. sudo -i 를 사용하세요.",
+        "aix": "su 기록은 /var/adm/sulog 에 남습니다. su 를 허용할 그룹은 /etc/security/user 의 sugroups 속성으로 제한합니다 (lsuser -a sugroups root). -s, -m 옵션은 없습니다.",
+        "hpux": "su 기록은 /var/adm/sulog 에 남습니다. /etc/default/security 의 SU_ROOT_GROUP 으로 root 전환을 허용할 그룹을 제한할 수 있습니다. -s, -m 옵션은 없습니다.",
+        "solaris": "su 기록은 /var/adm/sulog, 설정은 /etc/default/su 입니다. Solaris 11 은 root 가 role 이라 root role 이 부여된 사용자만 su - 로 전환할 수 있습니다 (roles {{USER}} 로 확인). -s, -m 옵션은 없습니다."
       },
       "help": "man su",
       "keywords": [
@@ -464,7 +571,10 @@
         "sudo",
         "whoami",
         "id"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "runas",
@@ -541,7 +651,10 @@
       "related": [
         "win-whoami",
         "net-user"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "chmod",
@@ -552,7 +665,10 @@
       "task": "users.permission",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -570,30 +686,106 @@
         },
         {
           "flag": "-v",
-          "desc": "처리한 파일마다 결과 출력"
+          "desc": "처리한 파일마다 결과 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-c",
-          "desc": "실제로 변경된 파일만 출력"
+          "desc": "실제로 변경된 파일만 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "--reference={{REF_FILE}}",
-          "desc": "기준 파일과 같은 권한으로 설정"
+          "desc": "기준 파일과 같은 권한으로 설정 (GNU/Linux 전용)"
         },
         {
-          "flag": "u+x / g-w / o=",
-          "desc": "기호 방식: 소유자 실행 추가 / 그룹 쓰기 제거 / 기타 권한 모두 제거"
+          "flag": "-f",
+          "desc": "변경 실패 메시지를 출력하지 않음"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "숫자 방식 (8진수)",
+          "type": "directive",
+          "note": "앞 자리부터 특수비트(생략 가능)·소유자·그룹·기타 순서입니다.",
+          "items": [
+            {
+              "cmd": "7 / 6 / 5 / 4 / 0",
+              "desc": "rwx / rw- / r-x / r-- / --- (r=4, w=2, x=1 을 더한 값)"
+            },
+            {
+              "cmd": "755",
+              "desc": "소유자 rwx, 그룹·기타 r-x (디렉토리·실행 파일 기본)"
+            },
+            {
+              "cmd": "644",
+              "desc": "소유자 rw-, 그룹·기타 r-- (일반 파일 기본)"
+            },
+            {
+              "cmd": "750 / 640",
+              "desc": "기타 사용자 접근 차단 (보안 점검 권장값)"
+            },
+            {
+              "cmd": "700 / 600",
+              "desc": "소유자만 접근 (~/.ssh, 개인키, 비밀번호 파일)"
+            },
+            {
+              "cmd": "4755",
+              "desc": "setuid: 실행 시 파일 소유자 권한으로 동작 (예: /usr/bin/passwd)"
+            },
+            {
+              "cmd": "2775",
+              "desc": "setgid: 디렉토리에 걸면 새 파일이 디렉토리 그룹을 상속"
+            },
+            {
+              "cmd": "1777",
+              "desc": "sticky: 공유 디렉토리에서 본인 파일만 삭제 가능 (예: /tmp)"
+            }
+          ]
         },
         {
-          "flag": "X (대문자)",
-          "desc": "디렉토리와 이미 실행 권한이 있는 파일에만 x 부여"
-        },
-        {
-          "flag": "4xxx / 2xxx / 1xxx",
-          "desc": "setuid / setgid / sticky 비트"
+          "title": "기호 방식",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "u / g / o / a",
+              "desc": "소유자 / 그룹 / 기타 / 전체"
+            },
+            {
+              "cmd": "+ / - / =",
+              "desc": "권한 추가 / 제거 / 지정한 값으로 교체"
+            },
+            {
+              "cmd": "u+x",
+              "desc": "소유자에 실행 권한 추가"
+            },
+            {
+              "cmd": "g-w",
+              "desc": "그룹 쓰기 권한 제거"
+            },
+            {
+              "cmd": "o=",
+              "desc": "기타 사용자 권한 모두 제거"
+            },
+            {
+              "cmd": "u+rwX,go-rwx",
+              "desc": "쉼표로 여러 조건을 한 번에 적용"
+            },
+            {
+              "cmd": "X (대문자)",
+              "desc": "디렉토리와 이미 실행 권한이 있는 파일에만 x 부여 (-R 과 함께 사용)"
+            },
+            {
+              "cmd": "u+s / g+s / +t",
+              "desc": "setuid / setgid / sticky 비트"
+            }
+          ]
         }
       ],
       "examples": [
+        {
+          "title": "변경 전 현재 권한 기록 (롤백용)",
+          "command": "ls -ld {{DIR}}\nls -lR {{DIR}} > /tmp/perm_before.txt",
+          "note": "재귀 변경 전에 남겨 두면 문제 시 원래 권한을 확인할 수 있습니다. Linux 는 getfacl -R 로 백업 후 setfacl --restore 로 복원도 가능합니다."
+        },
         {
           "title": "스크립트에 실행 권한 추가",
           "command": "chmod +x {{FILE}}"
@@ -620,6 +812,11 @@
         "chmod -R 755 처럼 숫자로 재귀 적용하면 일반 파일까지 실행 권한이 붙습니다. find 로 파일/디렉토리를 나누거나 X 를 사용하세요.",
         "ACL 이 설정된 파일은 chmod 의 그룹 권한이 ACL mask 를 바꿉니다."
       ],
+      "platformNotes": {
+        "aix": "-R, -f, -h 를 지원하며 -v, -c, --reference 는 없습니다. JFS2 확장 ACL(NFS4) 이 걸린 파일은 aclget 으로 확인하세요.",
+        "hpux": "-R, -A(ACL 유지) 를 지원하며 -v, -c, --reference 는 없습니다. JFS(VxFS) ACL 은 getacl 로 확인합니다.",
+        "solaris": "-R, -f 를 지원하며 -v, -c, --reference 는 없습니다. ZFS 에서는 chmod A+user:{{USER}}:read_data:allow {{FILE}} 처럼 NFSv4 ACL 도 chmod 로 설정하고 ls -V 로 확인합니다."
+      },
       "help": "man chmod",
       "keywords": [
         "권한 변경",
@@ -638,7 +835,10 @@
         "setfacl",
         "ls",
         "stat"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "chown",
@@ -649,7 +849,10 @@
       "task": "users.permission",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -671,19 +874,15 @@
         },
         {
           "flag": "-v / -c",
-          "desc": "처리 결과 출력 / 변경된 것만 출력"
+          "desc": "처리 결과 출력 / 변경된 것만 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "--reference={{REF_FILE}}",
-          "desc": "기준 파일과 같은 소유자·그룹으로 설정"
+          "desc": "기준 파일과 같은 소유자·그룹으로 설정 (GNU/Linux 전용)"
         },
         {
           "flag": "--from={{OLD_USER}}:{{OLD_GROUP}}",
-          "desc": "현재 소유자가 일치하는 파일만 변경"
-        },
-        {
-          "flag": "{{USER}}:",
-          "desc": "콜론 뒤를 비우면 그룹을 해당 사용자의 기본 그룹으로 설정"
+          "desc": "현재 소유자가 일치하는 파일만 변경 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -697,13 +896,35 @@
         },
         {
           "title": "특정 UID 소유 파일만 다른 사용자로 변경",
-          "command": "chown -R --from={{OLD_USER}} {{USER}} {{DIR}}"
+          "command": "chown -R --from={{OLD_USER}} {{USER}} {{DIR}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "소유자와 그 사용자의 기본 그룹으로 한 번에 변경",
+          "command": "chown {{USER}}: {{FILE}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ],
+          "note": "콜론 뒤를 비우는 형식은 GNU chown 전용입니다."
+        },
+        {
+          "title": "특정 사용자 소유 파일만 찾아 변경 (Unix 공통)",
+          "command": "find {{DIR}} -user {{OLD_USER}} -exec chown {{USER}} {} \\;"
         }
       ],
       "cautions": [
         "chown -R 경로를 잘못 지정하면(예: / 나 /usr) 시스템이 망가질 수 있습니다. 실행 전 경로를 다시 확인하세요.",
         "setuid/setgid 비트가 있는 파일은 소유자를 바꾸면 해당 비트가 해제될 수 있습니다."
       ],
+      "platformNotes": {
+        "aix": "-R, -h, -f 를 지원합니다. {{USER}}:{{GROUP}} 외에 {{USER}}.{{GROUP}} 형식도 받습니다. --from, --reference 는 없습니다.",
+        "hpux": "-R, -h 를 지원합니다. 일반 사용자의 chown 허용 여부는 커널 설정(privgrp CHOWN)에 따릅니다.",
+        "solaris": "-R, -h, -f 를 지원합니다. 기본으로 rstchown 이 켜져 있어 root 가 아니면 소유자를 바꿀 수 없습니다."
+      },
       "help": "man chown",
       "keywords": [
         "소유자 변경",
@@ -718,7 +939,10 @@
         "ls",
         "stat",
         "id"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "chgrp",
@@ -729,7 +953,10 @@
       "task": "users.permission",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -750,11 +977,11 @@
         },
         {
           "flag": "-v / -c",
-          "desc": "처리 결과 출력 / 변경된 것만 출력"
+          "desc": "처리 결과 출력 / 변경된 것만 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "--reference={{REF_FILE}}",
-          "desc": "기준 파일과 같은 그룹으로 설정"
+          "desc": "기준 파일과 같은 그룹으로 설정 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -767,7 +994,15 @@
           "command": "chgrp {{GROUP}} {{FILE}}"
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "일반 사용자는 자신이 속한 그룹으로만 변경할 수 있습니다.",
+        "-R 로 넓은 경로를 바꾸기 전에 ls -ld 로 현재 그룹을 기록해 두세요."
+      ],
+      "platformNotes": {
+        "aix": "-R, -h, -f 를 지원합니다. -v, -c, --reference 는 없습니다.",
+        "hpux": "-R, -h 를 지원합니다. -v, -c, --reference 는 없습니다.",
+        "solaris": "-R, -h, -f 를 지원합니다. -v, -c, --reference 는 없습니다."
+      },
       "help": "man chgrp",
       "keywords": [
         "그룹 변경",
@@ -779,7 +1014,10 @@
         "chown",
         "chmod",
         "groups"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "icacls",
@@ -837,10 +1075,51 @@
         {
           "flag": "/save / /restore",
           "desc": "ACL 을 파일로 백업 / 복원"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "F, M, RX, R, W, (OI)(CI)",
-          "desc": "전체 / 수정 / 읽기·실행 / 읽기 / 쓰기, 하위 파일(OI)·폴더(CI)에 상속"
+          "title": "권한·상속 표기",
+          "type": "directive",
+          "note": "예: {{USER}}:(OI)(CI)M 은 폴더와 그 아래 파일·폴더 전체에 수정 권한",
+          "items": [
+            {
+              "cmd": "F",
+              "desc": "모든 권한 (Full)"
+            },
+            {
+              "cmd": "M",
+              "desc": "수정 (읽기·쓰기·삭제)"
+            },
+            {
+              "cmd": "RX",
+              "desc": "읽기 및 실행"
+            },
+            {
+              "cmd": "R / W",
+              "desc": "읽기 전용 / 쓰기"
+            },
+            {
+              "cmd": "D",
+              "desc": "삭제"
+            },
+            {
+              "cmd": "(OI)",
+              "desc": "하위 파일에 상속 (Object Inherit)"
+            },
+            {
+              "cmd": "(CI)",
+              "desc": "하위 폴더에 상속 (Container Inherit)"
+            },
+            {
+              "cmd": "(IO)",
+              "desc": "현재 폴더에는 적용하지 않고 상속만 (Inherit Only)"
+            },
+            {
+              "cmd": "(I)",
+              "desc": "조회 결과에서 상위 폴더로부터 상속된 항목 표시"
+            }
+          ]
         }
       ],
       "examples": [
@@ -879,7 +1158,10 @@
       "related": [
         "takeown",
         "win-whoami"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "takeown",
@@ -940,7 +1222,10 @@
       ],
       "related": [
         "icacls"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "useradd",
@@ -951,7 +1236,9 @@
       "task": "users.account",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -968,7 +1255,7 @@
         },
         {
           "flag": "-M",
-          "desc": "홈 디렉토리 생성 안 함"
+          "desc": "홈 디렉토리 생성 안 함 (Linux 전용)"
         },
         {
           "flag": "-d {{HOME_DIR}}",
@@ -996,14 +1283,61 @@
         },
         {
           "flag": "-r",
-          "desc": "시스템 계정 생성 (낮은 UID 대역, 홈 미생성)"
+          "desc": "시스템 계정 생성 (낮은 UID 대역, 홈 미생성) (Linux 전용)"
         },
         {
           "flag": "-e {{DATE}}",
-          "desc": "계정 만료일"
+          "desc": "계정 만료일 (Linux 는 YYYY-MM-DD, Unix 는 형식이 다르므로 man 확인)"
+        },
+        {
+          "flag": "-D",
+          "desc": "기본값(기본 그룹, 홈 기준 경로, 셸 등) 조회"
         }
       ],
       "examples": [
+        {
+          "title": "계정 생성부터 sudo 권한 확인까지",
+          "platforms": [
+            "rhel"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "id {{USER}}",
+              "desc": "같은 이름의 계정이 이미 있는지 확인 (없어야 정상)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "useradd -m -s /bin/bash -c '{{COMMENT}}' {{USER}}",
+              "desc": "홈 디렉토리와 함께 계정 생성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "passwd {{USER}}",
+              "desc": "초기 비밀번호 설정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "chage -d 0 {{USER}}",
+              "desc": "첫 로그인 시 비밀번호 변경 강제"
+            },
+            {
+              "prompt": "#",
+              "cmd": "usermod -aG wheel {{USER}}",
+              "desc": "관리자 그룹에 추가 (Ubuntu 는 sudo 그룹)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "id {{USER}}",
+              "desc": "그룹 반영 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "sudo -l -U {{USER}}",
+              "desc": "실제로 허용된 sudo 권한 확인"
+            }
+          ]
+        },
         {
           "title": "일반 사용자 생성 후 비밀번호 설정",
           "command": "useradd -m -s /bin/bash {{USER}}\npasswd {{USER}}"
@@ -1025,7 +1359,26 @@
         {
           "title": "로그인 불가 서비스 계정 생성",
           "command": "useradd -r -s /sbin/nologin -d {{HOME_DIR}} {{USER}}",
-          "note": "Debian 계열은 /usr/sbin/nologin"
+          "note": "Debian 계열은 /usr/sbin/nologin",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "계정 생성 후 비밀번호 설정 (Solaris)",
+          "command": "useradd -m -d /export/home/{{USER}} -s /usr/bin/bash {{USER}}\npasswd {{USER}}",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "Solaris 11 은 /export/home 아래에 사용자별 ZFS 파일시스템이 생기고 /home/{{USER}} 로 자동 마운트됩니다."
+        },
+        {
+          "title": "계정 생성 후 비밀번호 설정 (HP-UX)",
+          "command": "useradd -m -d /home/{{USER}} -s /usr/bin/sh {{USER}}\npasswd {{USER}}",
+          "platforms": [
+            "hpux"
+          ]
         }
       ],
       "cautions": [
@@ -1034,7 +1387,9 @@
       ],
       "platformNotes": {
         "rhel": "login.defs 의 CREATE_HOME yes 로 -m 없이도 홈 디렉토리가 만들어집니다. adduser 는 useradd 로의 심볼릭 링크입니다.",
-        "debian": "-m 을 주지 않으면 홈 디렉토리가 생성되지 않고 기본 셸이 /bin/sh 일 수 있습니다. 대화식으로 만들려면 adduser 를 사용하세요."
+        "debian": "-m 을 주지 않으면 홈 디렉토리가 생성되지 않고 기본 셸이 /bin/sh 일 수 있습니다. 대화식으로 만들려면 adduser 를 사용하세요.",
+        "hpux": "useradd -u -g -G -d -s -c -m -k -e -f 를 지원합니다. -r, -M 은 없습니다. -m 을 주지 않으면 홈 디렉토리가 생성되지 않습니다. 기본값은 useradd -D 로 확인합니다. Trusted 모드 시스템이면 비밀번호 정책은 /tcb 데이터베이스가 관리합니다.",
+        "solaris": "useradd -u -g -G -d -s -c -m -k -e -f 와 RBAC 용 -R(role)·-P(profile)·-K 를 지원합니다. -r, -M 은 없습니다. Solaris 11 은 -m 사용 시 /export/home/{{USER}} 를 ZFS 데이터셋으로 만들고 /home 으로 자동 마운트합니다. 기본값은 useradd -D 로 확인합니다."
       },
       "help": "man useradd",
       "keywords": [
@@ -1052,7 +1407,10 @@
         "groupadd",
         "chage",
         "id"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "usermod",
@@ -1063,7 +1421,9 @@
       "task": "users.account",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1076,7 +1436,7 @@
       "options": [
         {
           "flag": "-aG {{GROUP}}",
-          "desc": "기존 보조 그룹을 유지하며 그룹 추가"
+          "desc": "기존 보조 그룹을 유지하며 그룹 추가 (Linux 전용)"
         },
         {
           "flag": "-G {{GROUP1}},{{GROUP2}}",
@@ -1084,7 +1444,7 @@
         },
         {
           "flag": "-L / -U",
-          "desc": "비밀번호 잠금 / 해제"
+          "desc": "비밀번호 잠금 / 해제 (Linux 전용. Unix 는 passwd -l)"
         },
         {
           "flag": "-s {{SHELL}}",
@@ -1125,11 +1485,32 @@
         {
           "title": "퇴사자 계정 잠금 + 셸 차단",
           "command": "usermod -L -e 1 {{USER}}\nusermod -s /sbin/nologin {{USER}}",
-          "note": "-e 1 은 1970-01-02 만료로 SSH 키 로그인까지 차단"
+          "note": "-e 1 은 1970-01-02 만료로 SSH 키 로그인까지 차단",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "변경 결과 확인",
           "command": "id {{USER}}"
+        },
+        {
+          "title": "보조 그룹 추가 (기존 그룹을 함께 나열)",
+          "command": "id -a {{USER}}\nusermod -G {{OLD_GROUP1}},{{OLD_GROUP2}},{{GROUP}} {{USER}}",
+          "platforms": [
+            "hpux",
+            "solaris"
+          ],
+          "note": "-a 가 없으므로 -G 에 기존 보조 그룹을 모두 다시 적어야 합니다."
+        },
+        {
+          "title": "계정 잠금 (Solaris·HP-UX)",
+          "command": "passwd -l {{USER}}",
+          "platforms": [
+            "hpux",
+            "solaris"
+          ]
         }
       ],
       "cautions": [
@@ -1137,6 +1518,10 @@
         "-L 은 비밀번호만 잠그므로 SSH 키 인증은 계속 가능합니다. 완전 차단은 -e 만료 또는 셸 변경을 함께 사용하세요.",
         "그룹 변경은 해당 사용자가 재로그인해야 반영됩니다."
       ],
+      "platformNotes": {
+        "hpux": "-G 는 보조 그룹 전체를 지정한 목록으로 바꿉니다. 기존 그룹을 함께 적으세요. -L/-U 대신 passwd -l 로 잠급니다. -l(이름 변경), -d -m(홈 이동), -s, -e, -c 는 지원합니다.",
+        "solaris": "-a 옵션이 없어 -G 는 보조 그룹 목록을 교체합니다. 기존 그룹을 함께 적으세요. -L/-U 대신 passwd -l / passwd -u 를 씁니다. RBAC 권한은 usermod -R {{ROLE}} 또는 -P '{{PROFILE}}' 로 부여합니다."
+      },
       "help": "man usermod",
       "keywords": [
         "계정 수정",
@@ -1154,7 +1539,10 @@
         "id",
         "groups",
         "chage"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "userdel",
@@ -1165,7 +1553,9 @@
       "task": "users.account",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "destructive",
@@ -1182,7 +1572,7 @@
         },
         {
           "flag": "-f",
-          "desc": "로그인 중이어도 강제 삭제"
+          "desc": "로그인 중이어도 강제 삭제 (Linux 전용)"
         }
       ],
       "examples": [
@@ -1192,11 +1582,40 @@
         },
         {
           "title": "홈 백업 후 계정과 홈 삭제",
-          "command": "tar czf /root/{{USER}}_home.tgz /home/{{USER}}\nuserdel -r {{USER}}"
+          "command": "tar czf /root/{{USER}}_home.tgz /home/{{USER}}\nuserdel -r {{USER}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "삭제 후 남은 소유자 없는 파일 찾기",
           "command": "find / -xdev -nouser -ls 2>/dev/null"
+        },
+        {
+          "title": "잠금 → 백업 → 삭제 순서로 정리",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "passwd -l {{USER}}",
+              "desc": "먼저 잠가서 일정 기간 영향 여부 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ps -fu {{USER}}",
+              "desc": "남아 있는 프로세스 확인 (해당 사용자의 crontab 예약 작업도 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tar cf /var/tmp/{{USER}}_home.tar {{HOME_DIR}}",
+              "desc": "홈 디렉토리 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "userdel -r {{USER}}",
+              "desc": "계정과 홈 삭제"
+            }
+          ]
         }
       ],
       "cautions": [
@@ -1204,6 +1623,10 @@
         "실행 중인 프로세스가 있으면 삭제가 실패합니다. -f 는 프로세스를 정리하지 않으므로 pkill -u {{USER}} 로 먼저 종료하세요.",
         "삭제한 UID 가 새 계정에 재사용되면 남은 파일의 소유권을 새 계정이 갖게 됩니다."
       ],
+      "platformNotes": {
+        "hpux": "userdel [-r] 만 지원합니다 (-f 없음). 프로세스를 먼저 종료하세요.",
+        "solaris": "userdel [-r] 를 지원합니다 (-f 없음). Solaris 11 에서 -r 은 /export/home 의 사용자 ZFS 데이터셋도 삭제합니다."
+      },
       "help": "man userdel",
       "keywords": [
         "계정 삭제",
@@ -1217,7 +1640,10 @@
         "usermod",
         "deluser",
         "pkill"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "passwd",
@@ -1228,7 +1654,9 @@
       "task": "users.account",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1242,27 +1670,35 @@
       "options": [
         {
           "flag": "-S",
-          "desc": "비밀번호 상태 확인 (P=설정됨, L=잠김, NP=없음)"
+          "desc": "비밀번호 상태 확인 (P=설정됨, L=잠김, NP=없음) (Linux 전용. Solaris·HP-UX 는 -s)"
+        },
+        {
+          "flag": "-s",
+          "desc": "Solaris·HP-UX: 비밀번호 상태 확인 (PS=설정됨, LK=잠김, NP=없음). AIX·Linux 에서는 의미가 다름"
         },
         {
           "flag": "-l",
-          "desc": "비밀번호 잠금"
+          "desc": "비밀번호 잠금 (Linux·Solaris·HP-UX)"
         },
         {
           "flag": "-u",
-          "desc": "비밀번호 잠금 해제"
+          "desc": "비밀번호 잠금 해제 (Linux·Solaris)"
         },
         {
           "flag": "-e",
-          "desc": "비밀번호 즉시 만료 (다음 로그인 시 변경 강제)"
+          "desc": "비밀번호 즉시 만료 (다음 로그인 시 변경 강제) (Linux 전용. Solaris·HP-UX 는 -f)"
+        },
+        {
+          "flag": "-f",
+          "desc": "Solaris·HP-UX: 다음 로그인 시 비밀번호 변경 강제 (Linux 의 -e)"
         },
         {
           "flag": "-d",
-          "desc": "비밀번호 삭제 (빈 비밀번호)"
+          "desc": "비밀번호 삭제 (빈 비밀번호) (AIX 제외)"
         },
         {
           "flag": "-x {{DAYS}} / -n {{DAYS}} / -w {{DAYS}}",
-          "desc": "최대 사용일 / 최소 사용일 / 만료 경고일"
+          "desc": "최대 사용일 / 최소 사용일 / 만료 경고일 (Linux·Solaris·HP-UX)"
         },
         {
           "flag": "--stdin",
@@ -1276,15 +1712,28 @@
         },
         {
           "title": "비밀번호 상태 확인",
-          "command": "passwd -S {{USER}}"
+          "command": "passwd -S {{USER}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "초기 비밀번호 설정 후 첫 로그인 시 변경 강제",
-          "command": "passwd {{USER}}\npasswd -e {{USER}}"
+          "command": "passwd {{USER}}\npasswd -e {{USER}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "스크립트로 비밀번호 설정 (배포판 공통)",
-          "command": "echo '{{USER}}:{{PASSWORD}}' | chpasswd"
+          "command": "echo '{{USER}}:{{PASSWORD}}' | chpasswd",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix"
+          ]
         },
         {
           "title": "스크립트로 비밀번호 설정",
@@ -1292,6 +1741,21 @@
           "platforms": [
             "rhel"
           ]
+        },
+        {
+          "title": "상태 확인·첫 로그인 변경 강제 (Solaris·HP-UX)",
+          "command": "passwd -s {{USER}}\npasswd -f {{USER}}",
+          "platforms": [
+            "hpux"
+          ]
+        },
+        {
+          "title": "첫 로그인 변경 강제·잠금 해제 (AIX)",
+          "command": "pwdadm -f ADMCHG {{USER}}\nchuser account_locked=false {{USER}}\nchsec -f /etc/security/lastlog -a unsuccessful_login_count=0 -s {{USER}}",
+          "platforms": [
+            "aix"
+          ],
+          "note": "AIX 는 잠금·실패 횟수가 passwd 가 아닌 사용자 속성으로 관리됩니다. 상태는 lsuser -a account_locked unsuccessful_login_count {{USER}} 로 확인합니다."
         }
       ],
       "cautions": [
@@ -1300,7 +1764,9 @@
       ],
       "platformNotes": {
         "rhel": "--stdin 옵션을 지원합니다. 비밀번호 복잡도는 /etc/security/pwquality.conf 에서 설정합니다.",
-        "debian": "--stdin 옵션이 없으므로 chpasswd 를 사용하세요. -S 출력 형식이 RHEL 과 다릅니다."
+        "debian": "--stdin 옵션이 없으므로 chpasswd 를 사용하세요. -S 출력 형식이 RHEL 과 다릅니다.",
+        "aix": "passwd 는 비밀번호 변경만 합니다 (-f 는 GECOS, -s 는 셸 변경으로 의미가 다름). 첫 로그인 변경 강제는 pwdadm -f ADMCHG, 잠금은 chuser account_locked=true, 만료 정책은 chuser maxage=(주 단위) 로 설정합니다. chpasswd 로 일괄 설정 시 ADMCHG 플래그가 붙습니다 (-c 로 제거).",
+        "hpux": "-s(상태), -l(잠금), -d(삭제), -f(변경 강제), -x/-n/-w(에이징) 를 지원합니다. --stdin 은 없습니다. Trusted 모드에서는 잠금 해제·실패 횟수 초기화를 modprpw 로 하므로 시스템 모드를 먼저 확인하세요."
       },
       "help": "man passwd",
       "keywords": [
@@ -1314,8 +1780,12 @@
       "related": [
         "chage",
         "usermod",
-        "useradd"
-      ]
+        "useradd",
+        "solaris-passwd"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "groupadd",
@@ -1326,7 +1796,9 @@
       "task": "users.account",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1343,28 +1815,58 @@
         },
         {
           "flag": "-r",
-          "desc": "시스템 그룹 생성 (낮은 GID 대역)"
+          "desc": "시스템 그룹 생성 (낮은 GID 대역) (Linux 전용)"
         },
         {
           "flag": "-f",
-          "desc": "이미 있으면 오류 없이 성공 처리"
+          "desc": "이미 있으면 오류 없이 성공 처리 (Linux 전용)"
+        },
+        {
+          "flag": "-o",
+          "desc": "-g 와 함께 이미 사용 중인 GID 중복 허용 (권장하지 않음)"
         }
       ],
       "examples": [
         {
           "title": "그룹 생성 후 사용자 추가",
-          "command": "groupadd {{GROUP}}\nusermod -aG {{GROUP}} {{USER}}"
+          "command": "groupadd {{GROUP}}\nusermod -aG {{GROUP}} {{USER}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "그룹에서 사용자 제거",
-          "command": "gpasswd -d {{USER}} {{GROUP}}"
+          "command": "gpasswd -d {{USER}} {{GROUP}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "그룹 구성원 확인",
-          "command": "getent group {{GROUP}}"
+          "command": "getent group {{GROUP}}",
+          "platforms": [
+            "rhel",
+            "debian",
+            "solaris"
+          ]
+        },
+        {
+          "title": "GID 를 맞춰 그룹 생성 후 확인 (Unix)",
+          "command": "groupadd -g {{GID}} {{GROUP}}\ngrep '^{{GROUP}}:' /etc/group",
+          "platforms": [
+            "hpux",
+            "solaris"
+          ],
+          "note": "사용자 추가는 usermod -G 에 기존 보조 그룹과 함께 적습니다."
         }
       ],
       "cautions": [],
+      "platformNotes": {
+        "hpux": "groupadd [-g GID [-o]] 를 지원합니다. -r, -f 는 없고 gpasswd 도 없습니다. 구성원 변경은 usermod -G 또는 /etc/group 편집으로 합니다.",
+        "solaris": "groupadd [-g GID [-o]] 를 지원합니다. -r, -f 와 gpasswd 는 없습니다. 구성원 변경은 usermod -G 로 합니다."
+      },
       "help": "man groupadd",
       "keywords": [
         "그룹 생성",
@@ -1378,7 +1880,10 @@
         "usermod",
         "useradd",
         "groups"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "adduser",
@@ -1462,7 +1967,10 @@
         "deluser",
         "usermod",
         "passwd"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "deluser",
@@ -1529,7 +2037,10 @@
         "userdel",
         "adduser",
         "usermod"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "net-user",
@@ -1548,13 +2059,10 @@
       "description": "로컬(또는 /domain 으로 도메인) 사용자 계정을 조회·생성·삭제하고 비밀번호와 활성 상태를 변경합니다. 단일 사용자 조회 시 마지막 로그온, 비밀번호 만료일, 소속 그룹 등을 확인할 수 있습니다. 조회는 일반 사용자도 가능합니다.",
       "syntax": [
         "net user [{{USER}} [{{PASSWORD}} | *] [/add | /delete]] [/domain]",
-        "net user {{USER}} /active:yes|no"
+        "net user {{USER}} /active:yes|no",
+        "net user {{USER}} *"
       ],
       "options": [
-        {
-          "flag": "{{USER}} *",
-          "desc": "비밀번호를 화면에 표시하지 않고 입력받아 변경"
-        },
         {
           "flag": "/add",
           "desc": "계정 생성"
@@ -1624,7 +2132,10 @@
         "net-accounts",
         "get-localuser",
         "new-localuser"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "net-localgroup",
@@ -1645,10 +2156,6 @@
         "net localgroup [{{GROUP}} [{{MEMBER}}...] [/add | /delete]]"
       ],
       "options": [
-        {
-          "flag": "{{GROUP}}",
-          "desc": "그룹 이름 (생략하면 전체 로컬 그룹 목록)"
-        },
         {
           "flag": "/add",
           "desc": "구성원 추가 (구성원 없이 쓰면 그룹 생성)"
@@ -1692,7 +2199,10 @@
         "net-user",
         "get-localuser",
         "gpresult"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-localuser",
@@ -1721,10 +2231,6 @@
         {
           "flag": "-SID {{SID}}",
           "desc": "SID 로 조회"
-        },
-        {
-          "flag": "| Select-Object *",
-          "desc": "모든 속성 표시 (PasswordLastSet, LastLogon 등)"
         }
       ],
       "examples": [
@@ -1764,7 +2270,10 @@
         "new-localuser",
         "net-user",
         "net-localgroup"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "new-localuser",
@@ -1846,7 +2355,10 @@
         "net-user",
         "net-localgroup",
         "net-accounts"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "umask",
@@ -1857,7 +2369,10 @@
       "task": "users.umask",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -1869,16 +2384,33 @@
       ],
       "options": [
         {
-          "flag": "(인자 없음)",
-          "desc": "현재 마스크를 8진수로 출력"
-        },
-        {
           "flag": "-S",
-          "desc": "기호 형식으로 출력 (u=rwx,g=rx,o=rx)"
-        },
+          "desc": "기호 형식으로 출력 (u=rwx,g=rx,o=rx). Solaris 10 /bin/sh 에서는 미지원"
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "{{MASK}}",
-          "desc": "새 마스크 설정 (예: 022, 027, 077)"
+          "title": "마스크 값과 새로 만든 파일 권한",
+          "type": "directive",
+          "note": "파일은 666, 디렉토리는 777 에서 마스크 비트를 뺀 값이 됩니다.",
+          "items": [
+            {
+              "cmd": "022",
+              "desc": "파일 644, 디렉토리 755 (일반 기본값)"
+            },
+            {
+              "cmd": "027",
+              "desc": "파일 640, 디렉토리 750 (기타 사용자 차단, 보안 점검 권장값)"
+            },
+            {
+              "cmd": "077",
+              "desc": "파일 600, 디렉토리 700 (본인만 접근)"
+            },
+            {
+              "cmd": "002",
+              "desc": "파일 664, 디렉토리 775 (그룹 공동 작업)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1893,21 +2425,40 @@
         },
         {
           "title": "실행 중인 프로세스의 umask 확인",
-          "command": "grep Umask /proc/{{PID}}/status"
+          "command": "grep Umask /proc/{{PID}}/status",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "systemd 서비스의 umask 지정",
           "command": "systemctl edit {{SERVICE}}\n# [Service] 아래에 UMask=0027 추가",
-          "note": "서비스는 로그인 셸의 umask 를 따르지 않음"
+          "note": "서비스는 로그인 셸의 umask 를 따르지 않음",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "사용자 기본 umask 속성 확인·변경 (AIX)",
+          "command": "lsuser -a umask {{USER}}\nchuser umask=027 {{USER}}",
+          "platforms": [
+            "aix"
+          ],
+          "note": "기본값은 /etc/security/user 의 default 스탠자 umask 입니다."
         }
       ],
       "cautions": [
-        "~/.bashrc 나 /etc/profile 에 설정한 umask 는 로그인 셸에만 적용됩니다. systemd 서비스는 유닛 파일의 UMask= 로 지정해야 합니다.",
+        "~/.bashrc 나 /etc/profile 에 설정한 umask 는 로그인 셸에만 적용됩니다. Linux systemd 서비스는 유닛 파일의 UMask= 로, Unix 데몬은 기동 스크립트 안에서 지정해야 합니다.",
         "보안 점검(KISA 등)에서는 umask 022 이상(027 권장)을 요구하는 경우가 많습니다."
       ],
       "platformNotes": {
         "rhel": "기본값은 /etc/login.defs 의 UMASK 와 /etc/profile·/etc/bashrc 에서 정해집니다.",
-        "debian": "기본값은 /etc/login.defs 의 UMASK 를 pam_umask 가 적용합니다. USERGROUPS_ENAB yes 이면 사용자 전용 그룹 계정은 002 가 됩니다."
+        "debian": "기본값은 /etc/login.defs 의 UMASK 를 pam_umask 가 적용합니다. USERGROUPS_ENAB yes 이면 사용자 전용 그룹 계정은 002 가 됩니다.",
+        "aix": "셸 내장 명령으로 같습니다. 로그인 기본값은 /etc/security/user 의 umask 속성(기본 022)이며 /etc/profile 의 umask 가 그 뒤에 적용됩니다.",
+        "hpux": "셸 내장 명령으로 같습니다. 기본값은 /etc/profile 과 /etc/default/security 의 UMASK 로 정합니다.",
+        "solaris": "셸 내장 명령으로 같습니다. 기본값은 /etc/profile 과 /etc/default/login 의 UMASK 로 정합니다. Solaris 10 의 /bin/sh(본 셸)는 -S 를 지원하지 않습니다."
       },
       "help": "help umask",
       "keywords": [
@@ -1920,7 +2471,10 @@
       "related": [
         "chmod",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "visudo",
@@ -1931,7 +2485,10 @@
       "task": "users.sudoers",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -1940,7 +2497,8 @@
       "description": "/etc/sudoers 또는 /etc/sudoers.d/ 아래 파일을 잠금 상태에서 편집하고, 저장 시 문법을 검사해 오류가 있으면 반영하지 않습니다. sudoers 문법 오류는 sudo 전체를 사용 불가로 만들기 때문에 반드시 visudo 로 편집해야 합니다.",
       "syntax": [
         "visudo [-f {{FILE}}]",
-        "visudo -c [-f {{FILE}}]"
+        "visudo -c [-f {{FILE}}]",
+        "EDITOR={{EDITOR}} visudo"
       ],
       "options": [
         {
@@ -1954,10 +2512,28 @@
         {
           "flag": "-s",
           "desc": "엄격 모드 문법 검사"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "EDITOR={{EDITOR}} visudo",
-          "desc": "사용할 편집기 지정 (vim, nano 등)"
+          "title": "저장할 때 문법 오류가 나면",
+          "type": "interactive",
+          "prompt": "What now?",
+          "note": "visudo 는 임시 파일에서 편집한 뒤 문법을 검사하고 통과해야 실제 파일에 반영합니다.",
+          "items": [
+            {
+              "cmd": "e",
+              "desc": "다시 편집 (권장)"
+            },
+            {
+              "cmd": "x",
+              "desc": "저장하지 않고 종료 (원래 파일 유지)"
+            },
+            {
+              "cmd": "Q",
+              "desc": "오류가 있는 채로 저장 (sudo 가 동작하지 않을 수 있어 사용 금지)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1982,8 +2558,23 @@
         "편집 중 다른 root 세션을 하나 열어 두세요. 규칙 실수로 sudo 가 막히면 복구할 수단이 필요합니다.",
         "visudo 가 '오류가 있음'을 알리면 e 로 다시 편집하세요. Q(강제 저장)를 선택하면 sudo 가 깨질 수 있습니다."
       ],
+      "install": {
+        "aix": {
+          "package": "sudo",
+          "preinstalled": false,
+          "note": "sudo 패키지에 포함 (AIX Toolbox)"
+        },
+        "hpux": {
+          "package": "sudo",
+          "preinstalled": false,
+          "note": "sudo depot 에 포함"
+        }
+      },
       "platformNotes": {
-        "debian": "기본 편집기가 nano 입니다. vim 을 쓰려면 EDITOR=vim visudo 또는 update-alternatives --config editor."
+        "debian": "기본 편집기가 nano 입니다. vim 을 쓰려면 EDITOR=vim visudo 또는 update-alternatives --config editor.",
+        "aix": "sudo 를 설치하면 함께 들어옵니다. 기본 편집기는 vi 입니다.",
+        "hpux": "sudo 를 설치하면 함께 들어옵니다. sudoers 경로는 패키지에 따라 다르므로 visudo 가 여는 파일을 확인하세요.",
+        "solaris": "Solaris 11 은 sudo 와 함께 제공되며 /etc/sudoers 를 편집합니다."
       },
       "help": "man visudo",
       "keywords": [
@@ -1997,7 +2588,10 @@
         "etc-sudoers",
         "sudo",
         "usermod"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-sudoers",
@@ -2010,7 +2604,10 @@
       "task": "users.sudoers",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -2021,37 +2618,137 @@
         "{{USER}} {{HOST}}=({{RUNAS}}) [NOPASSWD:] {{COMMANDS}}",
         "%{{GROUP}} ALL=(ALL) ALL"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "{{USER}} ALL=(ALL) ALL",
-          "desc": "사용자에게 모든 명령 허용 (비밀번호 필요)"
+          "title": "규칙 줄 형식",
+          "type": "directive",
+          "note": "명령은 절대 경로로 씁니다. 같은 사용자에 여러 규칙이 맞으면 마지막에 맞는 규칙이 적용됩니다.",
+          "items": [
+            {
+              "cmd": "{{USER}} {{HOST}}=({{RUNAS}}) {{COMMANDS}}",
+              "desc": "누가 / 어느 호스트에서 / 어떤 계정으로 / 어떤 명령을 실행할 수 있는지"
+            },
+            {
+              "cmd": "{{USER}} ALL=(ALL) ALL",
+              "desc": "모든 호스트에서 모든 계정으로 모든 명령 허용 (비밀번호 필요)"
+            },
+            {
+              "cmd": "%{{GROUP}} ALL=(ALL) ALL",
+              "desc": "% 로 시작하면 그룹 대상"
+            },
+            {
+              "cmd": "{{USER}} ALL=(root) NOPASSWD: {{COMMAND}}",
+              "desc": "지정 명령만 비밀번호 없이 허용"
+            },
+            {
+              "cmd": "{{USER}} ALL=({{APP_USER}}) ALL",
+              "desc": "root 가 아닌 서비스 계정으로만 실행 허용 (sudo -u {{APP_USER}})"
+            },
+            {
+              "cmd": "{{USER}} ALL=(ALL) ALL, !/usr/bin/su",
+              "desc": "! 로 특정 명령 제외 (우회가 쉬워 보안 통제로는 불완전)"
+            }
+          ]
         },
         {
-          "flag": "%{{GROUP}} ALL=(ALL) ALL",
-          "desc": "% 로 시작하면 그룹 대상"
+          "title": "별칭",
+          "type": "directive",
+          "note": "별칭 이름은 대문자로 씁니다. 예: OPS ALL=(root) SVC_CMDS",
+          "items": [
+            {
+              "cmd": "User_Alias {{ALIAS}} = {{USER1}}, {{USER2}}",
+              "desc": "사용자 묶음"
+            },
+            {
+              "cmd": "Host_Alias {{ALIAS}} = {{HOST1}}, {{HOST2}}",
+              "desc": "호스트 묶음 (여러 서버에 같은 파일 배포 시)"
+            },
+            {
+              "cmd": "Runas_Alias {{ALIAS}} = {{USER1}}, {{USER2}}",
+              "desc": "실행 계정 묶음"
+            },
+            {
+              "cmd": "Cmnd_Alias {{ALIAS}} = {{CMD1}}, {{CMD2}}",
+              "desc": "명령 묶음"
+            }
+          ]
         },
         {
-          "flag": "NOPASSWD:",
-          "desc": "비밀번호 없이 실행 허용"
+          "title": "Defaults 설정",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "Defaults timestamp_timeout={{MIN}}",
+              "desc": "비밀번호 캐시 시간(분). 0 이면 매번 입력"
+            },
+            {
+              "cmd": "Defaults logfile=/var/log/sudo.log",
+              "desc": "별도 sudo 로그 파일"
+            },
+            {
+              "cmd": "Defaults use_pty",
+              "desc": "명령을 별도 가상 터미널에서 실행 (보안 점검 권장)"
+            },
+            {
+              "cmd": "Defaults env_reset",
+              "desc": "환경 변수를 초기화한 뒤 실행 (기본값)"
+            },
+            {
+              "cmd": "Defaults secure_path=\"{{PATH}}\"",
+              "desc": "sudo 로 실행할 때 쓸 PATH"
+            },
+            {
+              "cmd": "Defaults:{{USER}} !requiretty",
+              "desc": "특정 사용자만 설정 변경 (예: 자동화 계정 tty 요구 해제)"
+            }
+          ]
         },
         {
-          "flag": "Cmnd_Alias {{ALIAS}} = {{CMD1}}, {{CMD2}}",
-          "desc": "명령 묶음 정의"
-        },
-        {
-          "flag": "Defaults timestamp_timeout={{MIN}}",
-          "desc": "비밀번호 캐시 시간(분)"
-        },
-        {
-          "flag": "Defaults logfile=/var/log/sudo.log",
-          "desc": "별도 sudo 로그 파일"
-        },
-        {
-          "flag": "#includedir /etc/sudoers.d",
-          "desc": "조각 파일 디렉토리 포함 (신버전은 @includedir 표기)"
+          "title": "포함 지시어",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "#includedir /etc/sudoers.d",
+              "desc": "디렉토리 안의 조각 파일 포함 (앞의 # 은 주석이 아님)"
+            },
+            {
+              "cmd": "@includedir /etc/sudoers.d",
+              "desc": "sudo 1.9.1 이상의 새 표기 (의미 동일)"
+            },
+            {
+              "cmd": "#include {{FILE}}",
+              "desc": "파일 하나 포함"
+            }
+          ]
         }
       ],
       "examples": [
+        {
+          "title": "규칙 추가 → 검사 → 권한 확인",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cp -p /etc/sudoers /etc/sudoers.bak.$(date +%Y%m%d)",
+              "desc": "변경 전 백업 (다른 root 세션도 하나 열어 둠)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "visudo -f /etc/sudoers.d/{{NAME}}",
+              "desc": "조각 파일에 규칙 작성 (파일 이름에 . 을 넣지 않음)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "visudo -c",
+              "desc": "전체 문법 검사"
+            },
+            {
+              "prompt": "#",
+              "cmd": "sudo -l -U {{USER}}",
+              "desc": "대상 사용자에게 의도한 권한만 적용됐는지 확인"
+            }
+          ]
+        },
         {
           "title": "특정 사용자에게 서비스 재시작만 무비밀번호 허용",
           "command": "{{USER}} ALL=(root) NOPASSWD: /usr/bin/systemctl restart {{SERVICE}}, /usr/bin/systemctl status {{SERVICE}}"
@@ -2072,7 +2769,10 @@
       ],
       "platformNotes": {
         "rhel": "기본으로 %wheel ALL=(ALL) ALL 이 활성화되어 있습니다.",
-        "debian": "기본으로 %sudo ALL=(ALL:ALL) ALL 이 설정되어 있습니다."
+        "debian": "기본으로 %sudo ALL=(ALL:ALL) ALL 이 설정되어 있습니다.",
+        "aix": "AIX Toolbox sudo 는 /etc/sudoers 를 사용합니다. 기본 관리자 그룹 규칙은 없습니다.",
+        "hpux": "sudoers 경로가 설치 패키지에 따라 /etc/sudoers 또는 /usr/local/etc/sudoers 일 수 있습니다. sudo -V (root) 로 확인하세요.",
+        "solaris": "Solaris 11 은 /etc/sudoers 와 /etc/sudoers.d 를 사용합니다. Solaris 고유 권한 위임은 RBAC(/etc/user_attr, 권한 프로필) 입니다."
       },
       "keywords": [
         "sudoers",
@@ -2085,7 +2785,10 @@
       "related": [
         "visudo",
         "sudo"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "chage",
@@ -2158,7 +2861,8 @@
       ],
       "cautions": [
         "서비스 계정이 비밀번호 만료되면 cron·sudo·SSH 비밀번호 로그인이 실패합니다. 보안 정책 적용 시 서비스 계정을 별도로 확인하세요.",
-        "/etc/login.defs 를 수정해도 기존 계정에는 적용되지 않으므로 chage 로 개별 적용해야 합니다."
+        "/etc/login.defs 를 수정해도 기존 계정에는 적용되지 않으므로 chage 로 개별 적용해야 합니다.",
+        "AIX·HP-UX·Solaris 에는 chage 가 없습니다. Solaris·HP-UX 는 passwd -x/-n/-w/-f, AIX 는 chuser maxage=(주)·minage=·maxexpired= 와 pwdadm 을 사용합니다."
       ],
       "help": "man chage",
       "keywords": [
@@ -2174,7 +2878,10 @@
         "usermod",
         "authselect",
         "pam-auth-update"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "net-accounts",
@@ -2260,7 +2967,10 @@
         "secpol-msc",
         "net-user",
         "gpresult"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "secpol-msc",
@@ -2279,22 +2989,38 @@
       "syntax": [
         "secpol.msc"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "계정 정책 > 암호 정책",
-          "desc": "복잡도, 최소 길이, 최대·최소 사용 기간, 기록 개수"
-        },
-        {
-          "flag": "계정 정책 > 계정 잠금 정책",
-          "desc": "잠금 임계값·기간"
-        },
-        {
-          "flag": "로컬 정책 > 사용자 권한 할당",
-          "desc": "원격 데스크톱 로그온 허용, 서비스로 로그온 등"
-        },
-        {
-          "flag": "로컬 정책 > 보안 옵션",
-          "desc": "UAC, 익명 접근, 로그온 메시지 등"
+          "title": "자주 하는 작업",
+          "type": "action",
+          "note": "변경 후 gpupdate /force 로 즉시 적용하고, 도메인 GPO 와 겹치면 gpresult 로 최종 적용값을 확인합니다.",
+          "items": [
+            {
+              "cmd": "계정 정책 > 암호 정책",
+              "desc": "복잡도, 최소 길이, 최대·최소 사용 기간, 최근 암호 기억 개수"
+            },
+            {
+              "cmd": "계정 정책 > 계정 잠금 정책",
+              "desc": "잠금 임계값, 잠금 기간, 잠금 수 초기화 시간"
+            },
+            {
+              "cmd": "로컬 정책 > 감사 정책",
+              "desc": "로그온·계정 관리 등 감사 이벤트 기록 여부 (세부 설정은 고급 감사 정책 구성)"
+            },
+            {
+              "cmd": "로컬 정책 > 사용자 권한 할당",
+              "desc": "원격 데스크톱 서비스를 통한 로그온 허용, 서비스로 로그온, 로컬 로그온 거부 등"
+            },
+            {
+              "cmd": "로컬 정책 > 보안 옵션",
+              "desc": "UAC, 익명 접근 제한, 로그온 메시지, 마지막 사용자 이름 표시 안 함 등"
+            },
+            {
+              "cmd": "마우스 오른쪽 > 속성 > 설명 탭",
+              "desc": "각 정책의 의미와 기본값 확인"
+            }
+          ]
         }
       ],
       "examples": [
@@ -2324,7 +3050,10 @@
         "net-accounts",
         "gpresult",
         "gpupdate"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "getfacl",
@@ -2335,7 +3064,8 @@
       "task": "users.acl",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "critical",
       "risk": "safe",
@@ -2348,7 +3078,7 @@
       "options": [
         {
           "flag": "-R",
-          "desc": "하위까지 재귀 조회"
+          "desc": "하위까지 재귀 조회 (Linux 전용)"
         },
         {
           "flag": "-d",
@@ -2360,15 +3090,15 @@
         },
         {
           "flag": "-n",
-          "desc": "사용자·그룹을 숫자 ID 로 표시"
+          "desc": "사용자·그룹을 숫자 ID 로 표시 (Linux 전용)"
         },
         {
           "flag": "--omit-header",
-          "desc": "파일명·소유자 주석 헤더 생략"
+          "desc": "파일명·소유자 주석 헤더 생략 (Linux 전용)"
         },
         {
           "flag": "-p",
-          "desc": "경로 앞의 '/' 를 제거하지 않음"
+          "desc": "경로 앞의 '/' 를 제거하지 않음 (Linux 전용)"
         }
       ],
       "examples": [
@@ -2379,15 +3109,33 @@
         },
         {
           "title": "디렉토리 ACL 백업",
-          "command": "getfacl -R {{DIR}} > /root/acl_backup.txt"
+          "command": "getfacl -R {{DIR}} > /root/acl_backup.txt",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "ACL 이 걸린 파일 찾기",
           "command": "getfacl -R -s -p {{DIR}} | grep '^# file'",
-          "note": "-s 는 기본 권한 외 ACL 이 있는 파일만 출력"
+          "note": "-s 는 기본 권한 외 ACL 이 있는 파일만 출력",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "ZFS 파일의 ACL 확인 (Solaris)",
+          "command": "ls -V {{FILE}}",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "ZFS 는 NFSv4 형식 ACL 이라 getfacl 대신 ls -V(또는 ls -v) 로 봅니다."
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "AIX 는 aclget {{FILE}}, HP-UX 는 getacl {{FILE}}(JFS/VxFS) 또는 lsacl(HFS) 로 ACL 을 확인합니다."
+      ],
       "install": {
         "rhel": {
           "package": "acl",
@@ -2398,6 +3146,9 @@
           "preinstalled": false,
           "note": "Ubuntu Server 는 대부분 기본 포함, Debian 최소 설치는 apt install acl"
         }
+      },
+      "platformNotes": {
+        "solaris": "UFS 의 POSIX 초안 ACL 에만 동작하며 -a(ACL 전체), -d(기본 ACL) 만 지원합니다. ZFS(Solaris 11 기본)에서는 'File system doesn't support aclent_t style ACL's' 오류가 나므로 ls -V 를 사용하세요."
       },
       "help": "man getfacl",
       "keywords": [
@@ -2411,7 +3162,10 @@
         "setfacl",
         "chmod",
         "ls"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "setfacl",
@@ -2488,7 +3242,8 @@
       ],
       "cautions": [
         "ACL 실제 권한은 mask 로 제한됩니다. 이후 chmod g-w 를 하면 mask 가 바뀌어 ACL 쓰기 권한도 무효가 됩니다.",
-        "cp(-a/-p 없이), 일부 백업 도구, tar(--acls 없이)는 ACL 을 보존하지 않습니다."
+        "cp(-a/-p 없이), 일부 백업 도구, tar(--acls 없이)는 ACL 을 보존하지 않습니다.",
+        "Unix 는 명령·형식이 다릅니다: Solaris UFS 는 setfacl -m user:{{USER}}:rwx(삭제는 -d, 재귀 옵션 없음), Solaris ZFS 는 chmod A+user:{{USER}}:read_data/write_data:allow, AIX 는 aclget/aclput/acledit, HP-UX JFS 는 setacl -m user:{{USER}}:rwx 를 사용합니다."
       ],
       "install": {
         "rhel": {
@@ -2514,7 +3269,10 @@
         "getfacl",
         "chmod",
         "umask"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "authselect",
@@ -2538,36 +3296,52 @@
       ],
       "options": [
         {
-          "flag": "current",
-          "desc": "현재 적용된 프로필과 기능 확인"
-        },
-        {
-          "flag": "list",
-          "desc": "사용 가능한 프로필 목록"
-        },
-        {
-          "flag": "list-features {{PROFILE}}",
-          "desc": "프로필이 지원하는 기능 목록"
-        },
-        {
-          "flag": "select {{PROFILE}} {{FEATURE}}...",
-          "desc": "프로필 선택 (기능 함께 지정)"
-        },
-        {
           "flag": "--force",
           "desc": "authselect 가 관리하지 않던 기존 설정을 백업 후 덮어씀"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "enable-feature / disable-feature",
-          "desc": "현재 프로필에 기능 켜기 / 끄기"
-        },
-        {
-          "flag": "check",
-          "desc": "설정 파일이 수동으로 변경되지 않았는지 확인"
-        },
-        {
-          "flag": "apply-changes",
-          "desc": "프로필 설정을 파일에 다시 적용"
+          "title": "서브 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "authselect current",
+              "desc": "현재 적용된 프로필과 기능 확인"
+            },
+            {
+              "cmd": "authselect list",
+              "desc": "사용 가능한 프로필 목록"
+            },
+            {
+              "cmd": "authselect list-features {{PROFILE}}",
+              "desc": "프로필이 지원하는 기능 목록"
+            },
+            {
+              "cmd": "authselect select {{PROFILE}} {{FEATURE}}...",
+              "desc": "프로필 선택 (기능 함께 지정)"
+            },
+            {
+              "cmd": "authselect enable-feature {{FEATURE}}",
+              "desc": "현재 프로필에 기능 켜기 (예: with-faillock, with-mkhomedir)"
+            },
+            {
+              "cmd": "authselect disable-feature {{FEATURE}}",
+              "desc": "현재 프로필에서 기능 끄기"
+            },
+            {
+              "cmd": "authselect check",
+              "desc": "설정 파일이 수동으로 변경되지 않았는지 확인"
+            },
+            {
+              "cmd": "authselect apply-changes",
+              "desc": "프로필 설정을 파일에 다시 적용"
+            },
+            {
+              "cmd": "authselect backup-list",
+              "desc": "select --force 등이 남긴 백업 목록 (backup-restore {{NAME}} 로 복원)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -2593,14 +3367,14 @@
         "authselect 가 관리하는 /etc/pam.d/system-auth 등을 직접 수정하면 다음 적용 시 덮어써집니다. 사용자 정의가 필요하면 authselect create-profile 로 사용자 프로필을 만드세요.",
         "PAM 설정 변경 전 root 세션을 하나 열어 두세요. 잘못되면 모든 로그인이 막힐 수 있습니다."
       ],
-      "platformNotes": {
-        "rhel": "RHEL 8·9 기본 도구입니다. 사용 가능한 프로필 이름은 버전에 따라 다르므로 authselect list 로 확인하세요."
-      },
       "install": {
         "rhel": {
           "package": "authselect",
           "preinstalled": true
         }
+      },
+      "platformNotes": {
+        "rhel": "RHEL 8·9 기본 도구입니다. 사용 가능한 프로필 이름은 버전에 따라 다르므로 authselect list 로 확인하세요."
       },
       "help": "man authselect",
       "keywords": [
@@ -2615,7 +3389,10 @@
       "related": [
         "chage",
         "passwd"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pam-auth-update",
@@ -2638,10 +3415,6 @@
         "pam-auth-update --disable {{PROFILE}}"
       ],
       "options": [
-        {
-          "flag": "(인자 없음)",
-          "desc": "대화식 메뉴에서 프로필 선택"
-        },
         {
           "flag": "--enable {{PROFILE}}",
           "desc": "프로필 활성화 (예: mkhomedir)"
@@ -2695,7 +3468,10 @@
       "related": [
         "chage",
         "passwd"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "gpupdate",
@@ -2770,7 +3546,10 @@
       "related": [
         "gpresult",
         "secpol-msc"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "gpresult",
@@ -2855,7 +3634,10 @@
         "gpupdate",
         "secpol-msc",
         "win-whoami"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

@@ -1,0 +1,123 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "security",
+  "commands": [
+    {
+      "id": "aix-etc-security-failedlogin",
+      "name": "/etc/security/failedlogin",
+      "kind": "file",
+      "category": "security",
+      "task": "security.login-history",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "AIX 로그인 실패 기록 파일 (who 로 읽음)",
+      "description": "AIX 에서 로그인 실패 기록을 저장하는 바이너리 파일로, Linux 의 /var/log/btmp(lastb)에 해당합니다. 텍스트가 아니므로 cat 대신 who 명령에 파일을 지정해 읽습니다. 무차별 대입 시도나 잘못된 비밀번호로 계정이 잠긴 원인을 추적할 때 확인합니다.",
+      "syntax": [
+        "who /etc/security/failedlogin"
+      ],
+      "options": [],
+      "examples": [
+        { "title": "로그인 실패 기록 보기", "command": "who /etc/security/failedlogin | tail -30", "note": "사용자명, 터미널, 시각, 접속 호스트가 나옵니다." },
+        { "title": "특정 사용자의 실패 기록", "command": "who /etc/security/failedlogin | grep {{USER}}" },
+        { "title": "성공한 로그인 이력은 wtmp", "command": "last | head -30", "note": "last 는 /var/adm/wtmp 를 읽습니다." },
+        {
+          "title": "보관 후 파일 비우기 (용량 관리)",
+          "steps": [
+            { "prompt": "#", "cmd": "cp -p /etc/security/failedlogin /var/adm/failedlogin.$(date +%Y%m%d)", "desc": "보관용 사본 저장" },
+            { "prompt": "#", "cmd": "cat /dev/null > /etc/security/failedlogin", "desc": "파일 비우기 (삭제하지 말고 내용만 비움)" }
+          ]
+        }
+      ],
+      "cautions": [
+        "파일을 삭제하면 기록이 남지 않을 수 있습니다. 비울 때는 내용만 비우고 권한·소유자를 유지하세요.",
+        "접속 기록은 감사 증적이므로 내부 보관 기간 정책에 따라 백업한 뒤 정리하세요."
+      ],
+      "help": "man who",
+      "keywords": ["로그인 실패", "failedlogin", "lastb", "btmp", "접속 실패 이력", "무차별 대입"],
+      "related": ["lastb", "last", "who", "aix-etc-security-lastlog", "aix-lsuser"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-etc-security-lastlog",
+      "name": "/etc/security/lastlog",
+      "kind": "file",
+      "category": "security",
+      "task": "security.login-history",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "사용자별 마지막 로그인·실패 횟수 기록 파일",
+      "description": "사용자별 마지막 로그인 성공·실패 시각, 터미널, 접속 호스트와 연속 로그인 실패 횟수를 stanza 형식으로 저장합니다. 계정 잠금 판단(loginretries)은 이 파일의 unsuccessful_login_count 로 이루어집니다. 조회는 lsuser·lssec, 변경은 chuser·chsec 으로 합니다.",
+      "syntax": [
+        "{{USER}}:\n        time_last_login = {{EPOCH}}\n        tty_last_login = {{TTY}}\n        host_last_login = {{HOST}}\n        unsuccessful_login_count = {{COUNT}}"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "stanza 항목",
+          "type": "directive",
+          "note": "시각 값은 epoch 초입니다.",
+          "items": [
+            { "cmd": "time_last_login", "desc": "마지막 로그인 성공 시각" },
+            { "cmd": "tty_last_login", "desc": "마지막 로그인 터미널" },
+            { "cmd": "host_last_login", "desc": "마지막 로그인 접속 호스트" },
+            { "cmd": "unsuccessful_login_count", "desc": "마지막 성공 이후 연속 실패 횟수 (loginretries 이상이면 잠김)" },
+            { "cmd": "time_last_unsuccessful_login", "desc": "마지막 실패 시각" },
+            { "cmd": "tty_last_unsuccessful_login", "desc": "마지막 실패 터미널" },
+            { "cmd": "host_last_unsuccessful_login", "desc": "마지막 실패 접속 호스트" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "장기 미사용 계정 점검용 마지막 로그인 조회", "command": "lsuser -a time_last_login host_last_login ALL", "note": "값이 없는 계정은 로그인한 적이 없는 계정입니다." },
+        { "title": "로그인 실패 정보 조회", "command": "lssec -f /etc/security/lastlog -s {{USER}} -a unsuccessful_login_count -a time_last_unsuccessful_login -a host_last_unsuccessful_login" },
+        { "title": "실패 횟수 초기화", "command": "chsec -f /etc/security/lastlog -s {{USER}} -a unsuccessful_login_count=0" }
+      ],
+      "cautions": [
+        "직접 편집하지 마세요. 형식이 깨지면 로그인 처리에 문제가 생길 수 있습니다."
+      ],
+      "help": "man lastlog (파일 형식) · man lssec",
+      "keywords": ["마지막 로그인", "lastlog", "로그인 실패 횟수", "장기 미사용 계정", "time_last_login", "계정 잠금"],
+      "related": ["aix-etc-security-failedlogin", "aix-lsuser", "aix-chuser", "aix-lssec", "lastlog"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-csum",
+      "name": "csum",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.hash",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 해시(MD5·SHA1·SHA256 등) 계산",
+      "description": "파일의 메시지 다이제스트(해시)를 계산합니다. 반입한 패치·설치 파일이 원본과 같은지 확인할 때 씁니다. AIX 에는 sha256sum 이 기본으로 없으므로 csum 이나 openssl dgst 를 사용합니다.",
+      "syntax": [
+        "csum -h {{ALGORITHM}} {{FILE}} [{{FILE2}} ...]"
+      ],
+      "options": [
+        { "flag": "-h {{ALGORITHM}}", "desc": "해시 알고리즘 (MD5, SHA1, SHA224, SHA256, SHA384, SHA512)" }
+      ],
+      "examples": [
+        { "title": "패치 파일 SHA256 확인", "command": "csum -h SHA256 {{FILE}}", "note": "IBM Fix Central 등에서 제공한 해시 값과 비교합니다." },
+        { "title": "openssl 로 같은 계산", "command": "openssl dgst -sha256 {{FILE}}" }
+      ],
+      "cautions": [
+        "MD5·SHA1 은 무결성 위변조 검증용으로 권장되지 않습니다. 가능하면 SHA256 이상을 쓰세요."
+      ],
+      "platformNotes": {
+        "aix": "AIX 7.2·7.3 에 기본 포함되어 있습니다. AIX Toolbox 의 coreutils 를 설치하면 /opt/freeware/bin/sha256sum 도 쓸 수 있습니다."
+      },
+      "help": "man csum",
+      "keywords": ["파일 해시", "csum", "sha256", "md5", "체크섬", "무결성 검증"],
+      "related": ["sha256sum", "md5sum", "openssl", "aix-lppchk"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}

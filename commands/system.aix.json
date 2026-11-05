@@ -1,0 +1,1339 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "system",
+  "commands": [
+    {
+      "id": "aix-oslevel",
+      "name": "oslevel",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "aix"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "AIX 버전·TL·SP 레벨 확인",
+      "description": "설치된 AIX 의 버전과 Technology Level(TL), Service Pack(SP)을 보여 줍니다. 패치 점검·벤더 지원 문의 때 가장 먼저 확인하는 값입니다. -s 결과의 7200-05-03-2148 은 AIX 7.2 TL5 SP3, 2021년 48주 빌드를 뜻합니다.",
+      "syntax": [
+        "oslevel [-r | -s]",
+        "oslevel -s -l {{LEVEL}}"
+      ],
+      "options": [
+        {
+          "flag": "-r",
+          "desc": "TL 레벨까지 표시 (예: 7200-05)"
+        },
+        {
+          "flag": "-s",
+          "desc": "SP 레벨까지 표시 (예: 7200-05-03-2148)"
+        },
+        {
+          "flag": "-q",
+          "desc": "시스템이 알고 있는 레벨 목록 (-r, -s 와 함께)"
+        },
+        {
+          "flag": "-l {{LEVEL}}",
+          "desc": "지정 레벨보다 낮은 fileset 목록 (-r 또는 -s 와 함께). 업데이트가 덜 된 fileset 찾기"
+        },
+        {
+          "flag": "-g {{LEVEL}}",
+          "desc": "지정 레벨보다 높은 fileset 목록"
+        }
+      ],
+      "examples": [
+        {
+          "title": "TL·SP 레벨 확인",
+          "command": "oslevel -s",
+          "output": "7200-05-03-2148"
+        },
+        {
+          "title": "TL 업데이트 후 레벨이 올라가지 않을 때 원인 fileset 찾기",
+          "command": "oslevel -sq\noslevel -s -l {{LEVEL}}",
+          "note": "oslevel -sq 로 시스템이 아는 SP 레벨 목록(위쪽이 최신)을 보고, 기대한 레벨을 {{LEVEL}} 에 넣으면 그보다 낮은 fileset 이 출력됩니다."
+        }
+      ],
+      "cautions": [
+        "oslevel 은 설치된 fileset 기준으로 계산합니다. 일부 fileset 만 낮아도 레벨이 이전 값으로 표시됩니다."
+      ],
+      "help": "man oslevel",
+      "keywords": [
+        "OS 버전",
+        "AIX 버전",
+        "TL",
+        "SP",
+        "Technology Level",
+        "Service Pack",
+        "oslevel -s"
+      ],
+      "related": [
+        "uname",
+        "aix-lslpp",
+        "aix-instfix",
+        "aix-emgr",
+        "aix-prtconf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-prtconf",
+      "name": "prtconf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "시스템 모델·CPU·메모리·펌웨어·장치 구성 요약",
+      "description": "서버 모델, 시리얼, CPU 종류·개수·클럭, 메모리, 펌웨어 레벨, LPAR 정보, 네트워크 설정, 장치 목록을 한 번에 출력합니다. 인수인계·점검 보고서에 서버 구성을 남길 때 많이 씁니다. 인자 없이 실행하면 장치 정보까지 모으므로 수 초 이상 걸릴 수 있습니다.",
+      "syntax": [
+        "prtconf",
+        "prtconf [-c] [-k] [-L] [-m] [-s]"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "프로세서 유형 (32/64비트 CHRP 등)"
+        },
+        {
+          "flag": "-k",
+          "desc": "커널 유형 (64-bit)"
+        },
+        {
+          "flag": "-L",
+          "desc": "LPAR 이름·번호"
+        },
+        {
+          "flag": "-m",
+          "desc": "메모리 크기"
+        },
+        {
+          "flag": "-s",
+          "desc": "프로세서 클럭 속도"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 구성 요약을 파일로 저장",
+          "command": "prtconf > /tmp/$(hostname).prtconf.txt"
+        },
+        {
+          "title": "메모리·LPAR 정보만 빠르게",
+          "command": "prtconf -m\nprtconf -L"
+        }
+      ],
+      "cautions": [],
+      "help": "man prtconf",
+      "keywords": [
+        "하드웨어 정보",
+        "시스템 구성",
+        "모델",
+        "시리얼",
+        "CPU",
+        "메모리",
+        "펌웨어",
+        "prtconf"
+      ],
+      "related": [
+        "aix-lscfg",
+        "aix-lsattr",
+        "aix-lparstat",
+        "aix-lsmcode",
+        "dmidecode"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-lsattr",
+      "name": "lsattr",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "장치 속성(ODM) 확인 (디스크·NIC·FC·sys0)",
+      "description": "ODM 에 저장된 장치 속성을 보여 줍니다. 디스크의 queue_depth·reserve_policy, NIC 의 IP·MTU, FC 어댑터 설정, sys0 의 maxuproc·realmem 처럼 AIX 튜닝·점검 항목 대부분을 이 명령으로 확인합니다. 출력의 마지막 열 True 는 변경 가능한 속성입니다.",
+      "syntax": [
+        "lsattr -El {{DEVICE}} [-a {{ATTR}}]",
+        "lsattr -Rl {{DEVICE}} -a {{ATTR}}",
+        "lsattr -Dl {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-E",
+          "desc": "현재 적용(effective) 값"
+        },
+        {
+          "flag": "-D",
+          "desc": "기본(default) 값"
+        },
+        {
+          "flag": "-R",
+          "desc": "설정 가능한 값의 범위·목록 (-a 와 함께)"
+        },
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "장치 이름 (hdisk0, en0, ent0, fcs0, sys0, inet0 등)"
+        },
+        {
+          "flag": "-a {{ATTR}}",
+          "desc": "특정 속성만 표시 (여러 번 지정 가능)"
+        },
+        {
+          "flag": "-H",
+          "desc": "열 제목 표시"
+        },
+        {
+          "flag": "-F {{FORMAT}}",
+          "desc": "출력 형식 지정 (예: -F value)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 속성 확인 (멀티패스·클러스터 점검)",
+          "command": "lsattr -El {{HDISK}} -a queue_depth -a reserve_policy -a algorithm"
+        },
+        {
+          "title": "NIC IP·넷마스크·상태 확인",
+          "command": "lsattr -El en0"
+        },
+        {
+          "title": "기본 게이트웨이·호스트명 (inet0)",
+          "command": "lsattr -El inet0"
+        },
+        {
+          "title": "사용자당 최대 프로세스 수·물리 메모리",
+          "command": "lsattr -El sys0 -a maxuproc -a realmem"
+        },
+        {
+          "title": "속성에 넣을 수 있는 값 범위 확인",
+          "command": "lsattr -Rl {{HDISK}} -a queue_depth"
+        }
+      ],
+      "cautions": [],
+      "help": "man lsattr",
+      "keywords": [
+        "장치 속성",
+        "ODM",
+        "queue_depth",
+        "reserve_policy",
+        "maxuproc",
+        "lsattr",
+        "NIC 설정",
+        "FC"
+      ],
+      "related": [
+        "aix-chdev",
+        "aix-lsdev",
+        "aix-lscfg",
+        "aix-prtconf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-chdev",
+      "name": "chdev",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "aix"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "장치 속성 변경 (디스크·NIC·inet0·sys0)",
+      "description": "ODM 의 장치 속성을 바꿉니다. 디스크 queue_depth·reserve_policy, NIC IP·별칭, 기본 게이트웨이(inet0), maxuproc(sys0) 등을 바꿀 때 씁니다. 사용 중인 장치는 즉시 바꿀 수 없는 속성이 많아 -P 로 ODM 만 바꾸고 재부팅(또는 장치 재구성) 때 적용합니다.",
+      "syntax": [
+        "chdev -l {{DEVICE}} -a {{ATTR}}={{VALUE}} [-a {{ATTR2}}={{VALUE2}}] [-P]"
+      ],
+      "options": [
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "대상 장치 이름"
+        },
+        {
+          "flag": "-a {{ATTR}}={{VALUE}}",
+          "desc": "바꿀 속성과 값 (여러 개 지정 가능)"
+        },
+        {
+          "flag": "-P",
+          "desc": "ODM 에만 기록하고 다음 재부팅 시 적용 (사용 중인 장치용)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "사용자당 최대 프로세스 수 변경 (즉시 적용)",
+          "command": "lsattr -El sys0 -a maxuproc\nchdev -l sys0 -a maxuproc={{VALUE}}"
+        },
+        {
+          "title": "디스크 queue_depth 변경 (사용 중이면 재부팅 시 적용)",
+          "command": "chdev -l {{HDISK}} -a queue_depth={{VALUE}} -P"
+        },
+        {
+          "title": "클러스터 공유 디스크의 SCSI 예약 해제 정책",
+          "command": "chdev -l {{HDISK}} -a reserve_policy=no_reserve",
+          "note": "디스크가 VG 에 열려 있으면 실패하므로 -P 를 붙이거나 VG 를 내린 뒤 수행합니다."
+        },
+        {
+          "title": "NIC 에 IP 별칭 추가 (재부팅 후에도 유지)",
+          "command": "chdev -l en0 -a alias4={{IP}},{{NETMASK}}"
+        },
+        {
+          "title": "호스트명·기본 게이트웨이 변경 (inet0)",
+          "command": "chdev -l inet0 -a hostname={{HOSTNAME}}\nchdev -l inet0 -a route=net,-hopcount,0,,0,{{GATEWAY}}",
+          "note": "기존 게이트웨이를 지우려면 chdev -l inet0 -a delroute=net,-hopcount,0,,0,{{OLD_GATEWAY}} 를 씁니다. 원격 접속 중이면 순서를 잘못 잡으면 접속이 끊깁니다."
+        }
+      ],
+      "cautions": [
+        "NIC 의 netaddr·state 를 원격 세션에서 바꾸면 즉시 접속이 끊길 수 있습니다. HMC 콘솔(vterm) 접속을 확보한 뒤 수행하세요.",
+        "-P 로 바꾼 값은 lsattr -El 에는 바로 보이지만 실제 적용은 재부팅 이후입니다. 변경 이력을 남겨 두세요.",
+        "변경 전 lsattr -El {{DEVICE}} 결과를 저장해 두면 원래 값으로 되돌리기 쉽습니다."
+      ],
+      "help": "man chdev",
+      "keywords": [
+        "장치 속성 변경",
+        "chdev",
+        "queue_depth",
+        "reserve_policy",
+        "maxuproc",
+        "IP 별칭",
+        "게이트웨이",
+        "inet0"
+      ],
+      "related": [
+        "aix-lsattr",
+        "aix-lsdev",
+        "aix-mktcpip",
+        "aix-cfgmgr"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-lscfg",
+      "name": "lscfg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "장치 VPD 정보 (FC WWPN, 위치 코드, 부품 번호)",
+      "description": "장치의 VPD(Vital Product Data)를 보여 줍니다. FC 어댑터의 WWPN(Network Address), 하드웨어 위치 코드, 부품·FRU 번호, 시리얼을 확인할 수 있어 스토리지 zoning 요청이나 부품 교체 요청 때 필수입니다.",
+      "syntax": [
+        "lscfg [-v] [-p] [-l {{DEVICE}}]"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "VPD 상세 (부품 번호, 시리얼, WWPN 등)"
+        },
+        {
+          "flag": "-p",
+          "desc": "플랫폼 고유 장치 정보 포함"
+        },
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "특정 장치만 (와일드카드 가능, 예: -l fcs*)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "FC 어댑터 WWPN 확인 (스토리지 zoning 요청용)",
+          "command": "lscfg -vl fcs0 | grep 'Network Address'"
+        },
+        {
+          "title": "전체 FC 어댑터의 위치 코드와 WWPN",
+          "command": "for f in $(lsdev -Cc adapter -F name | grep fcs); do echo $f; lscfg -vl $f | grep -E 'Network Address|Location'; done"
+        },
+        {
+          "title": "시스템 전체 장치 목록과 위치 코드",
+          "command": "lscfg"
+        }
+      ],
+      "cautions": [],
+      "help": "man lscfg",
+      "keywords": [
+        "WWPN",
+        "WWN",
+        "FC 어댑터",
+        "VPD",
+        "위치 코드",
+        "부품 번호",
+        "lscfg",
+        "시리얼"
+      ],
+      "related": [
+        "aix-lsdev",
+        "aix-lsattr",
+        "aix-prtconf",
+        "aix-lsmcode",
+        "lspci"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-lsmcode",
+      "name": "lsmcode",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "시스템·어댑터 펌웨어(마이크로코드) 레벨 확인",
+      "description": "시스템 펌웨어와 어댑터·디스크의 마이크로코드 레벨을 보여 줍니다. IBM 지원 문의나 펌웨어 호환성 점검(FLRT) 때 씁니다. 옵션 없이 실행하면 메뉴 화면이 열리므로 스크립트에서는 -c 를 붙입니다.",
+      "syntax": [
+        "lsmcode -c",
+        "lsmcode -A",
+        "lsmcode -d {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-c",
+          "desc": "메뉴 없이 시스템 펌웨어 레벨 출력"
+        },
+        {
+          "flag": "-A",
+          "desc": "지원되는 모든 장치의 마이크로코드 레벨"
+        },
+        {
+          "flag": "-d {{DEVICE}}",
+          "desc": "특정 장치(fcs0 등)의 마이크로코드 레벨"
+        }
+      ],
+      "examples": [
+        {
+          "title": "시스템 펌웨어 레벨",
+          "command": "lsmcode -c"
+        },
+        {
+          "title": "FC 어댑터 펌웨어 레벨",
+          "command": "lsmcode -d fcs0"
+        }
+      ],
+      "cautions": [],
+      "help": "man lsmcode",
+      "keywords": [
+        "펌웨어",
+        "마이크로코드",
+        "firmware",
+        "lsmcode",
+        "FLRT",
+        "어댑터 펌웨어"
+      ],
+      "related": [
+        "aix-prtconf",
+        "aix-lscfg",
+        "aix-oslevel"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-lparstat",
+      "name": "lparstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.virtualization",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "LPAR 구성(Entitlement·vCPU·메모리)과 CPU 사용 통계",
+      "description": "PowerVM LPAR 의 구성 정보와 CPU 사용 통계를 보여 줍니다. -i 로 파티션 이름·번호, Shared/Dedicated 모드, Entitled Capacity, 가상 CPU 수, Capped 여부, 메모리를 확인합니다. 간격을 주면 physc(사용한 물리 CPU), %entc(할당 대비 사용률)를 볼 수 있어 CPU 증설 판단에 씁니다.",
+      "syntax": [
+        "lparstat -i",
+        "lparstat [{{INTERVAL}} [{{COUNT}}]]",
+        "lparstat -h {{INTERVAL}} {{COUNT}}"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "LPAR 구성 정보 (모드, Entitled Capacity, Online Virtual CPUs, 메모리, 풀 정보)"
+        },
+        {
+          "flag": "-h",
+          "desc": "하이퍼바이저 사용률(%hypv, hcalls) 추가 표시"
+        },
+        {
+          "flag": "-H",
+          "desc": "하이퍼바이저 호출 종류별 상세 통계"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LPAR 구성 확인",
+          "command": "lparstat -i"
+        },
+        {
+          "title": "5초 간격 12회 CPU 사용 통계",
+          "command": "lparstat 5 12",
+          "note": "Shared 모드에서 %entc 가 100% 를 계속 넘으면 Entitled Capacity 를 넘어 풀 CPU 를 빌려 쓰는 상태입니다. Capped 이면 100% 에서 막힙니다."
+        }
+      ],
+      "cautions": [
+        "Shared 프로세서 LPAR 에서는 vmstat·sar 의 %idle 만으로 CPU 여유를 판단하면 안 됩니다. physc·%entc 를 함께 보세요."
+      ],
+      "help": "man lparstat",
+      "keywords": [
+        "LPAR",
+        "가상화",
+        "Entitled Capacity",
+        "vCPU",
+        "physc",
+        "entc",
+        "PowerVM",
+        "lparstat"
+      ],
+      "related": [
+        "aix-prtconf",
+        "aix-topas",
+        "vmstat",
+        "sar"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-lsdev",
+      "name": "lsdev",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "장치 목록과 상태(Available·Defined) 확인",
+      "description": "ODM 에 등록된 장치(디스크, 어댑터, NIC, 테이프 등)와 상태를 보여 줍니다. Available 은 사용 가능, Defined 는 정의만 있고 구성되지 않은 상태(경로 장애·제거된 장치 등)입니다. 새 디스크 인식 확인과 장애 장치 점검에 씁니다.",
+      "syntax": [
+        "lsdev -Cc {{CLASS}}",
+        "lsdev -Cl {{DEVICE}}",
+        "lsdev -p {{PARENT}}"
+      ],
+      "options": [
+        {
+          "flag": "-C",
+          "desc": "시스템에 구성된(Customized) 장치"
+        },
+        {
+          "flag": "-P",
+          "desc": "지원되는(Predefined) 장치 유형"
+        },
+        {
+          "flag": "-c {{CLASS}}",
+          "desc": "장치 클래스 (disk, adapter, if, tape, processor, memory)"
+        },
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "특정 장치"
+        },
+        {
+          "flag": "-p {{PARENT}}",
+          "desc": "지정 장치에 연결된 하위 장치 (예: fscsi0 아래 디스크)"
+        },
+        {
+          "flag": "-S {{STATE}}",
+          "desc": "상태로 필터 (a=Available, d=Defined)"
+        },
+        {
+          "flag": "-F {{FORMAT}}",
+          "desc": "출력 필드 지정 (예: -F 'name status')"
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 목록과 상태",
+          "command": "lsdev -Cc disk"
+        },
+        {
+          "title": "Defined 상태(이상) 장치만 보기",
+          "command": "lsdev -C -S d"
+        },
+        {
+          "title": "어댑터 목록 (FC, NIC)",
+          "command": "lsdev -Cc adapter"
+        },
+        {
+          "title": "네트워크 인터페이스 목록",
+          "command": "lsdev -Cc if"
+        }
+      ],
+      "cautions": [],
+      "help": "man lsdev",
+      "keywords": [
+        "장치 목록",
+        "lsdev",
+        "Available",
+        "Defined",
+        "디스크 인식",
+        "어댑터",
+        "hdisk"
+      ],
+      "related": [
+        "aix-cfgmgr",
+        "aix-rmdev",
+        "aix-lsattr",
+        "aix-lscfg",
+        "aix-lspv"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-cfgmgr",
+      "name": "cfgmgr",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "aix"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새 장치 검색·구성 (새 LUN·어댑터 인식)",
+      "description": "하드웨어를 다시 검색해 새 장치를 ODM 에 등록하고 Available 상태로 만듭니다. 스토리지에서 LUN 을 새로 매핑했거나 어댑터를 추가했을 때 실행합니다. -l 로 특정 어댑터 아래만 검색하면 빠르고 다른 장치에 영향이 적습니다.",
+      "syntax": [
+        "cfgmgr [-v]",
+        "cfgmgr -l {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "진행 상황 상세 출력"
+        },
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "지정 장치와 그 하위만 구성 (예: fcs0)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새로 매핑된 LUN 인식",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "lspv > /tmp/lspv.before",
+              "desc": "현재 디스크 목록 저장"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cfgmgr -l fcs0\ncfgmgr -l fcs1",
+              "desc": "FC 어댑터 아래만 재검색 (전체 cfgmgr 도 가능)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lspv > /tmp/lspv.after; diff /tmp/lspv.before /tmp/lspv.after",
+              "desc": "새로 생긴 hdisk 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lsattr -El {{HDISK}}",
+              "desc": "새 디스크 속성(멀티패스 알고리즘, reserve_policy) 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "전체 cfgmgr 는 모든 장치를 검색하므로 시간이 걸리고, 드물게 Defined 장치가 다시 올라오거나 장치 번호가 바뀔 수 있습니다. 가능하면 -l 로 범위를 좁히세요."
+      ],
+      "help": "man cfgmgr",
+      "keywords": [
+        "장치 재검색",
+        "디스크 인식",
+        "새 LUN",
+        "cfgmgr",
+        "rescan",
+        "어댑터 추가"
+      ],
+      "related": [
+        "aix-lsdev",
+        "aix-lspv",
+        "aix-rmdev",
+        "aix-extendvg"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-rmdev",
+      "name": "rmdev",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "aix"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "장치 구성 해제·정의 삭제",
+      "description": "장치를 Defined 상태로 내리거나(-d 없이), ODM 에서 정의를 완전히 지웁니다(-d). 스토리지 LUN 매핑 해제 전 디스크 정리, 장애 장치 재구성, FC 어댑터 재초기화에 씁니다.",
+      "syntax": [
+        "rmdev -l {{DEVICE}}",
+        "rmdev -dl {{DEVICE}}",
+        "rmdev -Rl {{DEVICE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "대상 장치"
+        },
+        {
+          "flag": "-d",
+          "desc": "ODM 에서 장치 정의까지 삭제"
+        },
+        {
+          "flag": "-R",
+          "desc": "하위 장치까지 재귀적으로 처리"
+        },
+        {
+          "flag": "-p {{PARENT}}",
+          "desc": "지정 장치의 하위 장치들만 처리"
+        }
+      ],
+      "examples": [
+        {
+          "title": "LUN 회수 전 디스크 정리",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "lspv | grep {{HDISK}}",
+              "desc": "VG 에 속하지 않은(None) 디스크인지 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "rmdev -dl {{HDISK}}",
+              "desc": "장치 정의 삭제"
+            },
+            {
+              "prompt": "#",
+              "cmd": "lsdev -Cc disk",
+              "desc": "목록에서 사라졌는지 확인 후 스토리지에서 매핑 해제"
+            }
+          ]
+        },
+        {
+          "title": "NIC 를 내렸다가 다시 구성",
+          "command": "rmdev -l en1\nmkdev -l en1",
+          "note": "-d 없이 실행하면 설정은 ODM 에 남아 mkdev -l 로 그대로 다시 올릴 수 있습니다."
+        }
+      ],
+      "cautions": [
+        "VG 에 속한 디스크나 사용 중인 NIC 에 실행하면 서비스가 중단됩니다.",
+        "-d 로 지운 장치의 속성(IP, queue_depth 등)은 사라집니다. 지우기 전 lsattr -El 결과를 저장하세요.",
+        "-R 은 하위 장치(디스크 전체 등)까지 내립니다. 어댑터에 -R 을 쓸 때는 그 아래 디스크가 모두 미사용인지 확인하세요."
+      ],
+      "help": "man rmdev",
+      "keywords": [
+        "장치 삭제",
+        "rmdev",
+        "LUN 회수",
+        "Defined",
+        "장치 재구성",
+        "디스크 제거"
+      ],
+      "related": [
+        "aix-cfgmgr",
+        "aix-lsdev",
+        "aix-mkdev",
+        "aix-reducevg"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-mkdev",
+      "name": "mkdev",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "aix"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "장치 구성(Defined→Available)·가상 장치(EtherChannel) 생성",
+      "description": "Defined 상태의 장치를 다시 구성하거나 새 장치를 정의·구성합니다. 네트워크 이중화용 EtherChannel(링크 집계·NIB) 장치도 mkdev 로 만듭니다. 실무에서는 smitty etherchannel 로 만드는 경우가 많습니다.",
+      "syntax": [
+        "mkdev -l {{DEVICE}}",
+        "mkdev -c adapter -s pseudo -t ibm_ech -a adapter_names={{ENT1}},{{ENT2}} -a mode={{MODE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l {{DEVICE}}",
+          "desc": "Defined 상태 장치를 Available 로 구성"
+        },
+        {
+          "flag": "-c {{CLASS}}",
+          "desc": "새 장치의 클래스"
+        },
+        {
+          "flag": "-s {{SUBCLASS}}",
+          "desc": "새 장치의 서브클래스"
+        },
+        {
+          "flag": "-t {{TYPE}}",
+          "desc": "새 장치의 유형 (EtherChannel 은 ibm_ech)"
+        },
+        {
+          "flag": "-a {{ATTR}}={{VALUE}}",
+          "desc": "생성 시 속성"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Defined 장치 다시 올리기",
+          "command": "mkdev -l {{DEVICE}}"
+        },
+        {
+          "title": "LACP(802.3ad) EtherChannel 생성",
+          "command": "mkdev -c adapter -s pseudo -t ibm_ech -a adapter_names={{ENT1}},{{ENT2}} -a mode=8023ad\nlsdev -Cc adapter | grep EtherChannel",
+          "note": "스위치 쪽 LACP 설정이 맞아야 합니다. 생성된 entN 위의 enN 에 IP 를 설정합니다. 구성원 NIC 의 en 인터페이스에는 IP 가 없어야 합니다."
+        },
+        {
+          "title": "NIB(Active-Backup) 구성",
+          "command": "mkdev -c adapter -s pseudo -t ibm_ech -a adapter_names={{ENT1}} -a backup_adapter={{ENT2}}",
+          "note": "스위치 설정 없이 쓸 수 있는 이중화 방식입니다. entstat -d 로 활성 어댑터를 확인합니다."
+        }
+      ],
+      "cautions": [
+        "EtherChannel 구성 시 구성원 NIC 의 IP 를 먼저 내려야 하므로 원격 접속이 끊길 수 있습니다. HMC 콘솔에서 작업하세요."
+      ],
+      "help": "man mkdev · smitty etherchannel",
+      "keywords": [
+        "장치 구성",
+        "mkdev",
+        "EtherChannel",
+        "LACP",
+        "NIB",
+        "본딩",
+        "링크 집계",
+        "802.3ad"
+      ],
+      "related": [
+        "aix-rmdev",
+        "aix-lsdev",
+        "aix-entstat",
+        "aix-chdev",
+        "aix-smitty"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-bootinfo",
+      "name": "bootinfo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "aix"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "부팅 디스크·디스크 크기·커널 비트 확인",
+      "description": "마지막 부팅 디스크, 디스크 크기(MB), 커널·하드웨어 비트 모드 같은 부팅 관련 정보를 보여 줍니다. IBM 은 bootinfo 를 사용자용 명령으로 지원하지 않는다고 밝히고 있으므로 스크립트에는 getconf 를 쓰는 것이 좋습니다.",
+      "syntax": [
+        "bootinfo -b",
+        "bootinfo -s {{HDISK}}",
+        "bootinfo -K"
+      ],
+      "options": [
+        {
+          "flag": "-b",
+          "desc": "마지막으로 부팅한 디스크"
+        },
+        {
+          "flag": "-s {{HDISK}}",
+          "desc": "디스크 크기(MB)"
+        },
+        {
+          "flag": "-K",
+          "desc": "커널 비트 모드 (64)"
+        },
+        {
+          "flag": "-y",
+          "desc": "하드웨어 비트 모드"
+        },
+        {
+          "flag": "-r",
+          "desc": "실제 메모리 크기(KB)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "지금 어느 디스크로 부팅했는지",
+          "command": "bootinfo -b"
+        },
+        {
+          "title": "getconf 로 같은 정보 보기 (권장)",
+          "command": "getconf BOOT_DEVICE\ngetconf DISK_SIZE /dev/{{HDISK}}\ngetconf KERNEL_BITMODE\ngetconf REAL_MEMORY"
+        }
+      ],
+      "cautions": [],
+      "help": "man getconf",
+      "keywords": [
+        "부팅 디스크",
+        "디스크 크기",
+        "커널 비트",
+        "bootinfo",
+        "getconf",
+        "BOOT_DEVICE"
+      ],
+      "related": [
+        "aix-bootlist",
+        "aix-lspv",
+        "aix-prtconf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-svmon",
+      "name": "svmon",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.memory",
+      "platforms": [
+        "aix"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "메모리 사용 현황(전체·프로세스·사용자별) 분석",
+      "description": "AIX 가상 메모리 사용 현황을 보여 줍니다. -G 로 전체 메모리의 사용·여유·고정(pin)·paging space 사용량을, -P 로 프로세스별 사용량을 봅니다. AIX 는 파일 캐시가 메모리를 많이 쓰므로 free 가 적다고 바로 부족한 것은 아니며 svmon -G 의 available 과 virtual 을 함께 봐야 합니다.",
+      "syntax": [
+        "svmon -G [-O unit=MB]",
+        "svmon -P {{PID}} [-O unit=MB]",
+        "svmon -U {{USER}} [-O unit=MB]"
+      ],
+      "options": [
+        {
+          "flag": "-G",
+          "desc": "시스템 전체 메모리 요약"
+        },
+        {
+          "flag": "-P [{{PID}}]",
+          "desc": "프로세스별 메모리 사용량"
+        },
+        {
+          "flag": "-U [{{USER}}]",
+          "desc": "사용자별 메모리 사용량"
+        },
+        {
+          "flag": "-C {{COMMAND}}",
+          "desc": "명령 이름별 합계 (예: -C java)"
+        },
+        {
+          "flag": "-t {{COUNT}}",
+          "desc": "상위 N개만 표시"
+        },
+        {
+          "flag": "-O unit=MB",
+          "desc": "출력 단위 지정 (기본은 4KB 페이지 수)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 메모리 현황 (MB)",
+          "command": "svmon -G -O unit=MB"
+        },
+        {
+          "title": "메모리를 많이 쓰는 프로세스 상위 10개",
+          "command": "svmon -P -t 10 -O unit=MB"
+        },
+        {
+          "title": "java 프로세스 전체 메모리 합계",
+          "command": "svmon -C java -O unit=MB"
+        }
+      ],
+      "cautions": [
+        "-P 를 전체 프로세스에 실행하면 시간이 오래 걸리고 CPU 를 씁니다. -t 로 개수를 제한하세요."
+      ],
+      "help": "man svmon",
+      "keywords": [
+        "메모리 사용량",
+        "svmon",
+        "메모리 분석",
+        "프로세스 메모리",
+        "pinned",
+        "free memory",
+        "virtual"
+      ],
+      "related": [
+        "vmstat",
+        "aix-lsps",
+        "aix-vmo",
+        "aix-topas",
+        "free"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-slibclean",
+      "name": "slibclean",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.memory",
+      "platforms": [
+        "aix"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "사용하지 않는 공유 라이브러리를 메모리에서 해제",
+      "description": "더 이상 어떤 프로세스도 쓰지 않는 공유 라이브러리와 커널 확장을 메모리에서 내립니다. 라이브러리 파일을 교체했는데 'Text file busy' 로 덮어쓰기가 안 되거나, 패치 적용 전 메모리에 남은 옛 라이브러리를 정리할 때 씁니다.",
+      "syntax": [
+        "slibclean"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "애플리케이션 종료 후 라이브러리 교체 전 정리",
+          "command": "slibclean\ngenkld | grep {{LIB_NAME}}",
+          "note": "genkld 는 메모리에 올라간 공유 라이브러리 목록을 보여 줍니다. 아직 남아 있으면 그 라이브러리를 쓰는 프로세스가 살아 있는 것입니다."
+        }
+      ],
+      "cautions": [],
+      "help": "man slibclean",
+      "keywords": [
+        "공유 라이브러리",
+        "slibclean",
+        "Text file busy",
+        "라이브러리 교체",
+        "genkld"
+      ],
+      "related": [
+        "aix-installp",
+        "aix-procfiles"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-topas",
+      "name": "topas",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "AIX 실시간 성능 모니터 (CPU·메모리·디스크·네트워크)",
+      "description": "AIX 기본 실시간 성능 모니터로, Linux 의 top 에 해당합니다. 한 화면에 CPU·메모리·paging·디스크·네트워크·상위 프로세스를 보여 주며 키를 눌러 각 영역을 확대합니다. AIX 6.1 이후에는 nmon 이 topas 에 통합되어 화면 안에서 ~ 키로 오갈 수 있습니다.",
+      "syntax": [
+        "topas [-i {{SECONDS}}]",
+        "topas -L",
+        "topas -C"
+      ],
+      "options": [
+        {
+          "flag": "-i {{SECONDS}}",
+          "desc": "갱신 간격 (초)"
+        },
+        {
+          "flag": "-L",
+          "desc": "LPAR 화면(physc, %entc, 논리 CPU 별)으로 시작"
+        },
+        {
+          "flag": "-C",
+          "desc": "같은 서버의 여러 LPAR 를 한 화면에 (Cross-Partition 화면)"
+        },
+        {
+          "flag": "-D",
+          "desc": "디스크 상세 화면으로 시작"
+        },
+        {
+          "flag": "-P",
+          "desc": "프로세스 전체 화면으로 시작"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "실행 중 단축키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "c",
+              "desc": "CPU 영역: 합계 ↔ CPU 별 ↔ 끄기 전환"
+            },
+            {
+              "cmd": "d",
+              "desc": "디스크 영역: 합계 ↔ 디스크별 전환"
+            },
+            {
+              "cmd": "n",
+              "desc": "네트워크 영역: 합계 ↔ 인터페이스별 전환"
+            },
+            {
+              "cmd": "p",
+              "desc": "상위 프로세스 목록 켜기/끄기"
+            },
+            {
+              "cmd": "P",
+              "desc": "프로세스 전체 화면"
+            },
+            {
+              "cmd": "D",
+              "desc": "디스크 상세 전체 화면"
+            },
+            {
+              "cmd": "L",
+              "desc": "LPAR 화면 (physc, %entc)"
+            },
+            {
+              "cmd": "~",
+              "desc": "topas ↔ nmon 화면 전환"
+            },
+            {
+              "cmd": "h",
+              "desc": "도움말"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "2초 간격으로 실행",
+          "command": "topas -i 2"
+        },
+        {
+          "title": "Shared LPAR 의 CPU 할당 대비 사용률 보기",
+          "command": "topas -L"
+        }
+      ],
+      "cautions": [],
+      "help": "man topas · 실행 중 h",
+      "keywords": [
+        "실시간 모니터링",
+        "topas",
+        "top",
+        "CPU 사용률",
+        "디스크 I/O",
+        "성능",
+        "AIX top"
+      ],
+      "related": [
+        "aix-nmon",
+        "aix-lparstat",
+        "aix-svmon",
+        "vmstat",
+        "iostat",
+        "top"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "aix-nmon",
+      "name": "nmon",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "aix"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "성능 모니터·장기 성능 데이터 수집(.nmon 파일)",
+      "description": "대화형 성능 모니터이자 성능 데이터 수집 도구입니다. 대화형으로는 키를 눌러 CPU·메모리·디스크 화면을 켜고 끄며, -f 로 실행하면 지정 간격으로 데이터를 .nmon 파일에 기록해 nmon analyser(엑셀) 등으로 그래프를 만들 수 있습니다. AIX 6.1 TL6 이후 topas_nmon 으로 기본 포함되어 있습니다.",
+      "syntax": [
+        "nmon",
+        "nmon -f -s {{SECONDS}} -c {{COUNT}} [-T] [-m {{DIR}}]"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "화면 대신 파일(호스트명_YYMMDD_HHMM.nmon)에 기록하며 백그라운드 실행"
+        },
+        {
+          "flag": "-s {{SECONDS}}",
+          "desc": "수집 간격 (초)"
+        },
+        {
+          "flag": "-c {{COUNT}}",
+          "desc": "수집 횟수"
+        },
+        {
+          "flag": "-T",
+          "desc": "상위 프로세스와 명령 인자까지 기록"
+        },
+        {
+          "flag": "-m {{DIR}}",
+          "desc": "기록 파일을 저장할 디렉토리"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "대화형 단축키 (켜기/끄기 토글)",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "c",
+              "desc": "CPU 사용률 (논리 CPU 별)"
+            },
+            {
+              "cmd": "l",
+              "desc": "CPU 장기 추이 그래프"
+            },
+            {
+              "cmd": "m",
+              "desc": "메모리·paging"
+            },
+            {
+              "cmd": "V",
+              "desc": "가상 메모리 상세"
+            },
+            {
+              "cmd": "d",
+              "desc": "디스크 I/O 그래프"
+            },
+            {
+              "cmd": "D",
+              "desc": "디스크 I/O 상세 수치"
+            },
+            {
+              "cmd": "a",
+              "desc": "디스크 어댑터별 I/O"
+            },
+            {
+              "cmd": "n",
+              "desc": "네트워크 인터페이스"
+            },
+            {
+              "cmd": "j",
+              "desc": "파일시스템 사용량"
+            },
+            {
+              "cmd": "t",
+              "desc": "상위 프로세스"
+            },
+            {
+              "cmd": "p",
+              "desc": "LPAR(파티션) 정보"
+            },
+            {
+              "cmd": "k",
+              "desc": "커널 통계"
+            },
+            {
+              "cmd": ".",
+              "desc": "바쁜 항목만 표시"
+            },
+            {
+              "cmd": "h",
+              "desc": "도움말"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "하루치 성능 데이터 수집 (1분 간격 1440회)",
+          "command": "nmon -f -T -s 60 -c 1440 -m /var/perf/nmon"
+        },
+        {
+          "title": "매일 0시에 수집을 시작하도록 crontab 등록",
+          "command": "0 0 * * * /usr/bin/nmon -f -T -s 60 -c 1440 -m /var/perf/nmon",
+          "note": "crontab -e 로 root crontab 에 추가합니다. 오래된 .nmon 파일 정리도 함께 등록하세요."
+        }
+      ],
+      "cautions": [
+        "-s 간격을 너무 짧게 하면 파일이 커지고 부하가 늘어납니다. 상시 수집은 30~300초 간격이 일반적입니다.",
+        "기록 디렉토리 파일시스템이 가득 차지 않도록 보관 주기를 정해 두세요."
+      ],
+      "help": "nmon -h · 실행 중 h",
+      "keywords": [
+        "nmon",
+        "성능 수집",
+        "성능 데이터",
+        "nmon analyser",
+        "모니터링",
+        "장기 추이",
+        "topas_nmon"
+      ],
+      "related": [
+        "aix-topas",
+        "aix-lparstat",
+        "sar",
+        "crontab"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

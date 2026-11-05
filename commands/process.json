@@ -12,7 +12,10 @@
       "task": "process.list",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -27,7 +30,7 @@
       "options": [
         {
           "flag": "aux",
-          "desc": "모든 사용자의 전체 프로세스 (CPU·메모리·RSS 포함)"
+          "desc": "모든 사용자의 전체 프로세스, BSD 형식 (CPU·메모리·RSS 포함). Linux·AIX (Solaris 는 /usr/ucb/ps)"
         },
         {
           "flag": "-ef",
@@ -35,11 +38,11 @@
         },
         {
           "flag": "-eo pid,ppid,user,%cpu,%mem,rss,cmd",
-          "desc": "출력 컬럼 지정"
+          "desc": "출력 컬럼 지정 (Linux 필드명. Unix 는 pcpu, vsz, args 등 POSIX 필드명 사용)"
         },
         {
           "flag": "--sort=-%cpu",
-          "desc": "컬럼 기준 정렬 (- 는 내림차순)"
+          "desc": "컬럼 기준 정렬 (- 는 내림차순) (GNU/Linux 전용)"
         },
         {
           "flag": "-p {{PID}}",
@@ -51,30 +54,151 @@
         },
         {
           "flag": "-C {{NAME}}",
-          "desc": "명령 이름으로 선택"
+          "desc": "명령 이름으로 선택 (GNU/Linux 전용)"
         },
         {
           "flag": "-L / -T",
-          "desc": "스레드(LWP) 단위로 표시"
+          "desc": "스레드(LWP) 단위로 표시 (-L 은 Linux·Solaris, -T 는 Linux)"
         },
         {
           "flag": "f / --forest",
-          "desc": "부모-자식 관계를 트리로 표시"
+          "desc": "부모-자식 관계를 트리로 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-o lstart,etime",
-          "desc": "시작 시각 / 경과 시간"
+          "desc": "시작 시각 / 경과 시간 (lstart 는 GNU/Linux 전용, etime 은 공통)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "STAT(S) 값 의미",
+          "type": "directive",
+          "note": "Linux 는 ps aux 의 STAT, ps -l 의 S 컬럼입니다. Unix 는 ps -l(또는 -o s)의 S 컬럼이며 문자 일부가 다릅니다.",
+          "items": [
+            {
+              "cmd": "R",
+              "desc": "실행 중 또는 실행 대기 (CPU 를 쓰거나 기다리는 중)"
+            },
+            {
+              "cmd": "S",
+              "desc": "인터럽트 가능한 대기 (대부분의 유휴 프로세스)"
+            },
+            {
+              "cmd": "D",
+              "desc": "인터럽트 불가 대기: 주로 디스크·NFS I/O 대기. 많으면 스토리지·NFS 점검",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "Z",
+              "desc": "좀비: 종료됐지만 부모가 회수하지 않음 (<defunct> 로 표시)"
+            },
+            {
+              "cmd": "T",
+              "desc": "정지됨 (Ctrl+Z, SIGSTOP, 디버거)"
+            },
+            {
+              "cmd": "I",
+              "desc": "유휴 커널 스레드 (Linux 4.14 이상)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "< / N",
+              "desc": "높은 우선순위 / 낮은 우선순위(nice)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "s / l / +",
+              "desc": "세션 리더 / 멀티스레드 / 포그라운드 프로세스 그룹",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "O",
+              "desc": "CPU 에서 실행 중 (Solaris ps -l 의 S 컬럼)",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "A",
+              "desc": "활성 상태 (AIX ps -l 의 S 컬럼)",
+              "platforms": [
+                "aix"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "자주 쓰는 출력 컬럼",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "PID / PPID",
+              "desc": "프로세스 ID / 부모 프로세스 ID"
+            },
+            {
+              "cmd": "%CPU (pcpu)",
+              "desc": "CPU 사용률. Linux 는 수명 전체 평균"
+            },
+            {
+              "cmd": "%MEM (pmem)",
+              "desc": "물리 메모리 대비 사용 비율"
+            },
+            {
+              "cmd": "RSS",
+              "desc": "실제 사용 중인 물리 메모리 (KB)"
+            },
+            {
+              "cmd": "VSZ",
+              "desc": "가상 메모리 크기 (KB)"
+            },
+            {
+              "cmd": "TTY",
+              "desc": "제어 터미널 (? 또는 - 는 데몬)"
+            },
+            {
+              "cmd": "STIME / ELAPSED (etime)",
+              "desc": "시작 시각 / 경과 시간 ([[일-]시:]분:초)"
+            },
+            {
+              "cmd": "TIME",
+              "desc": "누적 CPU 사용 시간"
+            },
+            {
+              "cmd": "CMD / COMMAND (args)",
+              "desc": "실행 명령과 인자"
+            }
+          ]
         }
       ],
       "examples": [
         {
           "title": "CPU 사용률 상위 10개 프로세스",
-          "command": "ps -eo pid,user,%cpu,%mem,cmd --sort=-%cpu | head -11"
+          "command": "ps -eo pid,user,%cpu,%mem,cmd --sort=-%cpu | head -11",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "메모리(RSS) 사용 상위 10개",
           "command": "ps -eo pid,user,rss,%mem,cmd --sort=-rss | head -11",
-          "note": "rss 단위는 KB"
+          "note": "rss 단위는 KB",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "프로세스 이름으로 찾기",
@@ -83,16 +207,50 @@
         },
         {
           "title": "프로세스 시작 시각·실행 시간",
-          "command": "ps -o pid,lstart,etime,cmd -p {{PID}}"
+          "command": "ps -o pid,lstart,etime,cmd -p {{PID}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "좀비(Z)·D 상태 프로세스 확인",
-          "command": "ps -eo pid,ppid,stat,cmd | awk '$3 ~ /^[ZD]/'"
+          "command": "ps -eo pid,ppid,stat,cmd | awk '$3 ~ /^[ZD]/'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "CPU 사용률 상위 10개 (AIX·Solaris)",
+          "command": "ps -eo pid,user,pcpu,vsz,args | sort -k3 -nr | head -10",
+          "platforms": [
+            "aix",
+            "solaris"
+          ]
+        },
+        {
+          "title": "CPU 사용률 상위 10개 (HP-UX)",
+          "command": "UNIX95= ps -eo pid,user,pcpu,vsz,args | sort -k3 -nr | head -10",
+          "platforms": [
+            "hpux"
+          ],
+          "note": "HP-UX 는 UNIX95 환경 변수를 지정해야 -o 컬럼 지정이 동작합니다."
+        },
+        {
+          "title": "좀비 프로세스와 부모 확인 (공통)",
+          "command": "ps -ef | grep [d]efunct",
+          "note": "세 번째 컬럼(PPID)이 회수하지 않는 부모 프로세스입니다."
         }
       ],
       "cautions": [
         "%CPU 는 프로세스 전체 수명 동안의 평균이므로 현재 순간 부하는 top 으로 확인하세요."
       ],
+      "platformNotes": {
+        "aix": "ps -ef 와 BSD 형식 ps aux 를 모두 지원합니다. -o 는 pid, ppid, user, pcpu, pmem, vsz, etime, time, args 같은 POSIX 필드명을 씁니다. --sort, --forest 는 없으므로 sort 로 정렬합니다. 스레드는 ps -mo THREAD -p {{PID}} 로 봅니다.",
+        "hpux": "기본은 ps -ef 입니다. -o, -C 같은 XPG4 옵션은 UNIX95= 를 앞에 붙여야 동작합니다 (UNIX95= ps -eo pid,vsz,args). BSD 형식 ps aux 는 없습니다.",
+        "solaris": "ps -ef, ps -eLf(스레드), ps -eo pid,pcpu,pmem,rss,vsz,etime,args 를 지원합니다. BSD 형식은 /usr/ucb/ps auxww 를 사용합니다 (Solaris 11 은 compatibility/ucb 패키지 필요). --sort, --forest 는 없고 트리는 ptree {{PID}} 로 봅니다."
+      },
       "help": "man ps",
       "keywords": [
         "프로세스 목록",
@@ -109,7 +267,10 @@
         "pstree",
         "kill",
         "lsof"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "tasklist",
@@ -195,7 +356,10 @@
         "taskkill",
         "get-process",
         "netstat"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-process",
@@ -280,7 +444,10 @@
         "tasklist",
         "get-counter",
         "get-nettcpconnection"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "top",
@@ -291,7 +458,9 @@
       "task": "process.monitor",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -304,35 +473,147 @@
       "options": [
         {
           "flag": "-b -n 1",
-          "desc": "배치 모드로 1회 출력 (스크립트·로그 저장용)"
+          "desc": "배치 모드로 1회 출력 (스크립트·로그 저장용) (Linux procps)"
         },
         {
           "flag": "-d {{SEC}}",
-          "desc": "갱신 주기(초)"
+          "desc": "갱신 주기(초) (Linux procps. HP-UX·Solaris top 은 -s, -d 는 반복 횟수)"
         },
         {
           "flag": "-p {{PID}}[,{{PID}}]",
-          "desc": "특정 프로세스만 감시"
+          "desc": "특정 프로세스만 감시 (Linux procps)"
         },
         {
           "flag": "-u {{USER}}",
-          "desc": "특정 사용자 프로세스만"
+          "desc": "특정 사용자 프로세스만 (Linux procps)"
         },
         {
           "flag": "-H",
-          "desc": "스레드 단위 표시"
+          "desc": "스레드 단위 표시 (Linux procps)"
         },
         {
           "flag": "-o %MEM",
-          "desc": "정렬 컬럼 지정"
+          "desc": "정렬 컬럼 지정 (Linux procps)"
         },
         {
           "flag": "-c",
-          "desc": "명령 전체 경로·인자 표시"
+          "desc": "명령 전체 경로·인자 표시 (Linux procps)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "실행 중 단축키 (Linux procps top)",
+          "type": "keys",
+          "note": "HP-UX·Solaris 의 top 은 키가 다릅니다. 실행 중 h 또는 ? 로 도움말을 보세요.",
+          "items": [
+            {
+              "cmd": "P",
+              "desc": "CPU 사용률 순 정렬 (기본)"
+            },
+            {
+              "cmd": "M",
+              "desc": "메모리 사용률 순 정렬"
+            },
+            {
+              "cmd": "T",
+              "desc": "누적 CPU 시간 순 정렬"
+            },
+            {
+              "cmd": "< / >",
+              "desc": "정렬 기준 컬럼을 왼쪽 / 오른쪽으로 이동"
+            },
+            {
+              "cmd": "1",
+              "desc": "CPU 코어별 사용률 표시 켜기/끄기"
+            },
+            {
+              "cmd": "c",
+              "desc": "명령 이름 ↔ 전체 명령줄 전환"
+            },
+            {
+              "cmd": "H",
+              "desc": "스레드 단위 표시 켜기/끄기"
+            },
+            {
+              "cmd": "u",
+              "desc": "특정 사용자 프로세스만 보기 (사용자 입력)"
+            },
+            {
+              "cmd": "k",
+              "desc": "PID 를 입력해 시그널 전송 (기본 15 TERM)"
+            },
+            {
+              "cmd": "r",
+              "desc": "PID 를 입력해 nice 값 변경 (renice)"
+            },
+            {
+              "cmd": "d (또는 s)",
+              "desc": "갱신 주기 변경"
+            },
+            {
+              "cmd": "V",
+              "desc": "부모-자식 트리 보기"
+            },
+            {
+              "cmd": "E / e",
+              "desc": "요약 영역 / 프로세스 목록의 메모리 단위 변경 (KiB→MiB→GiB)"
+            },
+            {
+              "cmd": "f",
+              "desc": "표시할 컬럼 선택"
+            },
+            {
+              "cmd": "W",
+              "desc": "현재 화면 설정을 ~/.toprc(또는 ~/.config/procps/toprc)에 저장"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
         },
         {
-          "flag": "(대화식 키) P / M / 1 / k / c / q",
-          "desc": "CPU 정렬 / 메모리 정렬 / CPU 코어별 / 종료 시그널 / 전체 명령 / 나가기"
+          "title": "요약 영역 읽는 법",
+          "type": "directive",
+          "note": "Linux procps top 기준입니다.",
+          "items": [
+            {
+              "cmd": "load average: 1분, 5분, 15분",
+              "desc": "실행 대기 + (Linux 는 D 상태 포함) 프로세스 평균 수. CPU 코어 수보다 계속 크면 과부하"
+            },
+            {
+              "cmd": "Tasks: ... zombie",
+              "desc": "좀비 개수. 계속 늘면 부모 프로세스 점검"
+            },
+            {
+              "cmd": "us / sy",
+              "desc": "사용자 / 커널 영역 CPU 사용률"
+            },
+            {
+              "cmd": "ni",
+              "desc": "nice 값이 조정된 프로세스의 CPU 사용률"
+            },
+            {
+              "cmd": "id",
+              "desc": "유휴 비율"
+            },
+            {
+              "cmd": "wa",
+              "desc": "I/O 대기. 높으면 디스크·스토리지 병목"
+            },
+            {
+              "cmd": "hi / si",
+              "desc": "하드웨어 / 소프트웨어 인터럽트 처리"
+            },
+            {
+              "cmd": "st",
+              "desc": "steal: 가상 머신에서 하이퍼바이저가 빼앗아 간 CPU"
+            },
+            {
+              "cmd": "MiB Mem: avail Mem",
+              "desc": "실제로 새 프로세스가 쓸 수 있는 메모리 (free 보다 이 값을 봄)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -342,21 +623,64 @@
         },
         {
           "title": "현재 상태를 파일로 저장 (장애 증적)",
-          "command": "top -b -n 1 > /tmp/top_$(date +%F_%H%M).txt"
+          "command": "top -b -n 1 > /tmp/top_$(date +%F_%H%M).txt",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "메모리 기준 정렬 1회 출력",
-          "command": "top -b -n 1 -o %MEM | head -20"
+          "command": "top -b -n 1 -o %MEM | head -20",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "특정 프로세스의 스레드별 CPU",
-          "command": "top -H -p {{PID}}"
+          "command": "top -H -p {{PID}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "5초 간격 화면을 파일로 1회 저장 (HP-UX)",
+          "command": "top -s 5 -d 1 -f /tmp/top_$(date +%Y%m%d_%H%M).txt",
+          "platforms": [
+            "hpux"
+          ],
+          "note": "-d 는 화면 반복 횟수, -s 는 갱신 주기(초), -f 는 출력 파일입니다."
+        },
+        {
+          "title": "프로세스·스레드별 상세 부하 (Solaris)",
+          "command": "prstat -mL 5",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "Solaris 는 top 보다 prstat 이 기본 도구입니다. -m 은 마이크로 상태(LAT, SLP 등) 표시, -L 은 스레드별 표시입니다."
         }
       ],
       "cautions": [
         "wa(iowait) 가 높으면 CPU 가 아니라 디스크 I/O 병목입니다. iostat 로 확인하세요.",
-        "가상 머신에서 st(steal) 가 높으면 하이퍼바이저 측 CPU 경합입니다."
+        "가상 머신에서 st(steal) 가 높으면 하이퍼바이저 측 CPU 경합입니다.",
+        "AIX 에는 top 이 없습니다. topas 또는 nmon 을 사용하세요."
       ],
+      "install": {
+        "solaris": {
+          "package": "diagnostic/top",
+          "preinstalled": false,
+          "note": "Solaris 11 저장소 패키지 (설치 그룹에 따라 기본 포함). 없으면 pkg install diagnostic/top"
+        }
+      },
+      "versions": {
+        "solaris": "11 이상"
+      },
+      "platformNotes": {
+        "hpux": "/usr/bin/top 이 기본 제공되며 옵션이 Linux 와 다릅니다: -s 갱신 주기, -d 화면 반복 횟수, -n 표시할 프로세스 수, -f 파일로 출력. 정밀 분석은 glance(GlancePlus, 별도 라이선스) 를 사용합니다.",
+        "solaris": "Solaris 11 에 top 이 있으나(diagnostic/top 패키지) Linux 와 옵션·키가 다릅니다. Solaris 10 에는 없으므로 prstat 을 사용하세요. 장애 분석에는 prstat -mL, prstat -Z(존별)가 더 정확합니다."
+      },
       "help": "man top",
       "keywords": [
         "실시간 모니터링",
@@ -373,7 +697,10 @@
         "free",
         "uptime",
         "iostat"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "htop",
@@ -414,10 +741,74 @@
         {
           "flag": "-s {{COLUMN}}",
           "desc": "정렬 컬럼 지정 (예: PERCENT_MEM)"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "(대화식 키) F3 / F4 / F5 / F6 / F9",
-          "desc": "검색 / 필터 / 트리 / 정렬 / 시그널 전송(종료)"
+          "title": "실행 중 단축키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "F3 또는 /",
+              "desc": "이름으로 검색 (F3 다시 누르면 다음 항목)"
+            },
+            {
+              "cmd": "F4 또는 \\",
+              "desc": "필터: 입력한 문자열이 포함된 프로세스만 표시"
+            },
+            {
+              "cmd": "F5 또는 t",
+              "desc": "트리 보기 켜기/끄기"
+            },
+            {
+              "cmd": "F6 또는 < >",
+              "desc": "정렬 컬럼 선택"
+            },
+            {
+              "cmd": "P / M / T",
+              "desc": "CPU / 메모리 / 시간 순 정렬"
+            },
+            {
+              "cmd": "H",
+              "desc": "사용자 스레드 표시 켜기/끄기"
+            },
+            {
+              "cmd": "K",
+              "desc": "커널 스레드 표시 켜기/끄기"
+            },
+            {
+              "cmd": "u",
+              "desc": "특정 사용자 프로세스만 보기"
+            },
+            {
+              "cmd": "Space",
+              "desc": "프로세스 선택(태그). 여러 개를 골라 한 번에 시그널 전송"
+            },
+            {
+              "cmd": "F9 또는 k",
+              "desc": "선택한 프로세스에 시그널 전송 (목록에서 15 TERM, 9 KILL 선택)"
+            },
+            {
+              "cmd": "F7 / F8",
+              "desc": "nice 값 낮추기(우선순위 높임, root) / 높이기"
+            },
+            {
+              "cmd": "l",
+              "desc": "선택 프로세스의 열린 파일 보기 (lsof 필요)"
+            },
+            {
+              "cmd": "s",
+              "desc": "선택 프로세스에 strace 연결 (strace 필요)"
+            },
+            {
+              "cmd": "F2",
+              "desc": "설정 (표시 컬럼, 미터 변경)"
+            },
+            {
+              "cmd": "F10 또는 q",
+              "desc": "종료"
+            }
+          ]
         }
       ],
       "examples": [
@@ -455,7 +846,10 @@
         "top",
         "ps",
         "kill"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "taskmgr",
@@ -474,22 +868,63 @@
       "syntax": [
         "taskmgr"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "Ctrl+Shift+Esc",
-          "desc": "바로 실행하는 단축키"
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "세부 정보 탭 > 컬럼 머리글 우클릭 > 열 선택",
+              "desc": "PID, 명령줄, 사용자 이름, 핸들, 스레드, 커밋 크기 컬럼 추가"
+            },
+            {
+              "cmd": "세부 정보 > 우클릭 > 프로세스 트리 끝내기",
+              "desc": "선택 프로세스와 자식 프로세스 모두 종료"
+            },
+            {
+              "cmd": "세부 정보 > 우클릭 > 덤프 파일 만들기",
+              "desc": "프로세스 전체 메모리 덤프 생성 (%TEMP% 에 저장)"
+            },
+            {
+              "cmd": "세부 정보 > 우클릭 > 파일 위치 열기",
+              "desc": "실행 파일 경로 확인"
+            },
+            {
+              "cmd": "세부 정보 > 우클릭 > 서비스로 이동",
+              "desc": "svchost 등에서 실행 중인 서비스 확인"
+            },
+            {
+              "cmd": "성능 탭",
+              "desc": "CPU·메모리·디스크·네트워크 실시간 그래프와 가동 시간"
+            },
+            {
+              "cmd": "성능 탭 > 리소스 모니터 열기",
+              "desc": "resmon 실행 (파일 잠금, 포트별 프로세스)"
+            },
+            {
+              "cmd": "사용자 탭",
+              "desc": "로그인한 사용자별 자원 사용, 연결 끊기·로그오프"
+            },
+            {
+              "cmd": "시작 프로그램 탭",
+              "desc": "로그온 시 자동 실행 프로그램 사용 안 함 설정 (Windows 10/11)"
+            }
+          ]
         },
         {
-          "flag": "세부 정보 탭 > 열 선택",
-          "desc": "PID, 명령줄, 사용자 이름, 핸들 등 컬럼 추가"
-        },
-        {
-          "flag": "세부 정보 > 우클릭 > 덤프 파일 만들기",
-          "desc": "프로세스 전체 메모리 덤프 생성 (%TEMP%)"
-        },
-        {
-          "flag": "성능 탭 > 리소스 모니터 열기",
-          "desc": "resmon 실행"
+          "title": "단축키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Ctrl+Shift+Esc",
+              "desc": "작업 관리자 바로 실행"
+            },
+            {
+              "cmd": "Ctrl+Alt+Del > 작업 관리자",
+              "desc": "원격 데스크톱 세션에서는 Ctrl+Alt+End"
+            }
+          ]
         }
       ],
       "examples": [
@@ -513,7 +948,10 @@
         "perfmon",
         "tasklist",
         "procdump"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "resmon",
@@ -532,22 +970,41 @@
       "syntax": [
         "resmon"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "CPU 탭 > 연결된 핸들 검색",
-          "desc": "파일·폴더 이름으로 잠금 프로세스 찾기"
-        },
-        {
-          "flag": "디스크 탭",
-          "desc": "프로세스·파일별 읽기/쓰기 바이트, 응답 시간"
-        },
-        {
-          "flag": "네트워크 탭 > 수신 대기 포트",
-          "desc": "포트별 LISTEN 프로세스와 방화벽 상태"
-        },
-        {
-          "flag": "메모리 탭",
-          "desc": "하드 폴트, 커밋, 작업 집합, 대기·사용 가능 메모리"
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "CPU 탭 > 연결된 핸들 > 핸들 검색",
+              "desc": "파일·폴더 이름으로 잠근 프로세스 찾기 (삭제·이동 불가 원인)"
+            },
+            {
+              "cmd": "CPU 탭 > 프로세스 체크",
+              "desc": "선택한 프로세스 기준으로 다른 탭(디스크·네트워크) 내용 필터"
+            },
+            {
+              "cmd": "디스크 탭 > 디스크 작업",
+              "desc": "프로세스·파일별 읽기/쓰기 바이트, 응답 시간"
+            },
+            {
+              "cmd": "네트워크 탭 > 수신 대기 포트",
+              "desc": "포트별 LISTEN 프로세스와 방화벽 상태"
+            },
+            {
+              "cmd": "네트워크 탭 > TCP 연결",
+              "desc": "프로세스별 원격 주소·포트, 지연 시간"
+            },
+            {
+              "cmd": "메모리 탭",
+              "desc": "하드 폴트, 커밋, 작업 집합, 대기·사용 가능 메모리"
+            },
+            {
+              "cmd": "프로세스 우클릭 > 대기 체인 분석",
+              "desc": "응답 없는 프로세스가 무엇을 기다리는지 확인"
+            }
+          ]
         }
       ],
       "examples": [
@@ -569,7 +1026,10 @@
         "taskmgr",
         "perfmon",
         "handle"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "perfmon",
@@ -606,10 +1066,34 @@
         {
           "flag": "/sys",
           "desc": "독립 실행형 성능 모니터"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "데이터 수집기 집합 > 사용자 정의",
-          "desc": "카운터 로그를 일정 간격으로 수집"
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "성능 모니터 > + (카운터 추가)",
+              "desc": "Processor, Memory, LogicalDisk 등 카운터를 골라 실시간 그래프"
+            },
+            {
+              "cmd": "데이터 수집기 집합 > 사용자 정의 > 새로 만들기",
+              "desc": "카운터 로그를 일정 간격으로 수집 (장애 재현 대비)"
+            },
+            {
+              "cmd": "데이터 수집기 집합 > 시스템 > System Performance",
+              "desc": "미리 정의된 60초 성능 진단 수집 후 보고서 생성"
+            },
+            {
+              "cmd": "보고서 > 사용자 정의 / 시스템",
+              "desc": "수집 결과 보고서 확인"
+            },
+            {
+              "cmd": "수집된 .blg 파일 열기 (그래프 우클릭 > 속성 > 원본)",
+              "desc": "다른 서버에서 받은 로그 분석"
+            }
+          ]
         }
       ],
       "examples": [
@@ -643,7 +1127,10 @@
         "get-counter",
         "resmon",
         "taskmgr"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "kill",
@@ -654,7 +1141,10 @@
       "task": "process.kill",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -695,7 +1185,73 @@
           "desc": "시그널 목록 출력"
         }
       ],
+      "commandGroups": [
+        {
+          "title": "주요 시그널",
+          "type": "directive",
+          "note": "1, 2, 3, 9, 15 는 모든 OS 에서 같지만 그 외 번호는 OS 마다 다르므로 kill -STOP 처럼 이름으로 쓰세요. 전체 목록은 kill -l.",
+          "items": [
+            {
+              "cmd": "1  HUP",
+              "desc": "끊김 신호. 데몬은 보통 설정 재적재 (프로그램마다 다름)"
+            },
+            {
+              "cmd": "2  INT",
+              "desc": "인터럽트 (Ctrl+C 와 같음)"
+            },
+            {
+              "cmd": "3  QUIT",
+              "desc": "종료 + 코어 덤프. Java 는 종료하지 않고 스레드 덤프 출력"
+            },
+            {
+              "cmd": "9  KILL",
+              "desc": "강제 종료. 차단·처리 불가, 정리 작업 없음 (마지막 수단)"
+            },
+            {
+              "cmd": "15 TERM",
+              "desc": "정상 종료 요청 (kill 기본값)"
+            },
+            {
+              "cmd": "STOP",
+              "desc": "일시 정지 (차단 불가). 번호: Linux 19, AIX 17, Solaris 23, HP-UX 24"
+            },
+            {
+              "cmd": "CONT",
+              "desc": "정지된 프로세스 재개. 번호: Linux 18, AIX 19, Solaris 25, HP-UX 26"
+            },
+            {
+              "cmd": "USR1 / USR2",
+              "desc": "프로그램 정의 (로그 재오픈 등). 번호가 OS 마다 다름"
+            }
+          ]
+        }
+      ],
       "examples": [
+        {
+          "title": "확인 → 정상 종료 → 남으면 강제 종료",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "ps -fp {{PID}}",
+              "desc": "종료할 프로세스가 맞는지 명령줄과 사용자 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "kill {{PID}}",
+              "desc": "TERM(15) 으로 정상 종료 요청"
+            },
+            {
+              "prompt": "#",
+              "cmd": "sleep 10; ps -fp {{PID}}",
+              "desc": "종료됐는지 확인 (정리 작업 시간을 줌)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "kill -9 {{PID}}",
+              "desc": "그래도 남아 있을 때만 강제 종료"
+            }
+          ]
+        },
         {
           "title": "정상 종료 후 남아 있으면 강제 종료",
           "command": "kill {{PID}}\nsleep 5\nkill -0 {{PID}} 2>/dev/null && kill -9 {{PID}}"
@@ -712,9 +1268,14 @@
       ],
       "cautions": [
         "kill -9 는 정리 작업 없이 즉시 종료되어 DB·메시지 큐 등의 데이터 손상, 잠금 파일 잔존이 생길 수 있습니다. 먼저 -15 를 시도하세요.",
-        "systemd 로 관리되는 서비스는 kill 대신 systemctl stop/restart 를 사용하세요. Restart= 설정 시 바로 다시 살아납니다.",
+        "Linux 에서 systemd 로 관리되는 서비스는 kill 대신 systemctl stop/restart 를 사용하세요 (Restart= 설정 시 바로 다시 살아남). Unix 도 서비스 관리자(AIX SRC, Solaris SMF)가 다시 띄울 수 있습니다.",
         "좀비(Z) 프로세스는 이미 종료된 상태라 kill 로 없어지지 않습니다. 부모 프로세스를 처리해야 합니다."
       ],
+      "platformNotes": {
+        "aix": "사용법은 같습니다. SRC 로 관리되는 데몬은 stopsrc -s {{SUBSYSTEM}} 으로 중지하세요. STOP=17, CONT=19 입니다.",
+        "hpux": "사용법은 같습니다. STOP=24, CONT=26 입니다. 데몬은 /sbin/init.d/{{SCRIPT}} stop 으로 중지하는 것이 우선입니다.",
+        "solaris": "사용법은 같습니다. SMF 서비스는 kill 해도 svc.startd 가 다시 띄우므로 svcadm disable {{FMRI}} 로 중지하세요. STOP=23, CONT=25 입니다."
+      },
       "help": "man kill",
       "keywords": [
         "프로세스 종료",
@@ -731,7 +1292,10 @@
         "ps",
         "pgrep",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pkill",
@@ -742,7 +1306,8 @@
       "task": "process.kill",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "basic",
       "risk": "destructive",
@@ -771,7 +1336,7 @@
         },
         {
           "flag": "-9 / -HUP / --signal {{SIGNAL}}",
-          "desc": "보낼 시그널 지정 (기본 TERM)"
+          "desc": "보낼 시그널 지정 (기본 TERM). --signal 은 Linux 전용"
         },
         {
           "flag": "-n / -o",
@@ -779,13 +1344,17 @@
         },
         {
           "flag": "-e",
-          "desc": "종료한 프로세스 출력 (procps-ng 3.3.15+)"
+          "desc": "종료한 프로세스 출력 (procps-ng 3.3.15+, Linux 전용)"
         }
       ],
       "examples": [
         {
           "title": "대상 확인 후 종료",
-          "command": "pgrep -af {{PATTERN}}\npkill -f {{PATTERN}}"
+          "command": "pgrep -af {{PATTERN}}\npkill -f {{PATTERN}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "특정 사용자의 모든 프로세스 종료",
@@ -794,11 +1363,19 @@
         {
           "title": "특정 터미널 세션 강제 로그아웃",
           "command": "who\npkill -KILL -t pts/{{N}}"
+        },
+        {
+          "title": "대상 확인 후 종료 (Solaris)",
+          "command": "pgrep -lf {{PATTERN}}\npkill -f {{PATTERN}}",
+          "platforms": [
+            "solaris"
+          ]
         }
       ],
       "cautions": [
         "패턴은 부분 일치 정규식입니다. 'pkill java' 는 이름에 java 가 들어간 모든 프로세스를 종료합니다. -x 나 pgrep 확인을 먼저 하세요.",
-        "-f 사용 시 자기 자신을 실행한 스크립트·ssh 명령줄까지 매칭될 수 있습니다."
+        "-f 사용 시 자기 자신을 실행한 스크립트·ssh 명령줄까지 매칭될 수 있습니다.",
+        "AIX·HP-UX 에는 기본 pkill 이 없습니다. ps -ef 로 PID 를 확인한 뒤 kill 하세요. 이때 killall 을 쓰면 안 됩니다 (Unix killall 은 모든 프로세스 종료)."
       ],
       "install": {
         "rhel": {
@@ -809,6 +1386,9 @@
           "package": "procps",
           "preinstalled": true
         }
+      },
+      "platformNotes": {
+        "solaris": "Solaris 7 이상 기본 제공됩니다. -f 는 명령줄 앞 80자만 비교합니다. -z {{ZONE}} 으로 존을 지정할 수 있습니다. --signal, -e 는 없습니다."
       },
       "help": "man pkill",
       "keywords": [
@@ -823,7 +1403,10 @@
         "kill",
         "killall",
         "who"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "killall",
@@ -889,7 +1472,9 @@
         }
       ],
       "cautions": [
-        "Solaris·AIX 등 다른 UNIX 의 killall 은 '모든 프로세스 종료' 를 의미합니다. 리눅스 습관대로 쓰면 서버가 멈출 수 있습니다."
+        "[매우 중요] AIX·HP-UX·Solaris 의 killall 은 이름으로 종료하는 명령이 아니라 '현재 프로세스를 뺀 모든 프로세스를 종료'하는 종료(shutdown)용 명령입니다. Unix 서버에서 killall {{NAME}} 을 입력하면 서비스 전체가 중단됩니다. Unix 에서는 pkill(Solaris) 또는 ps -ef 확인 후 kill 을 사용하세요.",
+        "여러 서버에 같은 스크립트를 배포할 때 killall 이 들어 있으면 uname 으로 OS 를 확인하는 분기를 반드시 넣으세요.",
+        "같은 이름의 프로세스를 모두 종료하므로 다른 사용자·다른 인스턴스까지 종료될 수 있습니다. -u, -i 로 범위를 좁히세요."
       ],
       "install": {
         "rhel": {
@@ -915,7 +1500,10 @@
         "kill",
         "pgrep",
         "pstree"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "taskkill",
@@ -994,7 +1582,10 @@
         "tasklist",
         "stop-process",
         "sc"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "stop-process",
@@ -1075,7 +1666,10 @@
       "related": [
         "get-process",
         "taskkill"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pgrep",
@@ -1086,7 +1680,8 @@
       "task": "process.search",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1099,7 +1694,7 @@
       "options": [
         {
           "flag": "-a",
-          "desc": "PID 와 전체 명령줄 출력"
+          "desc": "PID 와 전체 명령줄 출력 (Linux 전용. Solaris 는 -lf)"
         },
         {
           "flag": "-l",
@@ -1123,7 +1718,7 @@
         },
         {
           "flag": "-c",
-          "desc": "개수만 출력"
+          "desc": "개수만 출력 (Linux 전용. Solaris 의 -c 는 contract ID 지정으로 의미가 다름)"
         },
         {
           "flag": "-n / -o",
@@ -1138,11 +1733,19 @@
         {
           "title": "명령줄로 프로세스 찾기",
           "command": "pgrep -af {{PATTERN}}",
-          "output": "2314 /usr/bin/java -jar /opt/app/app.jar"
+          "output": "2314 /usr/bin/java -jar /opt/app/app.jar",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "프로세스 개수 확인 (워커 수 점검)",
-          "command": "pgrep -c -x {{NAME}}"
+          "command": "pgrep -c -x {{NAME}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "프로세스 실행 여부로 분기",
@@ -1150,11 +1753,30 @@
         },
         {
           "title": "찾은 PID 로 top 실행",
-          "command": "top -p $(pgrep -d, -x {{NAME}})"
+          "command": "top -p $(pgrep -d, -x {{NAME}})",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "명령줄로 프로세스 찾기 (Solaris)",
+          "command": "pgrep -lf {{PATTERN}}",
+          "platforms": [
+            "solaris"
+          ]
+        },
+        {
+          "title": "프로세스 개수 확인 (Solaris)",
+          "command": "pgrep -x {{NAME}} | wc -l",
+          "platforms": [
+            "solaris"
+          ]
         }
       ],
       "cautions": [
-        "프로세스 이름은 15자까지만 비교됩니다. 긴 이름은 -f 로 명령줄을 검색하세요."
+        "프로세스 이름은 15자까지만 비교됩니다. 긴 이름은 -f 로 명령줄을 검색하세요.",
+        "AIX·HP-UX 에는 기본 pgrep 이 없습니다. ps -ef | grep {{NAME}} | grep -v grep 형식을 사용하세요."
       ],
       "install": {
         "rhel": {
@@ -1165,6 +1787,9 @@
           "package": "procps",
           "preinstalled": true
         }
+      },
+      "platformNotes": {
+        "solaris": "Solaris 7 이상 기본 제공됩니다. -l, -f, -x, -u, -U, -P, -n, -o, -d, -v, -t 를 지원하고 -z {{ZONE}} 으로 존별 조회가 가능합니다. -a 는 없으며 -c 는 개수가 아니라 contract ID 입니다."
       },
       "help": "man pgrep",
       "keywords": [
@@ -1178,7 +1803,10 @@
         "pkill",
         "ps",
         "pstree"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pstree",
@@ -1269,7 +1897,10 @@
         "ps",
         "pgrep",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nohup",
@@ -1280,7 +1911,10 @@
       "task": "process.background",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -1292,16 +1926,32 @@
       ],
       "options": [
         {
-          "flag": "> {{LOG_FILE}} 2>&1",
-          "desc": "표준 출력·오류를 로그 파일로 (생략 시 ./nohup.out)"
-        },
+          "flag": "-p {{PID}}",
+          "desc": "이미 실행 중인 프로세스가 SIGHUP 을 무시하도록 설정 (Solaris 전용)"
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "&",
-          "desc": "백그라운드 실행 (nohup 자체 옵션이 아닌 셸 문법)"
-        },
-        {
-          "flag": "< /dev/null",
-          "desc": "표준 입력 분리 (입력 대기로 멈추는 것 방지)"
+          "title": "함께 쓰는 셸 문법",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "> {{LOG_FILE}} 2>&1",
+              "desc": "표준 출력·오류를 로그 파일로 (생략 시 ./nohup.out 또는 ~/nohup.out)"
+            },
+            {
+              "cmd": "&",
+              "desc": "백그라운드 실행 (nohup 자체가 아닌 셸 문법)"
+            },
+            {
+              "cmd": "< /dev/null",
+              "desc": "표준 입력 분리 (입력 대기로 멈추는 것 방지)"
+            },
+            {
+              "cmd": "echo $!",
+              "desc": "방금 백그라운드로 띄운 프로세스의 PID"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1316,13 +1966,33 @@
         },
         {
           "title": "실행 여부 확인",
-          "command": "pgrep -af {{SCRIPT}}"
+          "command": "pgrep -af {{SCRIPT}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "실행 여부 확인 (Unix 공통)",
+          "command": "ps -ef | grep {{SCRIPT_NAME}} | grep -v grep"
+        },
+        {
+          "title": "실행 중인 작업을 로그아웃해도 유지되게 (Solaris)",
+          "command": "nohup -p {{PID}}",
+          "platforms": [
+            "solaris"
+          ]
         }
       ],
       "cautions": [
-        "systemd-logind 의 KillUserProcesses=yes 환경에서는 로그아웃 시 nohup 프로세스도 종료됩니다. 계속 돌아야 하는 작업은 systemd-run, tmux/screen 또는 서비스로 등록하세요.",
+        "Linux 의 systemd-logind 가 KillUserProcesses=yes 이면 로그아웃 시 nohup 프로세스도 종료됩니다. 계속 돌아야 하는 작업은 systemd-run, tmux/screen 또는 서비스로 등록하세요.",
         "출력 리다이렉션 없이 실행하면 nohup.out 이 계속 커져 디스크를 채울 수 있습니다."
       ],
+      "platformNotes": {
+        "aix": "사용법은 같습니다. 출력 리다이렉션이 없으면 ./nohup.out 에 기록합니다.",
+        "hpux": "사용법은 같습니다. 출력 리다이렉션이 없으면 ./nohup.out 에 기록합니다.",
+        "solaris": "사용법은 같습니다. 이미 실행 중인 프로세스에는 nohup -p {{PID}} 로 SIGHUP 무시를 적용할 수 있습니다."
+      },
       "help": "man nohup",
       "keywords": [
         "백그라운드 실행",
@@ -1335,7 +2005,10 @@
         "jobs",
         "screen",
         "tmux"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "jobs",
@@ -1352,7 +2025,10 @@
       "task": "process.background",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1368,32 +2044,59 @@
       ],
       "options": [
         {
-          "flag": "jobs -l",
+          "flag": "-l",
           "desc": "작업 번호와 PID 함께 표시"
         },
         {
-          "flag": "jobs -p",
+          "flag": "-p",
           "desc": "PID 만 표시"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "작업 제어 명령",
+          "type": "subcommand",
+          "note": "%1 은 작업 번호 1, %% 또는 %+ 는 현재 작업, %- 는 직전 작업입니다.",
+          "items": [
+            {
+              "cmd": "{{COMMAND}} &",
+              "desc": "처음부터 백그라운드로 실행"
+            },
+            {
+              "cmd": "bg [%{{JOB}}]",
+              "desc": "정지된 작업을 백그라운드에서 재개"
+            },
+            {
+              "cmd": "fg [%{{JOB}}]",
+              "desc": "작업을 포그라운드로 가져오기"
+            },
+            {
+              "cmd": "kill %{{JOB}}",
+              "desc": "작업 번호로 종료"
+            },
+            {
+              "cmd": "disown -h %{{JOB}}",
+              "desc": "로그아웃 시 SIGHUP 을 보내지 않도록 표시 (-h 없으면 목록에서 제거). bash·ksh93 전용"
+            },
+            {
+              "cmd": "disown -a",
+              "desc": "모든 작업 분리 (bash 전용)"
+            }
+          ]
         },
         {
-          "flag": "Ctrl+Z",
-          "desc": "포그라운드 작업 일시 정지"
-        },
-        {
-          "flag": "bg %{{JOB}}",
-          "desc": "정지된 작업을 백그라운드에서 재개"
-        },
-        {
-          "flag": "fg %{{JOB}}",
-          "desc": "작업을 포그라운드로 가져오기"
-        },
-        {
-          "flag": "disown -h %{{JOB}}",
-          "desc": "로그아웃 시 SIGHUP 을 보내지 않도록 표시 (-h 없으면 목록에서 제거)"
-        },
-        {
-          "flag": "disown -a",
-          "desc": "모든 작업 분리"
+          "title": "단축키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "Ctrl+Z",
+              "desc": "포그라운드 작업 일시 정지 (이후 bg 또는 fg)"
+            },
+            {
+              "cmd": "Ctrl+C",
+              "desc": "포그라운드 작업 중단 (SIGINT)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1403,7 +2106,12 @@
         },
         {
           "title": "백그라운드 작업을 로그아웃 후에도 유지",
-          "command": "{{COMMAND}} > /tmp/out.log 2>&1 &\ndisown -h %1"
+          "command": "{{COMMAND}} > /tmp/out.log 2>&1 &\ndisown -h %1",
+          "platforms": [
+            "rhel",
+            "debian"
+          ],
+          "note": "disown 은 bash·ksh93 에만 있습니다. AIX·HP-UX 기본 셸에서는 처음부터 nohup 으로 실행하세요."
         },
         {
           "title": "작업 다시 포그라운드로",
@@ -1414,6 +2122,11 @@
         "jobs 는 현재 셸에서 시작한 작업만 보여줍니다. 다른 세션의 프로세스는 ps 로 확인하세요.",
         "백그라운드 작업이 터미널 입력을 읽으려 하면 정지(Stopped)됩니다."
       ],
+      "platformNotes": {
+        "aix": "기본 셸 ksh(ksh88)에서 jobs, bg, fg 를 사용할 수 있고 disown 은 없습니다.",
+        "hpux": "POSIX 셸(sh)과 ksh 에서 jobs, bg, fg 를 사용할 수 있고 disown 은 없습니다.",
+        "solaris": "Solaris 11 기본 셸(bash, ksh93)은 disown 까지 지원합니다. Solaris 10 의 /bin/sh 는 작업 제어가 없으므로 ksh 또는 bash 를 사용하세요."
+      },
       "help": "help jobs",
       "keywords": [
         "작업 제어",
@@ -1431,7 +2144,10 @@
         "kill",
         "screen",
         "tmux"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-start",
@@ -1511,7 +2227,10 @@
         "start-job",
         "tasklist",
         "taskkill"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "start-job",
@@ -1555,10 +2274,34 @@
         {
           "flag": "-Credential {{CRED}}",
           "desc": "다른 자격 증명으로 실행"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "Get-Job / Receive-Job -Keep / Wait-Job / Remove-Job",
-          "desc": "상태 확인 / 결과 수신 / 완료 대기 / 삭제"
+          "title": "작업 관리 cmdlet",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "Get-Job",
+              "desc": "작업 목록과 상태 (Running, Completed, Failed)"
+            },
+            {
+              "cmd": "Receive-Job -Id {{ID}} [-Keep]",
+              "desc": "결과 받기 (-Keep 은 결과를 지우지 않음)"
+            },
+            {
+              "cmd": "Wait-Job -Id {{ID}} [-Timeout {{SEC}}]",
+              "desc": "완료될 때까지 대기"
+            },
+            {
+              "cmd": "Stop-Job -Id {{ID}}",
+              "desc": "실행 중인 작업 중지"
+            },
+            {
+              "cmd": "Remove-Job -Id {{ID}}",
+              "desc": "작업 삭제"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1591,7 +2334,10 @@
       "related": [
         "win-start",
         "get-process"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "nice",
@@ -1602,7 +2348,10 @@
       "task": "process.priority",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -1616,10 +2365,6 @@
         {
           "flag": "-n {{NICE}}",
           "desc": "nice 값 증가량 (기본 10). 음수는 root 만"
-        },
-        {
-          "flag": "(인자 없음)",
-          "desc": "현재 셸의 nice 값 출력"
         }
       ],
       "examples": [
@@ -1630,16 +2375,33 @@
         {
           "title": "CPU·디스크 I/O 우선순위 모두 낮추기",
           "command": "nice -n 19 ionice -c3 {{COMMAND}}",
-          "note": "ionice -c3 은 idle I/O 클래스"
+          "note": "ionice -c3 은 idle I/O 클래스",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "현재 nice 값 확인",
-          "command": "nice"
+          "command": "nice",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "실행 중 프로세스의 nice 값 확인 (공통)",
+          "command": "ps -o pid,nice,args -p {{PID}}"
         }
       ],
       "cautions": [
         "nice 는 CPU 경쟁이 있을 때만 효과가 있으며 디스크 I/O 우선순위에는 영향이 없습니다. I/O 는 ionice 를 함께 사용하세요."
       ],
+      "platformNotes": {
+        "aix": "nice -n {{N}} {{COMMAND}} 형식이 같습니다. 인자 없이 실행해 현재 값을 보는 기능은 없습니다. ionice 는 없습니다.",
+        "hpux": "nice -n {{N}} {{COMMAND}} 형식이 같습니다. 인자 없는 실행과 ionice 는 없습니다.",
+        "solaris": "nice -n {{N}} {{COMMAND}} 형식이 같습니다 (예전 형식 nice -{{N}} 도 가능). 스케줄링 클래스 변경은 priocntl 을 사용합니다. ionice 는 없습니다."
+      },
       "help": "man nice",
       "keywords": [
         "우선순위",
@@ -1653,7 +2415,10 @@
         "renice",
         "ps",
         "top"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "renice",
@@ -1664,7 +2429,10 @@
       "task": "process.priority",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -1678,7 +2446,7 @@
       "options": [
         {
           "flag": "-n {{NICE}}",
-          "desc": "설정할 nice 값 (-20~19)"
+          "desc": "Linux: 설정할 nice 값 (-20~19). Unix(POSIX): 현재 값에 더할 증가량"
         },
         {
           "flag": "-p {{PID}}",
@@ -1700,17 +2468,36 @@
         },
         {
           "title": "변경 결과 확인",
-          "command": "ps -o pid,ni,cmd -p {{PID}}"
+          "command": "ps -o pid,ni,cmd -p {{PID}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "특정 사용자의 모든 프로세스 우선순위 낮추기",
           "command": "renice -n 10 -u {{USER}}"
+        },
+        {
+          "title": "변경 결과 확인 (Unix)",
+          "command": "ps -o pid,nice,args -p {{PID}}",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ]
         }
       ],
       "cautions": [
         "일반 사용자는 자신의 프로세스 우선순위를 낮출 수만 있고, 한 번 낮춘 값을 다시 높일 수 없습니다.",
-        "-p 로 지정하면 해당 스레드(메인)만 바뀌는 경우가 있어 멀티스레드 프로세스는 효과가 제한될 수 있습니다."
+        "-p 로 지정하면 해당 스레드(메인)만 바뀌는 경우가 있어 멀티스레드 프로세스는 효과가 제한될 수 있습니다.",
+        "AIX·HP-UX·Solaris 의 -n 은 '증가량'입니다. renice -n 5 -p {{PID}} 는 nice 를 5 로 만드는 것이 아니라 5 만큼 올립니다. 변경 후 ps -o pid,nice 로 확인하세요."
       ],
+      "platformNotes": {
+        "aix": "renice -n {{INCREMENT}} -p {{PID}} 형식(POSIX)이며 -n 은 증가량입니다. -g, -u 도 지원합니다.",
+        "hpux": "renice -n {{INCREMENT}} -p {{PID}} 형식(POSIX)이며 -n 은 증가량입니다.",
+        "solaris": "renice -n {{INCREMENT}} -p {{PID}} 형식(POSIX)이며 -n 은 증가량입니다. 실시간·고정 우선순위 클래스는 priocntl 로 조정합니다."
+      },
       "help": "man renice",
       "keywords": [
         "우선순위 변경",
@@ -1723,7 +2510,10 @@
         "nice",
         "top",
         "ps"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lsof",
@@ -1809,7 +2599,8 @@
       ],
       "cautions": [
         "인자 없이 lsof 만 실행하면 출력이 매우 많고 느립니다. 항상 조건을 지정하세요.",
-        "NFS 마운트가 응답하지 않으면 lsof 가 멈출 수 있습니다. -b 또는 대상 지정을 사용하세요."
+        "NFS 마운트가 응답하지 않으면 lsof 가 멈출 수 있습니다. -b 또는 대상 지정을 사용하세요.",
+        "Unix 에는 기본 lsof 가 없습니다 (AIX Toolbox 등으로 별도 설치). 대신 fuser 와 프로세스별 열린 파일 도구를 사용하세요: Solaris pfiles {{PID}}, AIX procfiles -n {{PID}}."
       ],
       "install": {
         "rhel": {
@@ -1840,7 +2631,10 @@
         "df",
         "du",
         "umount"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "fuser",
@@ -1851,7 +2645,10 @@
       "task": "process.open-files",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -1866,15 +2663,23 @@
       "options": [
         {
           "flag": "-v",
-          "desc": "사용자·접근 유형·명령 이름까지 상세 출력"
+          "desc": "사용자·접근 유형·명령 이름까지 상세 출력 (Linux 전용)"
         },
         {
           "flag": "-m",
-          "desc": "지정 경로가 속한 파일시스템 전체를 사용하는 프로세스"
+          "desc": "지정 경로가 속한 파일시스템 전체를 사용하는 프로세스 (Linux. Unix 는 -c)"
+        },
+        {
+          "flag": "-c",
+          "desc": "마운트 포인트로 지정한 파일시스템 사용 프로세스 (Unix 표준. Linux 에서는 -m 과 같음)"
+        },
+        {
+          "flag": "-u",
+          "desc": "PID 뒤에 사용자 이름 표시"
         },
         {
           "flag": "{{PORT}}/tcp",
-          "desc": "포트를 사용하는 프로세스 (-n tcp {{PORT}} 와 같음)"
+          "desc": "포트를 사용하는 프로세스 (-n tcp {{PORT}} 와 같음) (Linux 전용)"
         },
         {
           "flag": "-k",
@@ -1882,30 +2687,78 @@
         },
         {
           "flag": "-i",
-          "desc": "-k 사용 시 하나씩 확인"
+          "desc": "-k 사용 시 하나씩 확인 (Linux 전용)"
         },
         {
           "flag": "-{{SIGNAL}}",
-          "desc": "-k 와 함께 보낼 시그널 지정 (예: -TERM)"
+          "desc": "-k 와 함께 보낼 시그널 지정 (예: -TERM) (Linux 전용. Solaris 는 -s {{SIGNAL}})"
         }
       ],
       "examples": [
         {
+          "title": "마운트 포인트 사용 프로세스와 사용자 (공통)",
+          "command": "fuser -cu {{MOUNT_POINT}}",
+          "note": "PID 뒤 문자: c 현재 디렉토리, r 루트 디렉토리, o(Unix)·f(Linux) 열린 파일, t(Unix)·e(Linux) 실행 파일."
+        },
+        {
           "title": "마운트 포인트를 사용 중인 프로세스",
           "command": "fuser -vm {{MOUNT_POINT}}",
-          "note": "ACCESS 열의 c=현재 디렉토리, f=열린 파일, e=실행 파일"
+          "note": "ACCESS 열의 c=현재 디렉토리, f=열린 파일, e=실행 파일",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "포트를 사용하는 프로세스",
-          "command": "fuser -v {{PORT}}/tcp"
+          "command": "fuser -v {{PORT}}/tcp",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "마운트 사용 프로세스를 확인하며 종료 후 언마운트",
-          "command": "fuser -kim -TERM {{MOUNT_POINT}}\numount {{MOUNT_POINT}}"
+          "command": "fuser -kim -TERM {{MOUNT_POINT}}\numount {{MOUNT_POINT}}",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "umount 가 busy 일 때 정리 순서 (Unix)",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "fuser -cu {{MOUNT_POINT}}",
+              "desc": "사용 중인 PID 와 사용자 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ps -fp {{PID}}",
+              "desc": "어떤 프로세스인지 확인 후 담당자에게 정상 종료 요청"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fuser -ck {{MOUNT_POINT}}",
+              "desc": "정상 종료가 불가할 때만 강제 종료 (SIGKILL)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "umount {{MOUNT_POINT}}",
+              "desc": "언마운트"
+            }
+          ]
         }
       ],
       "cautions": [
-        "-k 는 기본으로 SIGKILL 을 보내며, -m 과 함께 쓰면 / 같은 루트 파일시스템을 지정했을 때 시스템 전체 프로세스가 종료됩니다."
+        "-k 는 기본으로 SIGKILL 을 보내며, -m 과 함께 쓰면 / 같은 루트 파일시스템을 지정했을 때 시스템 전체 프로세스가 종료됩니다.",
+        "Unix 에서 fuser -ck / 처럼 루트 파일시스템을 지정하면 거의 모든 프로세스가 종료됩니다. 마운트 포인트를 반드시 다시 확인하세요."
       ],
       "install": {
         "rhel": {
@@ -1917,6 +2770,11 @@
           "package": "psmisc",
           "preinstalled": true
         }
+      },
+      "platformNotes": {
+        "aix": "fuser -c(파일시스템), -d(삭제됐지만 열린 파일), -f(파일), -k(SIGKILL), -u(사용자), -x 를 지원합니다. 포트 지정과 -v, -i 는 없습니다. 열린 파일 상세는 procfiles {{PID}}.",
+        "hpux": "fuser -c, -f, -k, -u 를 지원합니다. 포트 지정과 -v, -i 는 없습니다.",
+        "solaris": "fuser -c, -f, -k, -u 와 -s {{SIGNAL}}(-k 대신 보낼 시그널), -n(NBMAND 잠금) 을 지원합니다. 포트 지정과 -v 는 없습니다. 열린 파일 상세는 pfiles {{PID}}."
       },
       "help": "man fuser",
       "keywords": [
@@ -1931,7 +2789,10 @@
         "umount",
         "kill",
         "ss"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "handle",
@@ -2022,7 +2883,10 @@
         "resmon",
         "procmon",
         "tasklist"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "strace",
@@ -2099,11 +2963,9 @@
       ],
       "cautions": [
         "strace 는 대상 프로세스를 크게 느리게 만듭니다. 운영 중인 서비스에는 짧게, -e 로 범위를 좁혀 사용하세요.",
-        "이미 다른 디버거(gdb 등)가 붙어 있는 프로세스에는 연결할 수 없습니다."
+        "이미 다른 디버거(gdb 등)가 붙어 있는 프로세스에는 연결할 수 없습니다.",
+        "Unix 에는 strace 가 없습니다. 같은 용도로 AIX·Solaris 는 truss (-p {{PID}}, -f, -o {{FILE}}), HP-UX 는 tusc(별도 설치)를 사용합니다."
       ],
-      "platformNotes": {
-        "debian": "Ubuntu 는 kernel.yama.ptrace_scope=1 이 기본이라 자신의 프로세스라도 -p 연결에는 sudo 가 필요합니다."
-      },
       "install": {
         "rhel": {
           "package": "strace",
@@ -2115,6 +2977,9 @@
           "preinstalled": true,
           "note": "Ubuntu Server 는 기본 포함, Debian 최소 설치는 apt install strace"
         }
+      },
+      "platformNotes": {
+        "debian": "Ubuntu 는 kernel.yama.ptrace_scope=1 이 기본이라 자신의 프로세스라도 -p 연결에는 sudo 가 필요합니다."
       },
       "help": "man strace",
       "keywords": [
@@ -2129,7 +2994,10 @@
         "lsof",
         "gcore",
         "pstack"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "procmon",
@@ -2177,14 +3045,38 @@
         {
           "flag": "/OpenLog {{FILE}}.pml",
           "desc": "저장된 로그 열기"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "Filter (Ctrl+L)",
-          "desc": "Process Name, Result is ACCESS DENIED 등 조건 필터"
-        },
-        {
-          "flag": "Options > Enable Boot Logging",
-          "desc": "다음 부팅 과정 기록"
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "Filter > Filter... (Ctrl+L)",
+              "desc": "Process Name is {{NAME}}, Result is ACCESS DENIED / NAME NOT FOUND 등 조건 지정"
+            },
+            {
+              "cmd": "캡처 켜기/끄기 (Ctrl+E)",
+              "desc": "재현 직전에 켜고 직후에 끔"
+            },
+            {
+              "cmd": "화면 지우기 (Ctrl+X)",
+              "desc": "이전 이벤트 삭제 후 새로 캡처"
+            },
+            {
+              "cmd": "Tools > Process Tree (Ctrl+T)",
+              "desc": "캡처 기간 동안의 프로세스 생성 관계"
+            },
+            {
+              "cmd": "Options > Enable Boot Logging",
+              "desc": "다음 부팅 과정 기록 (부팅 중 서비스 실패 분석)"
+            },
+            {
+              "cmd": "File > Save",
+              "desc": "PML 로 저장 (벤더 전달 시 All events 선택)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -2221,7 +3113,10 @@
         "handle",
         "procdump",
         "resmon"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "gcore",
@@ -2232,7 +3127,9 @@
       "task": "process.dump",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "critical",
       "risk": "caution",
@@ -2246,10 +3143,6 @@
         {
           "flag": "-o {{PREFIX}}",
           "desc": "출력 파일 접두어 (결과: {{PREFIX}}.{{PID}}, 기본 core.{{PID}})"
-        },
-        {
-          "flag": "{{PID}}...",
-          "desc": "덤프할 프로세스 (여러 개 가능)"
         }
       ],
       "examples": [
@@ -2260,7 +3153,19 @@
         },
         {
           "title": "덤프 파일에서 스택 확인",
-          "command": "gdb {{BINARY}} /var/tmp/core.{{PID}} -batch -ex 'thread apply all bt'"
+          "command": "gdb {{BINARY}} /var/tmp/core.{{PID}} -batch -ex 'thread apply all bt'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "코어 덤프 후 스택 확인 (Solaris)",
+          "command": "gcore -o /var/tmp/core {{PID}}\npstack /var/tmp/core.{{PID}}",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "더 깊은 분석은 mdb /var/tmp/core.{{PID}} 를 사용합니다."
         }
       ],
       "cautions": [
@@ -2277,10 +3182,20 @@
           "package": "gdb",
           "preinstalled": false,
           "note": "apt install gdb"
+        },
+        "aix": {
+          "preinstalled": true,
+          "note": "기본 OS 명령"
+        },
+        "solaris": {
+          "preinstalled": true,
+          "note": "기본 OS 명령 (/usr/bin/gcore)"
         }
       },
       "platformNotes": {
-        "debian": "Ubuntu 는 ptrace_scope=1 이 기본이라 sudo 로 실행해야 합니다."
+        "debian": "Ubuntu 는 ptrace_scope=1 이 기본이라 sudo 로 실행해야 합니다.",
+        "aix": "gcore [-o {{FILE}}] {{PID}} 형식의 기본 명령입니다. 기본 파일 이름은 core.{{PID}} 이고 분석은 dbx {{BINARY}} {{CORE_FILE}} 로 합니다.",
+        "solaris": "gcore [-o {{PREFIX}}] {{PID}} 형식의 기본 명령이며 결과는 {{PREFIX}}.{{PID}} 입니다. 코어 파일 정책은 coreadm 으로 확인합니다. 분석은 pstack, pmap, mdb 로 합니다."
       },
       "help": "man gcore",
       "keywords": [
@@ -2295,7 +3210,10 @@
         "pstack",
         "strace",
         "ulimit"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "pstack",
@@ -2320,12 +3238,7 @@
         "pstack {{PID}}",
         "gdb -p {{PID}} -batch -ex 'thread apply all bt'"
       ],
-      "options": [
-        {
-          "flag": "{{PID}}",
-          "desc": "스택을 출력할 프로세스"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "스레드 스택 출력",
@@ -2343,13 +3256,18 @@
         },
         {
           "title": "pstack 이 없을 때 gdb 로 동일 작업",
-          "command": "gdb -p {{PID}} -batch -ex 'thread apply all bt' > /tmp/stack.txt 2>&1"
+          "command": "gdb -p {{PID}} -batch -ex 'thread apply all bt' > /tmp/stack.txt 2>&1",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         }
       ],
       "cautions": [
         "출력 동안 프로세스가 잠시 정지됩니다.",
         "디버그 심볼이 없으면 함수 이름 대신 ?? 로 표시될 수 있습니다. RHEL 은 debuginfo-install 로 심볼을 설치합니다.",
-        "Java 프로세스는 JVM 내부 스택만 보이므로 jstack 또는 kill -3 을 사용하세요."
+        "Java 프로세스는 JVM 내부 스택만 보이므로 jstack 또는 kill -3 을 사용하세요.",
+        "AIX 는 같은 기능이 procstack {{PID}} 라는 이름으로 제공됩니다. HP-UX 는 gdb(WDB) 의 bt 를 사용합니다."
       ],
       "install": {
         "rhel": {
@@ -2380,8 +3298,12 @@
       "related": [
         "gcore",
         "strace",
-        "top"
-      ]
+        "top",
+        "solaris-pstack"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "procdump",
@@ -2486,7 +3408,10 @@
         "procmon",
         "taskmgr",
         "tasklist"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

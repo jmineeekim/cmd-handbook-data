@@ -22,49 +22,151 @@
       "summary": "RHEL 계열 패키지 설치·삭제·업데이트·검색",
       "description": "RHEL 8 이후의 기본 패키지 관리자로, 저장소에서 패키지와 의존성을 함께 설치·삭제·업데이트합니다. 파일을 제공하는 패키지 찾기, 버전 목록 확인, 작업 이력 되돌리기도 가능합니다. RHEL 8·9 에서 yum 은 dnf 를 가리키는 링크라 같은 문법으로 동작합니다.",
       "syntax": [
+        "dnf {{SUBCOMMAND}} [-y] [{{OPTIONS}}] {{PACKAGE}}",
         "dnf install|remove|update [-y] {{PACKAGE}}",
         "dnf search|info|provides {{KEYWORD}}"
       ],
       "options": [
         {
-          "flag": "install {{PACKAGE}}",
-          "desc": "패키지 설치 (로컬 .rpm 경로도 가능, 의존성 자동 해결)"
+          "flag": "-y",
+          "desc": "확인 질문에 자동으로 yes"
         },
         {
-          "flag": "remove {{PACKAGE}}",
-          "desc": "패키지 삭제 (이를 의존하는 패키지도 함께 삭제될 수 있음)"
+          "flag": "--enablerepo={{REPO}}",
+          "desc": "이번 실행에만 비활성 저장소 사용 (와일드카드 가능)"
         },
         {
-          "flag": "update [{{PACKAGE}}]",
-          "desc": "전체 또는 지정 패키지 업데이트 (upgrade 와 동일)"
+          "flag": "--disablerepo={{REPO}}",
+          "desc": "이번 실행에만 저장소 제외 ('*' 로 전부 끄고 --enablerepo 와 함께 사용)"
         },
         {
-          "flag": "check-update",
-          "desc": "업데이트 가능한 패키지 목록 확인"
+          "flag": "--exclude={{PATTERN}}",
+          "desc": "패키지 제외 (예: --exclude=kernel*)"
         },
         {
-          "flag": "provides {{FILE}}",
-          "desc": "해당 파일·명령을 제공하는 패키지 찾기"
+          "flag": "--security",
+          "desc": "(RHEL) 보안 권고(updateinfo)가 있는 업데이트만 대상"
         },
         {
-          "flag": "list --installed | --showduplicates {{PACKAGE}}",
-          "desc": "설치된 목록 / 저장소에 있는 모든 버전 확인"
+          "flag": "--downloadonly --downloaddir={{DIR}}",
+          "desc": "설치하지 않고 패키지 파일만 내려받기 (폐쇄망 반입용)"
         },
         {
-          "flag": "history [undo {{ID}}]",
-          "desc": "작업 이력 확인 / 특정 작업 되돌리기"
+          "flag": "-q",
+          "desc": "출력 최소화 (스크립트용)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "설치·삭제·업데이트",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dnf install {{PACKAGE}}",
+              "desc": "패키지 설치 (로컬 파일 ./{{FILE}}.rpm 도 가능, 의존성 자동 해결)"
+            },
+            {
+              "cmd": "dnf reinstall {{PACKAGE}}",
+              "desc": "같은 버전 다시 설치 (파일 손상·삭제 복구)"
+            },
+            {
+              "cmd": "dnf remove {{PACKAGE}}",
+              "desc": "패키지 삭제 (이를 의존하는 패키지도 함께 삭제될 수 있음)"
+            },
+            {
+              "cmd": "dnf update [{{PACKAGE}}]",
+              "desc": "전체 또는 지정 패키지 업데이트 (upgrade 와 같음)"
+            },
+            {
+              "cmd": "dnf check-update",
+              "desc": "업데이트 가능한 패키지 목록 (있으면 종료 코드 100)"
+            },
+            {
+              "cmd": "dnf downgrade {{PACKAGE}}",
+              "desc": "저장소에 있는 이전 버전으로 되돌리기"
+            },
+            {
+              "cmd": "dnf group list / dnf group install \"{{GROUP}}\"",
+              "desc": "패키지 그룹 목록 / 그룹 단위 설치",
+              "platforms": [
+                "rhel"
+              ]
+            }
+          ]
         },
         {
-          "flag": "repolist [all]",
-          "desc": "활성(전체) 저장소 목록"
+          "title": "검색·조회",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dnf search {{KEYWORD}}",
+              "desc": "이름·요약으로 검색"
+            },
+            {
+              "cmd": "dnf info {{PACKAGE}}",
+              "desc": "버전·저장소·크기·설명"
+            },
+            {
+              "cmd": "dnf provides {{FILE}}",
+              "desc": "해당 파일·명령을 제공하는 패키지 찾기 (예: '*/bin/netstat')"
+            },
+            {
+              "cmd": "dnf list --installed",
+              "desc": "설치된 패키지 목록"
+            },
+            {
+              "cmd": "dnf list --showduplicates {{PACKAGE}}",
+              "desc": "저장소에 있는 모든 버전"
+            },
+            {
+              "cmd": "dnf repoquery --requires {{PACKAGE}}",
+              "desc": "패키지가 필요로 하는 의존성 목록"
+            },
+            {
+              "cmd": "dnf updateinfo list --security",
+              "desc": "적용 가능한 보안 권고(RHSA) 목록",
+              "platforms": [
+                "rhel"
+              ]
+            }
+          ]
         },
         {
-          "flag": "clean all; makecache",
-          "desc": "캐시 삭제 후 저장소 메타데이터 다시 받기"
-        },
-        {
-          "flag": "-y / --enablerepo={{REPO}} / --exclude={{PATTERN}}",
-          "desc": "확인 생략 / 일시 저장소 활성화 / 패키지 제외"
+          "title": "이력·저장소·캐시",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dnf history",
+              "desc": "설치·업데이트 작업 이력 (ID 확인)"
+            },
+            {
+              "cmd": "dnf history info {{ID}}",
+              "desc": "해당 작업에서 바뀐 패키지 상세"
+            },
+            {
+              "cmd": "dnf history undo {{ID}}",
+              "desc": "해당 작업 되돌리기 (이전 버전 패키지가 저장소에 있어야 함)"
+            },
+            {
+              "cmd": "dnf repolist [all]",
+              "desc": "활성(전체) 저장소 목록"
+            },
+            {
+              "cmd": "dnf clean all",
+              "desc": "캐시 삭제 (저장소 변경 후)"
+            },
+            {
+              "cmd": "dnf makecache",
+              "desc": "저장소 메타데이터 다시 받기"
+            },
+            {
+              "cmd": "dnf module list",
+              "desc": "AppStream 모듈 스트림 목록 (RHEL 8·9)",
+              "platforms": [
+                "rhel"
+              ]
+            }
+          ]
         }
       ],
       "examples": [
@@ -75,26 +177,88 @@
         {
           "title": "명령어가 어느 패키지에 있는지 찾기",
           "command": "dnf provides '*/bin/netstat'",
-          "note": "결과: net-tools"
+          "note": "결과: net-tools",
+          "platforms": [
+            "rhel"
+          ]
         },
         {
           "title": "설치 가능한 모든 버전 확인 후 특정 버전 설치",
           "command": "dnf list --showduplicates {{PACKAGE}}\ndnf install {{PACKAGE}}-{{VERSION}}"
         },
         {
-          "title": "커널 제외 전체 업데이트 / 보안 업데이트만",
-          "command": "dnf update --exclude=kernel*\ndnf update --security",
-          "note": "--security 는 RHEL 처럼 저장소가 보안 권고(updateinfo)를 제공할 때 의미 있음"
+          "title": "운영 서버 정기 패치 (확인 → 적용 → 점검 → 롤백 준비)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "dnf history",
+              "desc": "현재 마지막 작업 ID 기록 (문제 시 되돌릴 기준)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf check-update",
+              "desc": "업데이트 대상 목록 확인 (커널 포함 여부)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf update -y",
+              "desc": "업데이트 적용. 보안만이면 --security, 커널 제외는 --exclude=kernel*"
+            },
+            {
+              "prompt": "#",
+              "cmd": "needs-restarting -r",
+              "desc": "재부팅 필요 여부 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf history undo {{ID}}",
+              "desc": "(문제 시) 이번 작업 되돌리기. 커널은 이전 커널로 부팅해 되돌림"
+            }
+          ],
+          "platforms": [
+            "rhel"
+          ]
         },
         {
-          "title": "잘못된 설치 되돌리기",
-          "command": "dnf history\ndnf history undo {{ID}}"
+          "title": "폐쇄망 서버에 패키지 반입·설치",
+          "steps": [
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "dnf install --downloadonly --downloaddir=/tmp/pkgs {{PACKAGE}}",
+              "desc": "폐쇄망과 같은 OS·버전 서버에서 패키지와 (그 서버에 없는) 의존성 받기"
+            },
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "tar czf pkgs.tar.gz -C /tmp pkgs",
+              "desc": "묶어서 반입 (USB·파일 전송)"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "tar xzf pkgs.tar.gz -C /tmp",
+              "desc": "폐쇄망 서버에서 풀기"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "dnf --disablerepo='*' install /tmp/pkgs/*.rpm",
+              "desc": "외부 저장소 없이 받아 온 파일끼리 의존성을 해결해 설치"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "rpm -q {{PACKAGE}}",
+              "desc": "설치 확인"
+            }
+          ],
+          "note": "받는 서버에 이미 설치된 의존성은 내려받지 않습니다. 빠지는 것이 있으면 createrepo 항목의 dnf download --resolve --alldeps 방식을 쓰세요.",
+          "platforms": [
+            "rhel"
+          ]
         }
       ],
       "cautions": [
         "remove 는 해당 패키지를 필요로 하는 다른 패키지까지 함께 지울 수 있습니다. 실행 전 출력되는 삭제 목록을 반드시 확인하세요.",
         "운영 서버의 전체 update 는 커널·라이브러리를 바꾸므로 점검 시간에 수행하고, 이후 needs-restarting -r 로 재부팅 필요 여부를 확인하세요.",
-        "RHEL 은 구독 등록(subscription-manager)이 되어야 Red Hat 저장소를 사용할 수 있습니다."
+        "RHEL 은 구독 등록(subscription-manager)이 되어야 Red Hat 저장소를 사용할 수 있습니다.",
+        "AIX 의 dnf 는 AIX Toolbox 오픈소스 패키지만 관리합니다. AIX 운영체제 파일셋·TL/SP 업데이트에 쓰면 안 됩니다."
       ],
       "platformNotes": {
         "rhel": "RHEL/CentOS 7 은 yum 을 사용합니다 (대부분 하위 명령 동일). 폐쇄망에서는 로컬 저장소(createrepo, ISO 마운트)를 구성해야 합니다."
@@ -108,15 +272,20 @@
         "dnf",
         "yum",
         "rpm",
-        "의존성"
+        "의존성",
+        "AIX Toolbox"
       ],
       "related": [
         "rpm",
         "etc-yum-reposd",
         "needs-restarting",
         "subscription-manager",
-        "createrepo"
-      ]
+        "createrepo",
+        "aix-dnf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "apt",
@@ -138,50 +307,145 @@
       "summary": "Ubuntu·Debian 패키지 설치·삭제·업데이트·검색",
       "description": "Debian 계열의 패키지 관리자로, 저장소 목록을 갱신하고 패키지와 의존성을 설치·삭제·업그레이드합니다. apt 는 대화형 사용에 맞춘 명령이며, 스크립트에서는 출력 형식이 안정적인 apt-get·apt-cache 를 권장합니다.",
       "syntax": [
+        "apt {{SUBCOMMAND}} [-y] [{{PACKAGE}}]",
         "apt update",
         "apt install|remove|purge [-y] {{PACKAGE}}",
         "apt upgrade"
       ],
       "options": [
         {
-          "flag": "update",
-          "desc": "저장소 패키지 목록 갱신 (설치·업그레이드 전에 실행)"
+          "flag": "-y",
+          "desc": "확인 질문에 자동으로 yes"
         },
         {
-          "flag": "install {{PACKAGE}}",
-          "desc": "패키지 설치 (./file.deb 처럼 로컬 파일도 가능)"
+          "flag": "-s, --simulate",
+          "desc": "실제로 바꾸지 않고 설치·삭제될 패키지만 표시"
         },
         {
-          "flag": "remove {{PACKAGE}}",
-          "desc": "패키지 삭제 (설정 파일은 남음)"
+          "flag": "-d, --download-only",
+          "desc": "설치하지 않고 /var/cache/apt/archives 에 deb 만 받기"
         },
         {
-          "flag": "purge {{PACKAGE}}",
-          "desc": "설정 파일까지 삭제"
+          "flag": "--no-install-recommends",
+          "desc": "권장(Recommends) 패키지는 설치하지 않음 (최소 설치)"
         },
         {
-          "flag": "upgrade",
-          "desc": "설치된 패키지 업그레이드 (기존 패키지 삭제는 하지 않음)"
+          "flag": "-t {{SUITE}}",
+          "desc": "설치 대상 배포 지정 (예: -t bookworm-backports)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "목록 갱신·설치·삭제",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "apt update",
+              "desc": "저장소 패키지 목록 갱신 (설치·업그레이드 전에 실행)"
+            },
+            {
+              "cmd": "apt install {{PACKAGE}}",
+              "desc": "패키지 설치"
+            },
+            {
+              "cmd": "apt install ./{{FILE}}.deb",
+              "desc": "로컬 deb 파일을 의존성과 함께 설치 (./ 필수)"
+            },
+            {
+              "cmd": "apt install {{PACKAGE}}={{VERSION}}",
+              "desc": "특정 버전 설치"
+            },
+            {
+              "cmd": "apt install --reinstall {{PACKAGE}}",
+              "desc": "같은 버전 다시 설치"
+            },
+            {
+              "cmd": "apt remove {{PACKAGE}}",
+              "desc": "패키지 삭제 (설정 파일은 남음)"
+            },
+            {
+              "cmd": "apt purge {{PACKAGE}}",
+              "desc": "설정 파일까지 삭제"
+            },
+            {
+              "cmd": "apt autoremove",
+              "desc": "더 이상 필요 없는 의존성 패키지 삭제"
+            }
+          ]
         },
         {
-          "flag": "full-upgrade",
-          "desc": "필요하면 패키지 삭제를 포함해 업그레이드 (apt-get dist-upgrade)"
+          "title": "업그레이드",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "apt list --upgradable",
+              "desc": "업그레이드 가능한 패키지 목록 (apt update 후)"
+            },
+            {
+              "cmd": "apt upgrade",
+              "desc": "설치된 패키지 업그레이드 (기존 패키지 삭제는 하지 않음)"
+            },
+            {
+              "cmd": "apt full-upgrade",
+              "desc": "필요하면 패키지 삭제를 포함해 업그레이드 (apt-get dist-upgrade)"
+            }
+          ]
         },
         {
-          "flag": "autoremove",
-          "desc": "더 이상 필요 없는 의존성 패키지 삭제"
+          "title": "검색·조회",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "apt search {{KEYWORD}}",
+              "desc": "패키지 검색"
+            },
+            {
+              "cmd": "apt show {{PACKAGE}}",
+              "desc": "버전·의존성·설명"
+            },
+            {
+              "cmd": "apt policy {{PACKAGE}}",
+              "desc": "설치 버전·후보 버전·저장소 우선순위"
+            },
+            {
+              "cmd": "apt list --installed",
+              "desc": "설치된 패키지 목록"
+            },
+            {
+              "cmd": "apt-cache depends {{PACKAGE}}",
+              "desc": "이 패키지가 필요로 하는 패키지"
+            },
+            {
+              "cmd": "apt-cache rdepends {{PACKAGE}}",
+              "desc": "이 패키지를 필요로 하는 패키지 (삭제 영향 확인)"
+            }
+          ]
         },
         {
-          "flag": "search / show {{PACKAGE}}",
-          "desc": "패키지 검색 / 상세 정보"
-        },
-        {
-          "flag": "list --installed | --upgradable",
-          "desc": "설치된 / 업그레이드 가능한 패키지 목록"
-        },
-        {
-          "flag": "policy {{PACKAGE}}",
-          "desc": "설치 버전·후보 버전·저장소 우선순위 확인"
+          "title": "보류·캐시",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "apt-mark hold {{PACKAGE}}",
+              "desc": "업그레이드 대상에서 제외 (버전 고정)"
+            },
+            {
+              "cmd": "apt-mark unhold {{PACKAGE}}",
+              "desc": "보류 해제"
+            },
+            {
+              "cmd": "apt-mark showhold",
+              "desc": "보류 중인 패키지 목록"
+            },
+            {
+              "cmd": "apt-get download {{PACKAGE}}",
+              "desc": "현재 디렉토리에 deb 파일만 받기 (의존성 제외)"
+            },
+            {
+              "cmd": "apt clean",
+              "desc": "받아 둔 deb 캐시 삭제 (/var/cache/apt/archives)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -194,8 +458,34 @@
           "command": "apt policy {{PACKAGE}}\napt install {{PACKAGE}}={{VERSION}}"
         },
         {
-          "title": "업그레이드 대상 확인 후 업그레이드",
-          "command": "apt update\napt list --upgradable\napt upgrade"
+          "title": "운영 서버 패치 (확인 → 모의 실행 → 적용 → 재부팅 필요 확인)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "apt update",
+              "desc": "목록 갱신"
+            },
+            {
+              "prompt": "#",
+              "cmd": "apt list --upgradable",
+              "desc": "업그레이드 대상 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "apt -s upgrade",
+              "desc": "실제 적용 없이 결과 미리 보기"
+            },
+            {
+              "prompt": "#",
+              "cmd": "apt upgrade -y",
+              "desc": "업그레이드 적용"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ls /var/run/reboot-required",
+              "desc": "파일이 있으면 재부팅 필요 (cat /var/run/reboot-required.pkgs 로 원인 패키지 확인)"
+            }
+          ]
         },
         {
           "title": "특정 패키지 업그레이드 보류",
@@ -230,7 +520,10 @@
         "add-apt-repository",
         "snap",
         "dpkg-scanpackages"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "winget",
@@ -248,46 +541,97 @@
       "summary": "Windows 패키지 관리자로 프로그램 설치·업그레이드",
       "description": "Windows 패키지 관리자(WinGet)로 프로그램을 검색·설치·업그레이드·삭제합니다. 7-Zip, Notepad++, PowerShell 7 같은 도구를 명령 한 줄로 설치할 수 있고, 설치 목록을 내보내 다른 PC 에 똑같이 설치할 수도 있습니다.",
       "syntax": [
+        "winget {{SUBCOMMAND}} [{{OPTIONS}}]",
         "winget search {{KEYWORD}}",
         "winget install --id {{PACKAGE_ID}} -e",
         "winget upgrade --all"
       ],
       "options": [
         {
-          "flag": "search {{KEYWORD}}",
-          "desc": "패키지 검색"
+          "flag": "--id {{PACKAGE_ID}}",
+          "desc": "패키지 ID 로 지정 (이름 검색보다 정확)"
         },
         {
-          "flag": "install --id {{PACKAGE_ID}} -e",
-          "desc": "ID 정확히 일치하는 패키지 설치"
+          "flag": "-e, --exact",
+          "desc": "ID·이름이 정확히 일치하는 것만"
         },
         {
-          "flag": "list",
-          "desc": "설치된 프로그램 목록 (winget 으로 설치하지 않은 것 포함)"
-        },
-        {
-          "flag": "upgrade [--all]",
-          "desc": "업그레이드 가능한 목록 확인 / 전체 업그레이드"
-        },
-        {
-          "flag": "uninstall --id {{PACKAGE_ID}}",
-          "desc": "프로그램 삭제"
-        },
-        {
-          "flag": "show --id {{PACKAGE_ID}}",
-          "desc": "패키지 상세 정보"
+          "flag": "--version {{VERSION}}",
+          "desc": "특정 버전 지정"
         },
         {
           "flag": "--silent",
           "desc": "설치 프로그램 UI 없이 설치"
         },
         {
-          "flag": "--accept-package-agreements --accept-source-agreements",
-          "desc": "라이선스·원본 약관 동의 (자동화용)"
+          "flag": "--scope machine",
+          "desc": "모든 사용자용으로 설치 (user 는 현재 사용자만)"
         },
         {
-          "flag": "export -o {{FILE}} / import -i {{FILE}}",
-          "desc": "설치 목록 내보내기 / 가져와서 일괄 설치"
+          "flag": "--source winget",
+          "desc": "원본(source) 지정 (msstore 제외 등)"
+        },
+        {
+          "flag": "--accept-package-agreements --accept-source-agreements",
+          "desc": "라이선스·원본 약관 동의 (자동화용)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "검색·설치·삭제",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "winget search {{KEYWORD}}",
+              "desc": "패키지 검색 (Id 열 확인)"
+            },
+            {
+              "cmd": "winget show --id {{PACKAGE_ID}}",
+              "desc": "패키지 상세 정보·설치 파일 주소"
+            },
+            {
+              "cmd": "winget install --id {{PACKAGE_ID}} -e",
+              "desc": "설치"
+            },
+            {
+              "cmd": "winget list",
+              "desc": "설치된 프로그램 목록 (winget 으로 설치하지 않은 것 포함)"
+            },
+            {
+              "cmd": "winget uninstall --id {{PACKAGE_ID}}",
+              "desc": "삭제"
+            }
+          ]
+        },
+        {
+          "title": "업그레이드·설치 목록 이전",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "winget upgrade",
+              "desc": "업그레이드 가능한 목록"
+            },
+            {
+              "cmd": "winget upgrade --all",
+              "desc": "전체 업그레이드"
+            },
+            {
+              "cmd": "winget pin add --id {{PACKAGE_ID}}",
+              "desc": "업그레이드 대상에서 고정 (winget 1.5 이상)"
+            },
+            {
+              "cmd": "winget export -o {{FILE}}",
+              "desc": "설치 목록을 JSON 으로 내보내기"
+            },
+            {
+              "cmd": "winget import -i {{FILE}}",
+              "desc": "목록 파일로 일괄 설치"
+            },
+            {
+              "cmd": "winget source list",
+              "desc": "사용 중인 원본(winget, msstore) 목록"
+            }
+          ]
         }
       ],
       "examples": [
@@ -325,7 +669,10 @@
       ],
       "related": [
         "msiexec"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "msiexec",
@@ -412,7 +759,10 @@
       "related": [
         "winget",
         "dism"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "rpm",
@@ -422,7 +772,8 @@
       "category": "package",
       "task": "package.single",
       "platforms": [
-        "rhel"
+        "rhel",
+        "aix"
       ],
       "level": "frequent",
       "risk": "caution",
@@ -436,55 +787,128 @@
       ],
       "options": [
         {
-          "flag": "-qa",
-          "desc": "설치된 전체 패키지 목록"
+          "flag": "-v / -h",
+          "desc": "자세한 출력 / 진행 표시(#). 설치 시 -ivh 처럼 함께 사용"
         },
         {
-          "flag": "-qi {{PACKAGE}}",
-          "desc": "패키지 상세 정보 (버전·설치일·벤더)"
+          "flag": "--test",
+          "desc": "실제로 설치·삭제하지 않고 의존성·충돌만 검사"
         },
         {
-          "flag": "-ql {{PACKAGE}}",
-          "desc": "패키지에 포함된 파일 목록"
+          "flag": "--nodeps",
+          "desc": "의존성 검사 생략 (시스템이 깨질 수 있어 비권장)"
         },
         {
-          "flag": "-qf {{FILE}}",
-          "desc": "파일이 속한 패키지 확인"
+          "flag": "--force",
+          "desc": "충돌·같은 버전이어도 강제로 설치 (비권장)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "조회(-q) 모드",
+          "type": "subcommand",
+          "note": "-q 뒤에 붙이는 글자로 무엇을 볼지 정합니다. p 를 붙이면 설치된 DB 대신 rpm 파일을 조회합니다.",
+          "items": [
+            {
+              "cmd": "rpm -qa [{{PATTERN}}]",
+              "desc": "설치된 전체(또는 이름 패턴) 패키지 목록"
+            },
+            {
+              "cmd": "rpm -qa --last",
+              "desc": "최근 설치·업데이트 순으로 목록"
+            },
+            {
+              "cmd": "rpm -q {{PACKAGE}}",
+              "desc": "설치 여부·버전"
+            },
+            {
+              "cmd": "rpm -qi {{PACKAGE}}",
+              "desc": "상세 정보 (버전·설치일·벤더)"
+            },
+            {
+              "cmd": "rpm -ql {{PACKAGE}}",
+              "desc": "패키지에 포함된 파일 목록"
+            },
+            {
+              "cmd": "rpm -qf {{FILE}}",
+              "desc": "파일이 속한 패키지"
+            },
+            {
+              "cmd": "rpm -qc {{PACKAGE}}",
+              "desc": "설정 파일 목록"
+            },
+            {
+              "cmd": "rpm -qR {{PACKAGE}}",
+              "desc": "필요로 하는 의존성"
+            },
+            {
+              "cmd": "rpm -q --changelog {{PACKAGE}}",
+              "desc": "변경 이력 (CVE 반영 여부 확인)"
+            },
+            {
+              "cmd": "rpm -q --scripts {{PACKAGE}}",
+              "desc": "설치·삭제 시 실행되는 스크립트"
+            },
+            {
+              "cmd": "rpm -qpi / -qpl / -qpR {{FILE}}.rpm",
+              "desc": "설치 전 rpm 파일의 정보 / 파일 목록 / 의존성"
+            }
+          ]
         },
         {
-          "flag": "-qc {{PACKAGE}}",
-          "desc": "패키지의 설정 파일 목록"
-        },
-        {
-          "flag": "-qpl {{FILE}}.rpm",
-          "desc": "설치 전 rpm 파일 내용 확인"
-        },
-        {
-          "flag": "-ivh / -Uvh {{FILE}}.rpm",
-          "desc": "설치 / 업그레이드(없으면 설치)"
-        },
-        {
-          "flag": "-e {{PACKAGE}}",
-          "desc": "패키지 삭제"
-        },
-        {
-          "flag": "-V {{PACKAGE}}",
-          "desc": "설치 후 변경된 파일 검증 (크기·권한·해시)"
-        },
-        {
-          "flag": "--import {{KEY_FILE}}",
-          "desc": "GPG 서명 키 가져오기"
+          "title": "설치·삭제·검증 모드",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "rpm -ivh {{FILE}}.rpm",
+              "desc": "설치 (이미 있으면 실패)"
+            },
+            {
+              "cmd": "rpm -Uvh {{FILE}}.rpm",
+              "desc": "업그레이드 (없으면 설치)"
+            },
+            {
+              "cmd": "rpm -Fvh {{FILE}}.rpm",
+              "desc": "설치되어 있는 경우에만 업그레이드"
+            },
+            {
+              "cmd": "rpm -e {{PACKAGE}}",
+              "desc": "패키지 삭제"
+            },
+            {
+              "cmd": "rpm -V {{PACKAGE}}",
+              "desc": "설치 후 변경된 파일 검증 (크기·권한·해시)"
+            },
+            {
+              "cmd": "rpm -Va",
+              "desc": "전체 패키지 검증 (점검용. 오래 걸림)"
+            },
+            {
+              "cmd": "rpm -K {{FILE}}.rpm",
+              "desc": "rpm 파일의 서명·무결성 확인"
+            },
+            {
+              "cmd": "rpm --import {{KEY_FILE}}",
+              "desc": "GPG 서명 키 가져오기"
+            }
+          ]
         }
       ],
       "examples": [
         {
           "title": "파일이 어느 패키지 것인지 확인",
           "command": "rpm -qf /etc/ssh/sshd_config",
-          "output": "openssh-server-8.7p1-38.el9.x86_64"
+          "output": "openssh-server-8.7p1-38.el9.x86_64",
+          "platforms": [
+            "rhel"
+          ]
         },
         {
           "title": "설치된 커널 버전 목록",
-          "command": "rpm -qa kernel"
+          "command": "rpm -qa kernel",
+          "platforms": [
+            "rhel"
+          ]
         },
         {
           "title": "최근 설치·업데이트된 패키지",
@@ -497,13 +921,22 @@
         {
           "title": "패키지 파일 변조 여부 검증",
           "command": "rpm -V {{PACKAGE}}",
-          "note": "출력이 없으면 변경 없음. 5 는 해시, M 은 권한, c 는 설정 파일 표시"
+          "note": "출력이 없으면 변경 없음. S 는 크기, 5 는 해시, M 은 권한, T 는 수정 시간, c 는 설정 파일 표시"
         }
       ],
       "cautions": [
         "--nodeps, --force 로 설치·삭제하면 의존성이 깨져 시스템이 불안정해질 수 있습니다.",
         "로컬 rpm 설치도 의존성 해결을 위해 dnf install ./{{FILE}}.rpm 을 권장합니다."
       ],
+      "install": {
+        "aix": {
+          "package": "rpm.rte",
+          "preinstalled": true
+        }
+      },
+      "platformNotes": {
+        "aix": "AIX 에도 rpm 이 기본 설치(rpm.rte)되어 있으며 AIX Toolbox 등 rpm 형식 패키지(/opt/freeware)를 관리합니다. AIX 운영체제 파일셋은 installp 형식이라 rpm -qa 에 나오지 않으므로 lslpp -l 로, 파일 소유 확인은 lslpp -w {{FILE}} 로 합니다. 의존성 해결이 필요하면 Toolbox 의 dnf 를 씁니다."
+      },
       "help": "man rpm",
       "keywords": [
         "패키지 조회",
@@ -517,7 +950,10 @@
       "related": [
         "dnf",
         "createrepo"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dpkg",
@@ -544,40 +980,82 @@
       ],
       "options": [
         {
-          "flag": "-l [{{PATTERN}}]",
-          "desc": "설치된 패키지 목록 (ii = 정상 설치, rc = 삭제됐고 설정만 남음)"
+          "flag": "--dry-run",
+          "desc": "실제로 바꾸지 않고 결과만 표시 (--no-act 와 같음)"
         },
         {
-          "flag": "-s {{PACKAGE}}",
-          "desc": "패키지 상태·버전 정보"
+          "flag": "-R, --recursive",
+          "desc": "-i 와 함께 디렉토리 안의 deb 를 모두 설치"
         },
         {
-          "flag": "-L {{PACKAGE}}",
-          "desc": "패키지가 설치한 파일 목록"
+          "flag": "--force-{{THING}}",
+          "desc": "특정 검사를 무시하고 강제 실행 (의존성이 깨질 수 있어 비권장)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "조회",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dpkg -l [{{PATTERN}}]",
+              "desc": "설치된 패키지 목록 (ii = 정상 설치, rc = 삭제됐고 설정만 남음)"
+            },
+            {
+              "cmd": "dpkg -s {{PACKAGE}}",
+              "desc": "패키지 상태·버전 정보"
+            },
+            {
+              "cmd": "dpkg -L {{PACKAGE}}",
+              "desc": "패키지가 설치한 파일 목록"
+            },
+            {
+              "cmd": "dpkg -S {{FILE}}",
+              "desc": "파일이 속한 패키지 찾기"
+            },
+            {
+              "cmd": "dpkg -c {{FILE}}.deb",
+              "desc": "설치 전 deb 파일에 든 파일 목록"
+            },
+            {
+              "cmd": "dpkg -I {{FILE}}.deb",
+              "desc": "설치 전 deb 파일의 정보·의존성"
+            },
+            {
+              "cmd": "dpkg --get-selections",
+              "desc": "설치 패키지 선택 상태 목록 (다른 서버와 비교용)"
+            },
+            {
+              "cmd": "dpkg-query -W -f='${Package} ${Version}\\n'",
+              "desc": "원하는 형식으로 이름·버전 출력"
+            }
+          ]
         },
         {
-          "flag": "-S {{FILE}}",
-          "desc": "파일이 속한 패키지 찾기"
-        },
-        {
-          "flag": "-c {{FILE}}.deb",
-          "desc": "설치 전 deb 파일 내용 확인"
-        },
-        {
-          "flag": "-i {{FILE}}.deb",
-          "desc": "deb 파일 설치"
-        },
-        {
-          "flag": "-r / -P {{PACKAGE}}",
-          "desc": "삭제 / 설정 파일까지 삭제(purge)"
-        },
-        {
-          "flag": "--configure -a",
-          "desc": "설치 도중 중단된 패키지 설정 마무리"
-        },
-        {
-          "flag": "--get-selections",
-          "desc": "설치 패키지 선택 상태 목록 (다른 서버와 비교용)"
+          "title": "설치·삭제·복구",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dpkg -i {{FILE}}.deb",
+              "desc": "deb 파일 설치 (의존성은 자동으로 받지 않음)"
+            },
+            {
+              "cmd": "dpkg -r {{PACKAGE}}",
+              "desc": "삭제 (설정 파일은 남음)"
+            },
+            {
+              "cmd": "dpkg -P {{PACKAGE}}",
+              "desc": "설정 파일까지 삭제 (purge)"
+            },
+            {
+              "cmd": "dpkg --configure -a",
+              "desc": "설치 도중 중단된 패키지 설정 마무리"
+            },
+            {
+              "cmd": "dpkg --audit",
+              "desc": "설치가 덜 끝났거나 깨진 패키지 점검"
+            }
+          ]
         }
       ],
       "examples": [
@@ -620,7 +1098,10 @@
       "related": [
         "apt",
         "dpkg-scanpackages"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-yum-reposd",
@@ -639,42 +1120,58 @@
       "syntax": [
         "/etc/yum.repos.d/{{REPO_NAME}}.repo"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "[{{REPO_ID}}]",
-          "desc": "저장소 ID (공백 없이 유일한 이름)"
-        },
-        {
-          "flag": "name={{NAME}}",
-          "desc": "표시용 이름"
-        },
-        {
-          "flag": "baseurl={{REPO_URL}}",
-          "desc": "저장소 주소 (http://, https://, file:///)"
-        },
-        {
-          "flag": "mirrorlist= / metalink=",
-          "desc": "미러 목록 주소 (baseurl 대신 사용)"
-        },
-        {
-          "flag": "enabled=1|0",
-          "desc": "저장소 사용 여부"
-        },
-        {
-          "flag": "gpgcheck=1|0",
-          "desc": "패키지 GPG 서명 검증 여부"
-        },
-        {
-          "flag": "gpgkey={{KEY_URL}}",
-          "desc": "GPG 키 위치 (예: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release)"
-        },
-        {
-          "flag": "sslverify=1|0",
-          "desc": "HTTPS 인증서 검증 여부"
-        },
-        {
-          "flag": "priority={{N}}",
-          "desc": "저장소 우선순위 (낮을수록 우선, 기본 99)"
+          "title": "[{{REPO_ID}}] 섹션 항목",
+          "type": "directive",
+          "note": "한 줄에 '키=값' 하나씩 씁니다. 수정 후 dnf clean all 로 캐시를 지우고 dnf repolist 로 확인합니다.",
+          "items": [
+            {
+              "cmd": "[{{REPO_ID}}]",
+              "desc": "저장소 ID (공백 없이 유일한 이름). 한 파일에 섹션 여러 개 가능"
+            },
+            {
+              "cmd": "name={{NAME}}",
+              "desc": "표시용 이름"
+            },
+            {
+              "cmd": "baseurl={{REPO_URL}}",
+              "desc": "저장소 주소 (http://, https://, file:///). repodata/ 가 있는 위치"
+            },
+            {
+              "cmd": "mirrorlist= / metalink=",
+              "desc": "미러 목록 주소 (baseurl 대신 사용)"
+            },
+            {
+              "cmd": "enabled=1|0",
+              "desc": "저장소 사용 여부"
+            },
+            {
+              "cmd": "gpgcheck=1|0",
+              "desc": "패키지 GPG 서명 검증 여부"
+            },
+            {
+              "cmd": "gpgkey={{KEY_URL}}",
+              "desc": "GPG 키 위치 (예: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release)"
+            },
+            {
+              "cmd": "sslverify=1|0",
+              "desc": "HTTPS 인증서 검증 여부"
+            },
+            {
+              "cmd": "priority={{N}}",
+              "desc": "저장소 우선순위 (낮을수록 우선, 기본 99)"
+            },
+            {
+              "cmd": "exclude={{PATTERN}}",
+              "desc": "이 저장소에서 제외할 패키지 (공백 구분, 와일드카드 가능)"
+            },
+            {
+              "cmd": "$releasever / $basearch",
+              "desc": "baseurl 안에서 쓰는 변수 (OS 메이저 버전 / x86_64 등 아키텍처)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -718,7 +1215,10 @@
         "dnf",
         "createrepo",
         "subscription-manager"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-apt-sources-list",
@@ -738,30 +1238,73 @@
         "deb [signed-by={{KEYRING}}] {{REPO_URL}} {{SUITE}} {{COMPONENTS}}",
         "/etc/apt/sources.list.d/ubuntu.sources"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "deb / deb-src",
-          "desc": "바이너리 / 소스 패키지 저장소 (한 줄 형식)"
+          "title": "한 줄 형식 (sources.list, *.list)",
+          "type": "directive",
+          "note": "형식: deb [옵션] 주소 코드명 구성요소… 예) deb http://archive.ubuntu.com/ubuntu jammy main universe",
+          "items": [
+            {
+              "cmd": "deb / deb-src",
+              "desc": "바이너리 / 소스 패키지 저장소"
+            },
+            {
+              "cmd": "[signed-by={{KEYRING}}]",
+              "desc": "저장소 서명 키 파일 지정 (예: /usr/share/keyrings/x.gpg)"
+            },
+            {
+              "cmd": "[arch=amd64]",
+              "desc": "받을 아키텍처 제한"
+            },
+            {
+              "cmd": "[trusted=yes]",
+              "desc": "서명 검증 생략 (내부 로컬 저장소용)"
+            },
+            {
+              "cmd": "{{REPO_URL}}",
+              "desc": "저장소 주소 (http://, https://, file:)"
+            },
+            {
+              "cmd": "{{SUITE}}",
+              "desc": "배포판 코드명 (jammy, noble, bookworm, noble-updates, noble-security 등)"
+            },
+            {
+              "cmd": "{{COMPONENTS}}",
+              "desc": "구성요소 (Ubuntu: main restricted universe multiverse / Debian: main contrib non-free non-free-firmware)"
+            }
+          ]
         },
         {
-          "flag": "[signed-by={{KEYRING}}]",
-          "desc": "저장소 서명 키 파일 지정 (예: /usr/share/keyrings/x.gpg)"
-        },
-        {
-          "flag": "[trusted=yes]",
-          "desc": "서명 검증 생략 (로컬 저장소용)"
-        },
-        {
-          "flag": "{{SUITE}}",
-          "desc": "배포판 코드명 (jammy, noble, bookworm, noble-updates, noble-security 등)"
-        },
-        {
-          "flag": "{{COMPONENTS}}",
-          "desc": "구성요소 (Ubuntu: main restricted universe multiverse / Debian: main contrib non-free non-free-firmware)"
-        },
-        {
-          "flag": "Types: / URIs: / Suites: / Components: / Signed-By:",
-          "desc": "deb822 형식(.sources)의 필드"
+          "title": "deb822 형식 (*.sources)",
+          "type": "directive",
+          "note": "필드 묶음(빈 줄로 구분) 하나가 저장소 하나입니다. Ubuntu 24.04 기본 형식입니다.",
+          "items": [
+            {
+              "cmd": "Types: deb",
+              "desc": "저장소 종류 (deb deb-src 처럼 여러 개 가능)"
+            },
+            {
+              "cmd": "URIs: {{REPO_URL}}",
+              "desc": "저장소 주소"
+            },
+            {
+              "cmd": "Suites: noble noble-updates",
+              "desc": "코드명 (공백으로 여러 개)"
+            },
+            {
+              "cmd": "Components: main restricted universe",
+              "desc": "구성요소"
+            },
+            {
+              "cmd": "Signed-By: /usr/share/keyrings/{{KEYRING}}.gpg",
+              "desc": "서명 키 파일"
+            },
+            {
+              "cmd": "Enabled: no",
+              "desc": "줄을 지우지 않고 저장소 끄기"
+            }
+          ]
         }
       ],
       "examples": [
@@ -803,7 +1346,10 @@
         "apt",
         "add-apt-repository",
         "dpkg-scanpackages"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "add-apt-repository",
@@ -827,20 +1373,16 @@
       ],
       "options": [
         {
-          "flag": "ppa:{{PPA_USER}}/{{PPA_NAME}}",
-          "desc": "Launchpad PPA 추가"
-        },
-        {
-          "flag": "universe | multiverse | restricted",
-          "desc": "Ubuntu 저장소 구성요소 활성화"
-        },
-        {
           "flag": "-y",
           "desc": "확인 질문 없이 진행"
         },
         {
           "flag": "-r, --remove",
           "desc": "추가했던 저장소 제거"
+        },
+        {
+          "flag": "-n, --no-update",
+          "desc": "추가 후 apt update 를 자동 실행하지 않음"
         }
       ],
       "examples": [
@@ -879,7 +1421,10 @@
       "related": [
         "etc-apt-sources-list",
         "apt"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "needs-restarting",
@@ -953,7 +1498,10 @@
       ],
       "related": [
         "dnf"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-hotfix",
@@ -1023,7 +1571,10 @@
         "wusa",
         "sconfig",
         "dism"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "wusa",
@@ -1045,10 +1596,6 @@
         "wusa /uninstall /kb:{{KB_NUMBER}} [/quiet] [/norestart]"
       ],
       "options": [
-        {
-          "flag": "{{FILE}}.msu",
-          "desc": "설치할 업데이트 파일"
-        },
         {
           "flag": "/quiet",
           "desc": "사용자 입력 없이 설치 (필요 시 자동 재시작)"
@@ -1094,7 +1641,10 @@
         "get-hotfix",
         "dism",
         "sconfig"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sconfig",
@@ -1114,42 +1664,55 @@
       "syntax": [
         "sconfig"
       ],
-      "options": [
+      "options": [],
+      "commandGroups": [
         {
-          "flag": "1",
-          "desc": "도메인/작업 그룹 가입"
-        },
-        {
-          "flag": "2",
-          "desc": "컴퓨터 이름 변경"
-        },
-        {
-          "flag": "4",
-          "desc": "원격 관리(WinRM 등) 구성"
-        },
-        {
-          "flag": "5",
-          "desc": "Windows 업데이트 설정 (자동/다운로드만/수동)"
-        },
-        {
-          "flag": "6",
-          "desc": "업데이트 검색·설치"
-        },
-        {
-          "flag": "7",
-          "desc": "원격 데스크톱 허용"
-        },
-        {
-          "flag": "8",
-          "desc": "네트워크 설정 (IP·DNS)"
-        },
-        {
-          "flag": "9",
-          "desc": "날짜 및 시간"
-        },
-        {
-          "flag": "13 / 14",
-          "desc": "서버 다시 시작 / 종료"
+          "title": "메뉴 번호 (Windows Server 2022 기준)",
+          "type": "interactive",
+          "prompt": "Enter number to select an option:",
+          "note": "번호는 버전에 따라 조금 다를 수 있으니 화면의 메뉴를 확인하세요.",
+          "items": [
+            {
+              "cmd": "1",
+              "desc": "도메인/작업 그룹 가입"
+            },
+            {
+              "cmd": "2",
+              "desc": "컴퓨터 이름 변경"
+            },
+            {
+              "cmd": "4",
+              "desc": "원격 관리(WinRM 등) 구성"
+            },
+            {
+              "cmd": "5",
+              "desc": "Windows 업데이트 설정 (자동/다운로드만/수동)"
+            },
+            {
+              "cmd": "6",
+              "desc": "업데이트 검색·설치"
+            },
+            {
+              "cmd": "7",
+              "desc": "원격 데스크톱 허용"
+            },
+            {
+              "cmd": "8",
+              "desc": "네트워크 설정 (IP·DNS)"
+            },
+            {
+              "cmd": "9",
+              "desc": "날짜 및 시간"
+            },
+            {
+              "cmd": "13 / 14",
+              "desc": "서버 다시 시작 / 종료"
+            },
+            {
+              "cmd": "15",
+              "desc": "PowerShell 로 나가기"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1178,7 +1741,10 @@
         "get-hotfix",
         "wusa",
         "install-windowsfeature"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "subscription-manager",
@@ -1196,50 +1762,81 @@
       "summary": "RHEL 구독 등록·상태 확인·저장소 활성화",
       "description": "RHEL 시스템을 Red Hat 고객 포털(또는 Satellite)에 등록하고 구독 상태를 확인하며, 사용할 Red Hat 저장소를 켜고 끕니다. 등록하지 않으면 RHEL 공식 저장소에서 패키지를 받을 수 없습니다.",
       "syntax": [
+        "subscription-manager {{SUBCOMMAND}} [{{OPTIONS}}]",
         "subscription-manager register --username {{USER}}",
         "subscription-manager register --org {{ORG_ID}} --activationkey {{KEY}}",
         "subscription-manager repos --enable {{REPO_ID}}"
       ],
       "options": [
         {
-          "flag": "register --username {{USER}}",
-          "desc": "Red Hat 계정으로 시스템 등록 (암호 입력)"
+          "flag": "--force",
+          "desc": "(register) 이미 등록된 시스템을 다시 등록"
         },
         {
-          "flag": "register --org {{ORG_ID}} --activationkey {{KEY}}",
-          "desc": "활성화 키로 등록 (자동화용)"
+          "flag": "--name={{NAME}}",
+          "desc": "(register) 포털에 표시할 시스템 이름 지정"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "등록·상태",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "subscription-manager register --username {{USER}}",
+              "desc": "Red Hat 계정으로 등록 (암호 입력)"
+            },
+            {
+              "cmd": "subscription-manager register --org {{ORG_ID}} --activationkey {{KEY}}",
+              "desc": "활성화 키로 등록 (자동화용)"
+            },
+            {
+              "cmd": "subscription-manager status",
+              "desc": "구독·등록 상태"
+            },
+            {
+              "cmd": "subscription-manager identity",
+              "desc": "등록된 시스템 ID·조직"
+            },
+            {
+              "cmd": "subscription-manager refresh",
+              "desc": "구독 정보 새로 고침"
+            },
+            {
+              "cmd": "subscription-manager unregister",
+              "desc": "등록 해제 (서버 폐기·템플릿화 전)"
+            }
+          ]
         },
         {
-          "flag": "status",
-          "desc": "구독·등록 상태 확인"
-        },
-        {
-          "flag": "identity",
-          "desc": "등록된 시스템 ID·조직 확인"
-        },
-        {
-          "flag": "repos --list-enabled",
-          "desc": "활성화된 저장소 목록"
-        },
-        {
-          "flag": "repos --enable={{REPO_ID}} / --disable={{REPO_ID}}",
-          "desc": "저장소 활성화 / 비활성화"
-        },
-        {
-          "flag": "release --set={{VERSION}}",
-          "desc": "마이너 버전 고정 (예: 9.4, EUS 등)"
-        },
-        {
-          "flag": "refresh",
-          "desc": "구독 정보 새로 고침"
-        },
-        {
-          "flag": "unregister",
-          "desc": "등록 해제 (서버 폐기·복제 전)"
-        },
-        {
-          "flag": "config --server.proxy_hostname={{HOST}} --server.proxy_port={{PORT}}",
-          "desc": "프록시 설정"
+          "title": "저장소·버전",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "subscription-manager repos --list-enabled",
+              "desc": "활성화된 저장소"
+            },
+            {
+              "cmd": "subscription-manager repos --list",
+              "desc": "사용 가능한 전체 저장소"
+            },
+            {
+              "cmd": "subscription-manager repos --enable={{REPO_ID}}",
+              "desc": "저장소 활성화 (--disable 은 비활성화)"
+            },
+            {
+              "cmd": "subscription-manager release --set={{VERSION}}",
+              "desc": "마이너 버전 고정 (예: 9.4, EUS 등)"
+            },
+            {
+              "cmd": "subscription-manager release --unset",
+              "desc": "버전 고정 해제"
+            },
+            {
+              "cmd": "subscription-manager config --server.proxy_hostname={{HOST}} --server.proxy_port={{PORT}}",
+              "desc": "프록시 설정 (/etc/rhsm/rhsm.conf 에 저장)"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1277,7 +1874,10 @@
         "dnf",
         "etc-yum-reposd",
         "leapp"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "snap",
@@ -1301,40 +1901,88 @@
       ],
       "options": [
         {
-          "flag": "find {{KEYWORD}}",
-          "desc": "스토어에서 snap 검색"
+          "flag": "--classic",
+          "desc": "(install) 시스템 제한 없는 클래식 모드로 설치"
         },
         {
-          "flag": "install {{PACKAGE}}",
-          "desc": "설치 (--classic: 시스템 제한 없는 클래식 모드)"
+          "flag": "--channel={{CHANNEL}}",
+          "desc": "(install·refresh) 채널 지정 (예: latest/stable, 1.28/stable)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "검색·설치·삭제",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "snap find {{KEYWORD}}",
+              "desc": "스토어에서 검색"
+            },
+            {
+              "cmd": "snap info {{PACKAGE}}",
+              "desc": "채널·버전 정보"
+            },
+            {
+              "cmd": "snap install {{PACKAGE}}",
+              "desc": "설치"
+            },
+            {
+              "cmd": "snap list [--all]",
+              "desc": "설치 목록 (--all 은 이전 리비전 포함)"
+            },
+            {
+              "cmd": "snap remove {{PACKAGE}}",
+              "desc": "삭제"
+            }
+          ]
         },
         {
-          "flag": "list [--all]",
-          "desc": "설치된 snap 목록 (--all 은 이전 리비전 포함)"
+          "title": "업데이트·되돌리기",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "snap refresh [{{PACKAGE}}]",
+              "desc": "업데이트"
+            },
+            {
+              "cmd": "snap refresh --list",
+              "desc": "업데이트 가능한 목록"
+            },
+            {
+              "cmd": "snap refresh --time",
+              "desc": "자동 업데이트 일정 확인"
+            },
+            {
+              "cmd": "snap refresh --hold[={{DURATION}}]",
+              "desc": "자동 업데이트 보류 (예: --hold=72h)"
+            },
+            {
+              "cmd": "snap set system refresh.timer=fri,23:00-01:00",
+              "desc": "자동 업데이트 시간대 지정"
+            },
+            {
+              "cmd": "snap revert {{PACKAGE}}",
+              "desc": "이전 리비전으로 되돌리기"
+            }
+          ]
         },
         {
-          "flag": "info {{PACKAGE}}",
-          "desc": "채널·버전 정보"
-        },
-        {
-          "flag": "refresh [{{PACKAGE}}]",
-          "desc": "업데이트 (--channel= 로 채널 변경)"
-        },
-        {
-          "flag": "refresh --hold[={{DURATION}}]",
-          "desc": "자동 업데이트 보류"
-        },
-        {
-          "flag": "revert {{PACKAGE}}",
-          "desc": "이전 리비전으로 되돌리기"
-        },
-        {
-          "flag": "remove {{PACKAGE}}",
-          "desc": "삭제"
-        },
-        {
-          "flag": "services",
-          "desc": "snap 이 제공하는 서비스 상태"
+          "title": "서비스·이력",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "snap services",
+              "desc": "snap 이 제공하는 서비스 상태"
+            },
+            {
+              "cmd": "snap logs {{PACKAGE}}",
+              "desc": "snap 서비스 로그"
+            },
+            {
+              "cmd": "snap changes",
+              "desc": "최근 설치·업데이트 작업 이력"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1375,7 +2023,10 @@
       ],
       "related": [
         "apt"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "install-windowsfeature",
@@ -1468,7 +2119,10 @@
       "related": [
         "dism",
         "sconfig"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dism",
@@ -1486,6 +2140,7 @@
       "summary": "Windows 기능·패키지·이미지 관리 및 구성요소 복구",
       "description": "배포 이미지 서비스 및 관리 도구로, 실행 중인 Windows(/Online) 또는 오프라인 이미지에 기능·업데이트 패키지·선택적 기능(Capability)을 추가·제거합니다. 구성요소 저장소 손상을 복구(/RestoreHealth)할 때도 씁니다. Windows 클라이언트와 서버 모두에서 사용할 수 있습니다.",
       "syntax": [
+        "dism /Online {{COMMAND}} [{{OPTIONS}}]",
         "dism /Online /Get-Features",
         "dism /Online /Enable-Feature /FeatureName:{{FEATURE}} [/All] [/Source:{{PATH}}] [/LimitAccess]",
         "dism /Online /Cleanup-Image /RestoreHealth"
@@ -1496,40 +2151,114 @@
           "desc": "현재 실행 중인 Windows 대상"
         },
         {
-          "flag": "/Get-Features [/Format:Table]",
-          "desc": "기능 목록과 상태"
+          "flag": "/Image:{{DIR}}",
+          "desc": "마운트한 오프라인 이미지 대상"
         },
         {
-          "flag": "/Enable-Feature /FeatureName:{{FEATURE}}",
-          "desc": "기능 활성화 (/All 은 상위 기능도 함께)"
+          "flag": "/All",
+          "desc": "(Enable-Feature) 상위 기능도 함께 활성화"
         },
         {
-          "flag": "/Disable-Feature /FeatureName:{{FEATURE}}",
-          "desc": "기능 비활성화"
+          "flag": "/Source:{{PATH}}",
+          "desc": "설치·복구 원본 지정 (예: D:\\sources\\sxs, wim:D:\\sources\\install.wim:1)"
         },
         {
-          "flag": "/Source:{{PATH}} /LimitAccess",
-          "desc": "설치 원본 지정 + Windows Update 접근 안 함 (폐쇄망)"
+          "flag": "/LimitAccess",
+          "desc": "Windows Update 에 접속하지 않음 (폐쇄망)"
         },
         {
-          "flag": "/Get-Packages",
-          "desc": "설치된 업데이트 패키지 목록"
+          "flag": "/NoRestart",
+          "desc": "자동 재시작 안 함"
         },
         {
-          "flag": "/Add-Package /PackagePath:{{FILE}}",
-          "desc": ".cab/.msu 업데이트 설치"
+          "flag": "/Quiet",
+          "desc": "진행 메시지 없이 실행"
         },
         {
-          "flag": "/Remove-Package /PackageName:{{NAME}}",
-          "desc": "업데이트 패키지 제거"
+          "flag": "/Format:Table",
+          "desc": "목록을 표 형태로 출력"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "기능 (Feature)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dism /Online /Get-Features /Format:Table",
+              "desc": "기능 목록과 상태"
+            },
+            {
+              "cmd": "dism /Online /Get-FeatureInfo /FeatureName:{{FEATURE}}",
+              "desc": "기능 상세"
+            },
+            {
+              "cmd": "dism /Online /Enable-Feature /FeatureName:{{FEATURE}} /All",
+              "desc": "기능 활성화"
+            },
+            {
+              "cmd": "dism /Online /Disable-Feature /FeatureName:{{FEATURE}}",
+              "desc": "기능 비활성화"
+            }
+          ]
         },
         {
-          "flag": "/Get-Capabilities / /Add-Capability /CapabilityName:{{NAME}}",
-          "desc": "선택적 기능(OpenSSH 등) 조회 / 추가"
+          "title": "업데이트 패키지",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dism /Online /Get-Packages /Format:Table",
+              "desc": "설치된 업데이트 패키지 목록"
+            },
+            {
+              "cmd": "dism /Online /Add-Package /PackagePath:{{FILE}}",
+              "desc": ".cab/.msu 업데이트 설치"
+            },
+            {
+              "cmd": "dism /Online /Remove-Package /PackageName:{{NAME}}",
+              "desc": "업데이트 패키지 제거"
+            }
+          ]
         },
         {
-          "flag": "/Cleanup-Image /RestoreHealth",
-          "desc": "구성요소 저장소 손상 복구"
+          "title": "선택적 기능 (Capability)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dism /Online /Get-Capabilities",
+              "desc": "선택적 기능(OpenSSH 등) 목록"
+            },
+            {
+              "cmd": "dism /Online /Add-Capability /CapabilityName:{{NAME}}",
+              "desc": "선택적 기능 추가"
+            },
+            {
+              "cmd": "dism /Online /Remove-Capability /CapabilityName:{{NAME}}",
+              "desc": "선택적 기능 제거"
+            }
+          ]
+        },
+        {
+          "title": "구성요소 저장소 점검·복구",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dism /Online /Cleanup-Image /CheckHealth",
+              "desc": "손상 표시 여부만 빠르게 확인"
+            },
+            {
+              "cmd": "dism /Online /Cleanup-Image /ScanHealth",
+              "desc": "손상 여부 전체 검사 (시간 걸림)"
+            },
+            {
+              "cmd": "dism /Online /Cleanup-Image /RestoreHealth",
+              "desc": "손상 복구 (폐쇄망은 /Source 지정)"
+            },
+            {
+              "cmd": "dism /Online /Cleanup-Image /StartComponentCleanup",
+              "desc": "교체된 구성요소 정리로 WinSxS 용량 확보"
+            }
+          ]
         }
       ],
       "examples": [
@@ -1564,7 +2293,10 @@
         "install-windowsfeature",
         "wusa",
         "sfc"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "leapp",
@@ -1587,14 +2319,6 @@
       ],
       "options": [
         {
-          "flag": "preupgrade",
-          "desc": "사전 점검만 수행하고 보고서 생성 (시스템 변경 없음)"
-        },
-        {
-          "flag": "upgrade",
-          "desc": "업그레이드 준비 후 재부팅 시 업그레이드 진행"
-        },
-        {
           "flag": "--target {{VERSION}}",
           "desc": "대상 마이너 버전 지정 (예: 9.4)"
         },
@@ -1603,23 +2327,74 @@
           "desc": "구독(RHSM) 없이 로컬·사용자 저장소로 진행"
         },
         {
-          "flag": "answer --section {{SECTION}}={{VALUE}}",
-          "desc": "보고서가 요구한 질문에 답변 기록"
+          "flag": "--enablerepo={{REPO}}",
+          "desc": "업그레이드에 추가로 사용할 저장소 지정"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "하위 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "leapp preupgrade",
+              "desc": "사전 점검만 수행하고 보고서 생성 (시스템 변경 없음)"
+            },
+            {
+              "cmd": "leapp upgrade",
+              "desc": "업그레이드 준비 후 재부팅 시 업그레이드 진행"
+            },
+            {
+              "cmd": "leapp answer --section {{SECTION}}={{VALUE}}",
+              "desc": "보고서가 요구한 질문에 답변 기록 (/var/log/leapp/answerfile)"
+            }
+          ]
         }
       ],
       "examples": [
         {
           "title": "RHEL 8 → 9 업그레이드 절차",
-          "command": "dnf update -y && reboot\ndnf install -y leapp-upgrade\nleapp preupgrade\ncat /var/log/leapp/leapp-report.txt\nleapp upgrade\nreboot",
-          "note": "보고서의 inhibitor 를 모두 해결해야 upgrade 가 진행됨"
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "dnf update -y && reboot",
+              "desc": "현재 버전 최신 상태로 맞추고 재부팅 (사전에 백업·스냅샷 확보)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf install -y leapp-upgrade",
+              "desc": "leapp 설치"
+            },
+            {
+              "prompt": "#",
+              "cmd": "leapp preupgrade --target {{VERSION}}",
+              "desc": "사전 점검"
+            },
+            {
+              "prompt": "#",
+              "cmd": "less /var/log/leapp/leapp-report.txt",
+              "desc": "inhibitor(차단 요소)를 모두 해결. 해결 후 preupgrade 를 다시 실행"
+            },
+            {
+              "prompt": "#",
+              "cmd": "leapp upgrade --target {{VERSION}}",
+              "desc": "업그레이드 준비"
+            },
+            {
+              "prompt": "#",
+              "cmd": "reboot",
+              "desc": "재부팅 중 업그레이드 진행 (콘솔로 진행 상황 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cat /etc/redhat-release; uname -r",
+              "desc": "버전 확인"
+            }
+          ]
         },
         {
           "title": "사전 점검 답변 파일 처리 예",
           "command": "leapp answer --section remove_pam_pkcs11_module_check.confirm=True"
-        },
-        {
-          "title": "업그레이드 후 버전 확인",
-          "command": "cat /etc/redhat-release\nuname -r"
         }
       ],
       "cautions": [
@@ -1649,7 +2424,10 @@
       "related": [
         "dnf",
         "subscription-manager"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "do-release-upgrade",
@@ -1681,25 +2459,63 @@
         {
           "flag": "-f DistUpgradeViewNonInteractive",
           "desc": "비대화형 모드로 실행"
-        },
+        }
+      ],
+      "commandGroups": [
         {
-          "flag": "/etc/update-manager/release-upgrades",
-          "desc": "Prompt=lts|normal|never 로 업그레이드 대상 지정 (설정 파일)"
+          "title": "/etc/update-manager/release-upgrades",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "Prompt=lts",
+              "desc": "다음 LTS 로만 업그레이드 (LTS 서버 기본값)"
+            },
+            {
+              "cmd": "Prompt=normal",
+              "desc": "다음 일반 릴리스로도 업그레이드"
+            },
+            {
+              "cmd": "Prompt=never",
+              "desc": "배포판 업그레이드 안내·실행 막기"
+            }
+          ]
         }
       ],
       "examples": [
         {
           "title": "업그레이드 전 준비 후 실행",
-          "command": "apt update && apt full-upgrade -y\nreboot\ndo-release-upgrade -c\ndo-release-upgrade"
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "apt update && apt full-upgrade -y",
+              "desc": "현재 버전 최신화 (사전에 백업·스냅샷 확보)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "reboot",
+              "desc": "재부팅해 최신 커널로"
+            },
+            {
+              "prompt": "#",
+              "cmd": "do-release-upgrade -c",
+              "desc": "새 배포판이 있는지 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "do-release-upgrade",
+              "desc": "업그레이드 진행 (질문에 응답. SSH 면 1022 포트 추가 sshd 안내)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cat /etc/os-release",
+              "desc": "버전 확인"
+            }
+          ]
         },
         {
           "title": "업그레이드 대상(LTS만/일반) 설정 확인",
           "command": "grep Prompt /etc/update-manager/release-upgrades",
           "output": "Prompt=lts"
-        },
-        {
-          "title": "업그레이드 후 버전 확인",
-          "command": "lsb_release -a\ncat /etc/os-release"
         }
       ],
       "cautions": [
@@ -1729,7 +2545,10 @@
       "related": [
         "apt",
         "etc-apt-sources-list"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "createrepo",
@@ -1754,10 +2573,6 @@
       ],
       "options": [
         {
-          "flag": "{{DIR}}",
-          "desc": "rpm 파일이 있는 디렉토리 (repodata/ 생성)"
-        },
-        {
           "flag": "--update",
           "desc": "기존 메타데이터를 재사용해 변경분만 갱신 (빠름)"
         },
@@ -1777,17 +2592,73 @@
       "examples": [
         {
           "title": "OS ISO 를 마운트해 로컬 저장소로 사용 (RHEL/Rocky 8·9)",
-          "command": "mkdir -p /mnt/iso\nmount -o loop,ro {{ISO_FILE}} /mnt/iso\ncat > /etc/yum.repos.d/local-iso.repo <<'EOF'\n[local-baseos]\nname=Local BaseOS\nbaseurl=file:///mnt/iso/BaseOS\nenabled=1\ngpgcheck=0\n\n[local-appstream]\nname=Local AppStream\nbaseurl=file:///mnt/iso/AppStream\nenabled=1\ngpgcheck=0\nEOF\ndnf clean all\ndnf --disablerepo='*' --enablerepo='local-*' install {{PACKAGE}}",
-          "note": "ISO 는 이미 repodata 가 있어 createrepo 불필요. 재부팅 후에도 쓰려면 /etc/fstab 에 마운트 등록"
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "mkdir -p /mnt/iso",
+              "desc": "마운트 포인트 생성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mount -o loop,ro {{ISO_FILE}} /mnt/iso",
+              "desc": "ISO 마운트 (DVD 장치면 /dev/sr0)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cat > /etc/yum.repos.d/local-iso.repo <<'EOF'\n[local-baseos]\nname=Local BaseOS\nbaseurl=file:///mnt/iso/BaseOS\nenabled=1\ngpgcheck=0\n\n[local-appstream]\nname=Local AppStream\nbaseurl=file:///mnt/iso/AppStream\nenabled=1\ngpgcheck=0\nEOF",
+              "desc": "BaseOS·AppStream 두 저장소 등록 (ISO 에 repodata 가 있어 createrepo 불필요)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf clean all && dnf repolist",
+              "desc": "저장소 인식 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "dnf --disablerepo='*' --enablerepo='local-*' install {{PACKAGE}}",
+              "desc": "로컬 저장소만으로 설치"
+            },
+            {
+              "prompt": "#",
+              "cmd": "echo '{{ISO_FILE}} /mnt/iso iso9660 loop,ro,nofail 0 0' >> /etc/fstab",
+              "desc": "(선택) 재부팅 후에도 자동 마운트"
+            }
+          ]
         },
         {
-          "title": "인터넷 되는 서버에서 패키지와 의존성 받기",
-          "command": "dnf download --resolve --alldeps --destdir=/opt/localrepo {{PACKAGE}}",
-          "note": "dnf download 는 dnf-plugins-core 제공. 폐쇄망 서버와 같은 OS 버전에서 받아야 함"
-        },
-        {
-          "title": "받아 온 rpm 으로 로컬 저장소 만들기",
-          "command": "createrepo /opt/localrepo\ncat > /etc/yum.repos.d/localrepo.repo <<'EOF'\n[localrepo]\nname=Local Repo\nbaseurl=file:///opt/localrepo\nenabled=1\ngpgcheck=0\nEOF\ndnf install {{PACKAGE}}"
+          "title": "인터넷 서버에서 받아 폐쇄망에 로컬 저장소 만들기",
+          "steps": [
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "dnf download --resolve --alldeps --destdir=/opt/localrepo {{PACKAGE}}",
+              "desc": "폐쇄망과 같은 OS·버전에서 패키지와 의존성 전부 받기 (dnf-plugins-core 필요)"
+            },
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "tar czf localrepo.tar.gz -C /opt localrepo",
+              "desc": "묶어서 반입"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "tar xzf localrepo.tar.gz -C /opt",
+              "desc": "폐쇄망 서버에 풀기"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "createrepo /opt/localrepo",
+              "desc": "repodata/ 생성"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "cat > /etc/yum.repos.d/localrepo.repo <<'EOF'\n[localrepo]\nname=Local Repo\nbaseurl=file:///opt/localrepo\nenabled=1\ngpgcheck=0\nEOF",
+              "desc": "저장소 등록"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "dnf --disablerepo='*' --enablerepo=localrepo install {{PACKAGE}}",
+              "desc": "로컬 저장소로 설치"
+            }
+          ]
         },
         {
           "title": "rpm 추가 후 메타데이터 갱신",
@@ -1820,7 +2691,10 @@
         "dnf",
         "rpm",
         "mount"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dpkg-scanpackages",
@@ -1842,27 +2716,55 @@
       ],
       "options": [
         {
-          "flag": "{{DIR}}",
-          "desc": "deb 파일이 있는 디렉토리 (저장소 루트 기준 상대 경로)"
-        },
-        {
-          "flag": "/dev/null",
-          "desc": "override 파일 자리 (없을 때 관례적으로 지정)"
-        },
-        {
           "flag": "-m, --multiversion",
           "desc": "같은 패키지의 여러 버전을 모두 인덱스에 포함"
         }
       ],
       "examples": [
         {
-          "title": "인터넷 되는 서버에서 패키지와 의존성 받기",
-          "command": "apt-get install --download-only -y {{PACKAGE}}\nmkdir -p /opt/localrepo\ncp /var/cache/apt/archives/*.deb /opt/localrepo/",
-          "note": "이미 설치된 의존성은 받지 않으므로, 폐쇄망 서버와 같은 OS 버전의 깨끗한 서버에서 받는 것이 좋음"
+          "title": "인터넷 서버에서 받아 폐쇄망에 로컬 apt 저장소 만들기",
+          "steps": [
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "apt-get install --download-only -y {{PACKAGE}}",
+              "desc": "폐쇄망과 같은 OS 버전의 깨끗한 서버에서 패키지·의존성 받기"
+            },
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "mkdir -p /opt/localrepo && cp /var/cache/apt/archives/*.deb /opt/localrepo/",
+              "desc": "받은 deb 모으기"
+            },
+            {
+              "prompt": "인터넷 서버 #",
+              "cmd": "tar czf localrepo.tar.gz -C /opt localrepo",
+              "desc": "묶어서 반입"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "tar xzf localrepo.tar.gz -C /opt",
+              "desc": "폐쇄망 서버에 풀기"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "cd /opt/localrepo && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz",
+              "desc": "Packages 인덱스 생성"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "echo 'deb [trusted=yes] file:/opt/localrepo ./' > /etc/apt/sources.list.d/local.list",
+              "desc": "저장소 등록"
+            },
+            {
+              "prompt": "폐쇄망 서버 #",
+              "cmd": "apt update && apt install {{PACKAGE}}",
+              "desc": "로컬 저장소로 설치"
+            }
+          ],
+          "note": "이미 설치된 의존성은 받지 않으므로 폐쇄망 서버와 같은 OS 버전의 최소 설치 서버에서 받는 것이 좋습니다."
         },
         {
-          "title": "로컬 저장소 만들고 등록",
-          "command": "cd /opt/localrepo\ndpkg-scanpackages . /dev/null | gzip -9c > Packages.gz\necho 'deb [trusted=yes] file:/opt/localrepo ./' > /etc/apt/sources.list.d/local.list\napt update\napt install {{PACKAGE}}"
+          "title": "deb 추가 후 인덱스 다시 만들기",
+          "command": "cd /opt/localrepo\ndpkg-scanpackages . /dev/null | gzip -9c > Packages.gz\napt update"
         }
       ],
       "cautions": [
@@ -1889,7 +2791,10 @@
         "etc-apt-sources-list",
         "apt",
         "dpkg"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

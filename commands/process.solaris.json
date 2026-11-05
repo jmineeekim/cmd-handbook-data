@@ -1,0 +1,878 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "process",
+  "commands": [
+    {
+      "id": "solaris-prstat",
+      "name": "prstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.monitor",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "Solaris 실시간 프로세스 모니터링 (top 대체)",
+      "description": "CPU·메모리 사용량 순으로 프로세스를 주기적으로 보여 주는 Solaris 기본 모니터링 도구입니다. -Z 로 Zone 별, -a 로 사용자별 합계를 보고, -mL 로 스레드(LWP)별 마이크로 상태(대기·잠금·CPU 시간 비율)를 분석할 수 있어 성능 장애 분석에 유용합니다.",
+      "syntax": [
+        "prstat [-a | -t | -Z | -J] [-s {{KEY}}] [-n {{N}}] [-p {{PID}}] [-u {{USER}}] [-mL] [-c] [{{INTERVAL}} [{{COUNT}}]]"
+      ],
+      "options": [
+        {
+          "flag": "-s cpu | rss | size | time | pri",
+          "desc": "정렬 기준 (기본 cpu, 내림차순. -S 는 오름차순)"
+        },
+        {
+          "flag": "-n {{N}}",
+          "desc": "상위 N 개만 표시"
+        },
+        {
+          "flag": "-a",
+          "desc": "프로세스 목록 아래 사용자별 합계"
+        },
+        {
+          "flag": "-t",
+          "desc": "사용자별 합계만"
+        },
+        {
+          "flag": "-Z",
+          "desc": "Zone 별 합계 (글로벌 존에서 Zone 자원 사용 비교)"
+        },
+        {
+          "flag": "-z {{ZONE}}",
+          "desc": "특정 Zone 의 프로세스만"
+        },
+        {
+          "flag": "-J",
+          "desc": "프로젝트별 합계"
+        },
+        {
+          "flag": "-p {{PID}}",
+          "desc": "특정 프로세스만"
+        },
+        {
+          "flag": "-u {{USER}}",
+          "desc": "특정 사용자 프로세스만"
+        },
+        {
+          "flag": "-L",
+          "desc": "스레드(LWP)별로 표시"
+        },
+        {
+          "flag": "-m",
+          "desc": "마이크로 상태 회계 (USR, SYS, LCK, SLP, LAT 등 시간 비율)"
+        },
+        {
+          "flag": "-c",
+          "desc": "화면을 지우지 않고 이어서 출력 (로그 저장용)"
+        },
+        {
+          "flag": "{{INTERVAL}} {{COUNT}}",
+          "desc": "갱신 간격(초)과 횟수"
+        }
+      ],
+      "examples": [
+        {
+          "title": "메모리(RSS) 많이 쓰는 상위 10개",
+          "command": "prstat -s rss -n 10"
+        },
+        {
+          "title": "Zone 별 CPU·메모리 사용량",
+          "command": "prstat -Z 5"
+        },
+        {
+          "title": "특정 프로세스의 스레드별 병목 분석",
+          "command": "prstat -mL -p {{PID}} 5",
+          "note": "LCK 가 높으면 잠금 경합, LAT 가 높으면 CPU 대기(부족)를 의심합니다."
+        },
+        {
+          "title": "장애 시간대 기록을 파일로 남기기",
+          "command": "prstat -c -n 20 10 30 > /var/tmp/prstat_$(date +%H%M).txt"
+        }
+      ],
+      "cautions": [],
+      "platformNotes": {
+        "solaris": "Solaris 의 top 대체 도구 (top 은 기본 설치에 없을 수 있음). q 로 종료합니다."
+      },
+      "help": "man prstat",
+      "keywords": [
+        "프로세스 모니터링",
+        "CPU 사용률",
+        "메모리 사용량",
+        "prstat",
+        "top",
+        "Zone 사용량"
+      ],
+      "related": [
+        "top",
+        "ps",
+        "vmstat",
+        "solaris-kstat",
+        "solaris-pstack"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-truss",
+      "name": "truss",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.trace",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로세스 시스템 콜·시그널 추적 (strace 대체)",
+      "description": "프로세스가 호출하는 시스템 콜과 받는 시그널을 추적합니다. 프로그램이 어떤 파일을 열다 실패하는지, 어디서 멈춰 있는지(read 대기 등) 확인할 때 씁니다. 새 명령을 실행하며 추적하거나 -p 로 실행 중인 프로세스에 붙을 수 있습니다.",
+      "syntax": [
+        "truss [-f] [-d] [-o {{FILE}}] [-t {{SYSCALLS}}] {{COMMAND}} [{{ARGS}}]",
+        "truss [-f] [-o {{FILE}}] -p {{PID}}",
+        "truss -c -p {{PID}}"
+      ],
+      "options": [
+        {
+          "flag": "-p {{PID}}",
+          "desc": "실행 중인 프로세스에 붙어서 추적 (Ctrl+C 로 분리)"
+        },
+        {
+          "flag": "-f",
+          "desc": "fork 로 생긴 자식 프로세스도 추적"
+        },
+        {
+          "flag": "-o {{FILE}}",
+          "desc": "출력을 파일로 저장"
+        },
+        {
+          "flag": "-t {{SYSCALLS}}",
+          "desc": "지정한 시스템 콜만 (예: -t open,read,write. !를 붙이면 제외)"
+        },
+        {
+          "flag": "-d",
+          "desc": "추적 시작 기준 경과 시간 표시"
+        },
+        {
+          "flag": "-D",
+          "desc": "직전 이벤트 대비 경과 시간 표시 (지연 구간 찾기)"
+        },
+        {
+          "flag": "-c",
+          "desc": "시스템 콜별 횟수·시간 요약만"
+        },
+        {
+          "flag": "-a",
+          "desc": "exec 시 인수 표시"
+        },
+        {
+          "flag": "-e",
+          "desc": "exec 시 환경 변수 표시"
+        },
+        {
+          "flag": "-u {{LIB}}:{{FUNC}}",
+          "desc": "사용자 라이브러리 함수 호출 추적"
+        }
+      ],
+      "examples": [
+        {
+          "title": "프로그램이 여는 파일과 실패 확인",
+          "command": "truss -f -t open,openat,stat -o /var/tmp/truss.out {{COMMAND}}\ngrep -i err /var/tmp/truss.out"
+        },
+        {
+          "title": "멈춘 프로세스가 무엇을 기다리는지",
+          "command": "truss -p {{PID}}",
+          "note": "같은 시스템 콜(예: read, pollsys)에서 멈춰 있으면 그 대상(소켓·파일)을 pfiles 로 확인합니다."
+        },
+        {
+          "title": "10초 동안 시스템 콜 통계",
+          "command": "timeout 10 truss -c -p {{PID}}",
+          "note": "timeout 이 없는 시스템은 Ctrl+C 로 중지하면 요약이 출력됩니다."
+        }
+      ],
+      "cautions": [
+        "추적 중 대상 프로세스가 크게 느려집니다. 운영 DB·WAS 프로세스는 짧게만 추적하세요.",
+        "truss 를 강제 종료(kill -9)하면 대상 프로세스가 정지 상태로 남을 수 있습니다. Ctrl+C 로 끝내세요."
+      ],
+      "platformNotes": {
+        "solaris": "Linux 의 strace 에 해당. 더 낮은 부하로 분석하려면 dtrace 를 씁니다."
+      },
+      "help": "man truss",
+      "keywords": [
+        "시스템 콜 추적",
+        "truss",
+        "strace",
+        "프로세스 추적",
+        "디버깅",
+        "syscall"
+      ],
+      "related": [
+        "solaris-dtrace",
+        "solaris-pfiles",
+        "solaris-pstack",
+        "strace"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-pfiles",
+      "name": "pfiles",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.open-files",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로세스가 연 파일·소켓(포트) 목록 확인",
+      "description": "프로세스가 열어 둔 파일 디스크립터(파일, 소켓, 파이프)를 보여 줍니다. 소켓은 로컬·원격 IP 와 포트가 함께 나오므로, Solaris 10 처럼 lsof 가 없는 환경에서 '이 포트를 어느 프로세스가 쓰는지' 찾는 기본 방법입니다.",
+      "syntax": [
+        "pfiles [-n] {{PID}}...",
+        "pfiles {{CORE_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-n",
+          "desc": "파일 경로 등 상세 정보를 얻기 위한 추가 조회 생략 (대상 영향 최소화)"
+        },
+        {
+          "flag": "-F",
+          "desc": "다른 도구가 붙어 있어도 강제로 실행 (주의)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "프로세스가 연 파일·소켓",
+          "command": "pfiles {{PID}}"
+        },
+        {
+          "title": "특정 포트를 쓰는 프로세스 찾기",
+          "command": "for p in $(ps -e -o pid=); do pfiles $p 2>/dev/null | grep -q \"port: {{PORT}}\" && echo \"PID $p: $(ps -o comm= -p $p)\"; done",
+          "note": "모든 프로세스를 잠깐씩 멈추므로 운영 중에는 대상 사용자 프로세스로 범위를 좁히세요. Solaris 11.2 이상은 netstat -u 로도 확인할 수 있습니다."
+        },
+        {
+          "title": "열린 파일 수 세기 (FD 고갈 점검)",
+          "command": "pfiles {{PID}} | grep -c '^ *[0-9]*:'"
+        }
+      ],
+      "cautions": [
+        "pfiles 는 조회하는 동안 대상 프로세스를 잠시 정지시킵니다. 지연에 민감한 운영 프로세스에 반복 실행하지 마세요."
+      ],
+      "platformNotes": {
+        "solaris": "Linux 의 lsof -p, ls -l /proc/PID/fd 에 해당. lsof 는 Solaris 기본 설치에 없습니다."
+      },
+      "help": "man proc (pfiles 는 proc 도구 모음)",
+      "keywords": [
+        "열린 파일",
+        "포트 사용 프로세스",
+        "소켓",
+        "pfiles",
+        "lsof",
+        "파일 디스크립터"
+      ],
+      "related": [
+        "lsof",
+        "fuser",
+        "netstat",
+        "solaris-truss"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-pstack",
+      "name": "pstack",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.dump",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로세스·코어 파일의 스레드별 호출 스택 출력",
+      "description": "실행 중인 프로세스나 코어 파일의 스레드별 호출 스택을 출력합니다. 프로세스가 멈추거나(hang) CPU 를 계속 쓰는 원인을 찾을 때, 몇 초 간격으로 여러 번 떠서 같은 위치에 머무는지 비교합니다. Solaris 기본 proc 도구라 별도 설치가 필요 없습니다.",
+      "syntax": [
+        "pstack {{PID}}[/{{LWP}}]...",
+        "pstack {{CORE_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-F",
+          "desc": "다른 도구가 붙어 있어도 강제로 실행 (주의)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "프로세스 스택 확인",
+          "command": "pstack {{PID}}"
+        },
+        {
+          "title": "5초 간격 3회 수집 (행 분석·벤더 전달용)",
+          "command": "for i in 1 2 3; do date; pstack {{PID}}; sleep 5; done > /var/tmp/pstack_{{PID}}.txt"
+        },
+        {
+          "title": "코어 파일 스택",
+          "command": "pstack /var/cores/{{CORE_FILE}}"
+        }
+      ],
+      "cautions": [
+        "수집하는 동안 대상 프로세스가 잠깐 정지됩니다.",
+        "Java 프로세스는 네이티브 스택만 보이므로 jstack(또는 kill -3)으로 스레드 덤프를 함께 받으세요."
+      ],
+      "help": "man proc",
+      "keywords": [
+        "스택 트레이스",
+        "행 분석",
+        "pstack",
+        "스레드 덤프",
+        "hang",
+        "core"
+      ],
+      "related": [
+        "solaris-mdb",
+        "solaris-coreadm",
+        "solaris-prstat",
+        "pstack",
+        "gcore"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-pargs",
+      "name": "pargs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.list",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "프로세스의 전체 실행 인수·환경 변수 출력",
+      "description": "프로세스가 실행될 때의 전체 인수와 환경 변수를 출력합니다. Solaris 의 ps 는 인수를 80자에서 자르므로, 긴 Java 옵션이나 경로 전체를 확인할 때 pargs 를 씁니다.",
+      "syntax": [
+        "pargs [-l] [-e] [-a] {{PID}}"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "인수 출력 (기본)"
+        },
+        {
+          "flag": "-e",
+          "desc": "환경 변수 출력"
+        },
+        {
+          "flag": "-l",
+          "desc": "인수를 한 줄 명령 형태로 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Java 프로세스 전체 옵션 확인",
+          "command": "pargs -l {{PID}}"
+        },
+        {
+          "title": "프로세스 환경 변수 확인",
+          "command": "pargs -e {{PID}} | grep -i -e LANG -e PATH"
+        }
+      ],
+      "cautions": [],
+      "platformNotes": {
+        "solaris": "Linux 의 cat /proc/PID/cmdline, ps -ww 에 해당. Solaris 11 은 /usr/bin/ps -ww 도 사용 가능합니다."
+      },
+      "help": "man proc",
+      "keywords": [
+        "프로세스 인수",
+        "실행 옵션",
+        "환경 변수",
+        "pargs",
+        "cmdline"
+      ],
+      "related": [
+        "ps",
+        "solaris-ptree",
+        "solaris-pwdx"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-ptree",
+      "name": "ptree",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.list",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "프로세스 부모·자식 관계 트리 출력",
+      "description": "지정한 프로세스(또는 사용자)의 부모·자식 프로세스 관계를 들여쓰기 트리로 보여 줍니다. 어떤 프로세스가 누구에게서 실행되었는지(예: cron → 스크립트 → java) 추적할 때 씁니다.",
+      "syntax": [
+        "ptree [-a] [{{PID}} | {{USER}}]"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "시스템 프로세스까지 모두 포함"
+        }
+      ],
+      "examples": [
+        {
+          "title": "특정 프로세스의 계보",
+          "command": "ptree {{PID}}"
+        },
+        {
+          "title": "사용자 프로세스 트리",
+          "command": "ptree {{USER}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man proc",
+      "keywords": [
+        "프로세스 트리",
+        "부모 프로세스",
+        "ptree",
+        "pstree"
+      ],
+      "related": [
+        "pstree",
+        "ps",
+        "solaris-pargs"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-pwdx",
+      "name": "pwdx",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.list",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "프로세스의 현재 작업 디렉토리 확인",
+      "description": "프로세스가 실행 중인 현재 작업 디렉토리를 출력합니다. 상대 경로로 로그를 쓰는 프로그램의 로그 위치를 찾거나, umount 가 실패할 때 해당 디렉토리를 붙잡고 있는 프로세스를 확인할 때 씁니다.",
+      "syntax": [
+        "pwdx {{PID}}..."
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "작업 디렉토리 확인",
+          "command": "pwdx {{PID}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man proc",
+      "keywords": [
+        "작업 디렉토리",
+        "cwd",
+        "pwdx",
+        "프로세스 경로"
+      ],
+      "related": [
+        "solaris-pargs",
+        "fuser"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-dtrace",
+      "name": "dtrace",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.trace",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "커널·프로세스 동적 추적 (원라이너로 원인 분석)",
+      "description": "운영 중인 시스템에 낮은 부하로 추적 지점(probe)을 걸어 시스템 콜, 프로세스 생성, I/O 등을 집계합니다. 복잡한 스크립트를 쓰지 않아도 잘 알려진 한 줄 명령으로 '누가 시스템 콜을 많이 하는지', '누가 디스크 I/O 를 일으키는지'를 바로 확인할 수 있습니다. Ctrl+C 로 멈추면 집계 결과가 출력됩니다.",
+      "syntax": [
+        "dtrace -n '{{PROBE}} { {{ACTION}} }'",
+        "dtrace -l [-n {{PROBE}}]",
+        "dtrace -s {{SCRIPT}}.d"
+      ],
+      "options": [
+        {
+          "flag": "-n '{{PROBE}} { ... }'",
+          "desc": "프로브와 동작을 명령줄에서 지정"
+        },
+        {
+          "flag": "-l",
+          "desc": "사용 가능한 프로브 목록"
+        },
+        {
+          "flag": "-s {{SCRIPT}}",
+          "desc": "D 스크립트 파일 실행"
+        },
+        {
+          "flag": "-p {{PID}}",
+          "desc": "특정 프로세스를 대상으로 ($target 사용)"
+        },
+        {
+          "flag": "-q",
+          "desc": "프로브 일치 메시지 생략 (printf 결과만)"
+        },
+        {
+          "flag": "-o {{FILE}}",
+          "desc": "결과를 파일로 저장"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 원라이너 (Ctrl+C 로 종료하면 결과 출력)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "dtrace -n 'syscall:::entry { @[execname] = count(); }'",
+              "desc": "프로세스 이름별 시스템 콜 횟수"
+            },
+            {
+              "cmd": "dtrace -n 'syscall:::entry /pid == {{PID}}/ { @[probefunc] = count(); }'",
+              "desc": "특정 프로세스의 시스템 콜 종류별 횟수"
+            },
+            {
+              "cmd": "dtrace -n 'proc:::exec-success { trace(curpsinfo->pr_psargs); }'",
+              "desc": "새로 실행되는 명령 실시간 출력 (짧게 실행되고 사라지는 프로세스 찾기)"
+            },
+            {
+              "cmd": "dtrace -n 'io:::start { @[execname] = sum(args[0]->b_bcount); }'",
+              "desc": "프로세스별 디스크 I/O 바이트"
+            },
+            {
+              "cmd": "dtrace -n 'profile-997 /arg1/ { @[execname] = count(); }'",
+              "desc": "사용자 모드 CPU 를 쓰는 프로세스 샘플링"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "시스템 콜을 가장 많이 하는 프로세스",
+          "command": "dtrace -n 'syscall:::entry { @[execname] = count(); }'"
+        },
+        {
+          "title": "10초만 집계하고 자동 종료",
+          "command": "dtrace -n 'syscall:::entry { @[execname] = count(); } tick-10s { exit(0); }'"
+        },
+        {
+          "title": "새로 실행되는 명령 감시",
+          "command": "dtrace -qn 'proc:::exec-success { printf(\"%d %s\\n\", pid, curpsinfo->pr_psargs); }'"
+        }
+      ],
+      "cautions": [
+        "부하가 낮은 편이지만 모든 시스템 콜·함수에 프로브를 거는 등 범위가 넓으면 운영 성능에 영향을 줍니다. 처음에는 짧게(tick-10s) 실행하세요.",
+        "검증되지 않은 인터넷 스크립트, 특히 destructive 동작(-w 옵션)을 쓰는 스크립트는 운영 서버에서 실행하지 마세요.",
+        "non-global zone 에서는 zonecfg 의 limitpriv 에 dtrace 권한이 있어야 하며 볼 수 있는 범위가 제한됩니다."
+      ],
+      "platformNotes": {
+        "solaris": "Solaris 10 이상 기본 포함. Linux 의 bpftrace/perf, strace 를 넘어서는 분석 도구."
+      },
+      "help": "man dtrace · Oracle Solaris Dynamic Tracing Guide",
+      "keywords": [
+        "동적 추적",
+        "DTrace",
+        "성능 분석",
+        "dtrace",
+        "원라이너",
+        "시스템 콜 집계"
+      ],
+      "related": [
+        "solaris-truss",
+        "solaris-prstat",
+        "solaris-mdb",
+        "strace"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-mdb",
+      "name": "mdb",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.dump",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "커널·크래시 덤프 디버거 (메모리 사용 내역·패닉 원인)",
+      "description": "Solaris 의 모듈형 디버거로, 실행 중인 커널(mdb -k)이나 크래시 덤프, 코어 파일을 분석합니다. 운영자는 주로 ::memstat 으로 메모리가 커널·ZFS·애플리케이션 중 어디에 쓰이는지 확인하고, 크래시 덤프에서 ::status 와 ::msgbuf 로 패닉 원인을 확인하는 정도로 씁니다. 그 이상의 분석은 벤더에 덤프를 전달합니다.",
+      "syntax": [
+        "mdb -k",
+        "echo '{{DCMD}}' | mdb -k",
+        "mdb {{N}}",
+        "mdb {{PROGRAM}} {{CORE_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-k",
+          "desc": "실행 중인 커널을 읽기 전용으로 조사"
+        },
+        {
+          "flag": "-w",
+          "desc": "쓰기 모드 (운영자는 사용 금지)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "안전한 읽기 전용 명령",
+          "type": "interactive",
+          "prompt": ">",
+          "note": "mdb 프롬프트는 > 입니다. 아래 명령만으로도 대부분의 1차 확인이 가능합니다.",
+          "items": [
+            {
+              "cmd": "::memstat",
+              "desc": "메모리 사용 분류 (Kernel, ZFS File Data, Anon, Exec and libs, Page cache, Free)"
+            },
+            {
+              "cmd": "::status",
+              "desc": "덤프·커널 상태 요약 (패닉 메시지 포함)"
+            },
+            {
+              "cmd": "::msgbuf",
+              "desc": "커널 메시지 버퍼 (패닉 직전 메시지)"
+            },
+            {
+              "cmd": "::panicinfo",
+              "desc": "패닉 시점 CPU·스레드·레지스터 정보 (크래시 덤프)"
+            },
+            {
+              "cmd": "$C",
+              "desc": "현재(패닉) 스레드 호출 스택"
+            },
+            {
+              "cmd": "::ps",
+              "desc": "덤프 시점 프로세스 목록"
+            },
+            {
+              "cmd": "$q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "메모리를 어디서 쓰는지 확인",
+          "command": "echo '::memstat' | mdb -k",
+          "note": "메모리가 큰 서버에서는 수십 초 이상 걸리고 CPU 를 씁니다. 업무 피크 시간을 피하세요."
+        },
+        {
+          "title": "크래시 덤프 1차 확인",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cd /var/crash/{{HOSTNAME}}",
+              "desc": "덤프 디렉토리로 이동 (Solaris 11 은 dumpadm 의 Savecore directory 확인)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "savecore -vf vmdump.{{N}}",
+              "desc": "압축 덤프(vmdump)를 unix.N, vmcore.N 으로 풀기"
+            },
+            {
+              "prompt": "#",
+              "cmd": "mdb {{N}}",
+              "desc": "덤프 열기"
+            },
+            {
+              "prompt": ">",
+              "cmd": "::status",
+              "desc": "패닉 메시지 확인"
+            },
+            {
+              "prompt": ">",
+              "cmd": "::msgbuf",
+              "desc": "패닉 직전 커널 메시지"
+            },
+            {
+              "prompt": ">",
+              "cmd": "$q",
+              "desc": "종료 후 덤프 파일을 벤더에 전달"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "-w(쓰기 모드)로 실행 중인 커널을 수정하면 즉시 시스템이 멈출 수 있습니다. 운영 서버에서는 읽기 전용 명령만 사용하세요.",
+        "::memstat 등 일부 명령은 대형 메모리 시스템에서 오래 걸리고 부하를 줍니다."
+      ],
+      "help": "man mdb · Oracle Solaris Modular Debugger Guide",
+      "keywords": [
+        "커널 디버거",
+        "크래시 덤프",
+        "memstat",
+        "mdb",
+        "패닉 분석",
+        "메모리 분석"
+      ],
+      "related": [
+        "solaris-savecore",
+        "solaris-dumpadm",
+        "solaris-pstack",
+        "solaris-dtrace"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-coreadm",
+      "name": "coreadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "process",
+      "task": "process.dump",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "프로세스 코어 파일 생성 위치·이름·활성화 설정",
+      "description": "인수 없이 실행하면 현재 설정을 보여 줍니다. 프로세스가 비정상 종료할 때 만드는 코어 파일의 저장 위치와 이름 규칙, 생성 여부를 설정합니다. 기본은 프로세스의 현재 디렉토리에 core 로 만들어지므로, 운영 서버에서는 전역(global) 코어를 별도 디렉토리에 이름 규칙대로 모으도록 설정해 두면 장애 분석이 쉬워집니다.",
+      "syntax": [
+        "coreadm",
+        "coreadm -g {{PATTERN}} -e global [-e log]",
+        "coreadm -d {{OPTION}}"
+      ],
+      "options": [
+        {
+          "flag": "-g {{PATTERN}}",
+          "desc": "전역 코어 파일 경로·이름 규칙"
+        },
+        {
+          "flag": "-i {{PATTERN}}",
+          "desc": "프로세스별 코어 파일 이름 규칙 (기본 core)"
+        },
+        {
+          "flag": "-e global | process | global-setid | proc-setid | log",
+          "desc": "해당 코어 덤프 기능 켜기"
+        },
+        {
+          "flag": "-d {{OPTION}}",
+          "desc": "해당 코어 덤프 기능 끄기"
+        },
+        {
+          "flag": "-p {{PATTERN}} {{PID}}",
+          "desc": "실행 중인 특정 프로세스의 규칙 변경"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "이름 규칙 변수",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "%f",
+              "desc": "실행 파일 이름"
+            },
+            {
+              "cmd": "%p",
+              "desc": "PID"
+            },
+            {
+              "cmd": "%n",
+              "desc": "호스트명(노드명)"
+            },
+            {
+              "cmd": "%t",
+              "desc": "시각 (time(2) 값)"
+            },
+            {
+              "cmd": "%u / %g",
+              "desc": "UID / GID"
+            },
+            {
+              "cmd": "%z",
+              "desc": "Zone 이름"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 설정 확인",
+          "command": "coreadm"
+        },
+        {
+          "title": "코어 파일을 한 곳에 모으기",
+          "command": "mkdir -p /var/cores\ncoreadm -g /var/cores/core.%f.%p.%t -e global -e log\ncoreadm",
+          "note": "log 를 켜면 코어 생성 시 syslog 에 기록됩니다."
+        },
+        {
+          "title": "실행 중인 프로세스의 코어 수동 생성",
+          "command": "gcore -o /var/cores/core {{PID}}",
+          "note": "프로세스를 종료하지 않고 현재 상태를 덤프합니다."
+        }
+      ],
+      "cautions": [
+        "코어 파일은 프로세스 메모리 크기만큼 커집니다. 저장 위치에 충분한 공간이 있는 별도 파일시스템을 지정하세요.",
+        "global-setid 를 켜면 권한 상승 프로그램의 메모리(비밀번호 등 민감 정보)가 코어에 남을 수 있습니다. 필요할 때만 켜고 접근 권한을 제한하세요."
+      ],
+      "platformNotes": {
+        "solaris": "설정은 Solaris 10 은 /etc/coreadm.conf, Solaris 11 은 SMF(svc:/system/coreadm)에 영구 저장됩니다. Linux 의 kernel.core_pattern 에 해당."
+      },
+      "help": "man coreadm",
+      "keywords": [
+        "코어 파일",
+        "core dump",
+        "coreadm",
+        "코어 위치",
+        "비정상 종료"
+      ],
+      "related": [
+        "solaris-pstack",
+        "solaris-mdb",
+        "solaris-dumpadm",
+        "gcore",
+        "sysctl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

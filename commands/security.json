@@ -12,7 +12,10 @@
       "task": "security.sessions",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -65,7 +68,15 @@
         "who",
         "last",
         "uptime"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "w, w -h, w {{USER}} 사용법이 같습니다. -u 는 Linux 와 달리 첫 줄(현재 시각·가동 시간·사용자 수·부하)만 보여 주고, -f 는 없습니다.",
+        "hpux": "w, w -h, w -s, w {{USER}} 사용법이 같습니다. -u 는 uptime 처럼 첫 줄만 보여 주고, -f 는 없습니다.",
+        "solaris": "w, w -h, w -s, w {{USER}} 사용법이 같습니다. -u 는 uptime 과 같은 첫 줄만 보여 주고, -f 는 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "who",
@@ -76,7 +87,10 @@
       "task": "security.sessions",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -126,6 +140,14 @@
         {
           "title": "sudo 이후에도 원래 로그인 계정 확인",
           "command": "who am i"
+        },
+        {
+          "title": "로그인 실패 기록 보기 (AIX)",
+          "command": "who /etc/security/failedlogin | tail -20",
+          "platforms": [
+            "aix"
+          ],
+          "note": "AIX 에는 lastb 가 없습니다. 실패 기록 파일을 who 로 읽습니다."
         }
       ],
       "cautions": [],
@@ -143,7 +165,15 @@
         "last",
         "whoami",
         "uptime"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-b, -r, -H, -q, -u, -a 와 who am i 가 같습니다. 로그인 실패 기록은 who /etc/security/failedlogin 으로 봅니다 (Linux 의 lastb 대응).",
+        "hpux": "-b, -r, -H, -q, -u, -a 와 who am i 가 같습니다.",
+        "solaris": "-b, -r, -H, -q, -u, -a 와 who am i 가 같습니다. 접속 정보는 /var/adm/utmpx 에서 읽습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "quser",
@@ -171,18 +201,6 @@
         {
           "flag": "/server:{{HOST}}",
           "desc": "원격 서버의 세션 조회"
-        },
-        {
-          "flag": "{{USER}}",
-          "desc": "특정 사용자만 조회"
-        },
-        {
-          "flag": "query session",
-          "desc": "세션 전체(콘솔·서비스 포함) 목록"
-        },
-        {
-          "flag": "logoff {{SESSION_ID}}",
-          "desc": "세션 강제 로그오프"
         }
       ],
       "examples": [
@@ -215,7 +233,36 @@
       "related": [
         "get-winevent",
         "win-shutdown"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "세션 조회·정리",
+          "type": "subcommand",
+          "note": "세션 상태가 '디스크' 이면 연결이 끊긴 채 남아 있는 세션입니다.",
+          "items": [
+            {
+              "cmd": "quser {{USER}}",
+              "desc": "특정 사용자의 세션만 조회"
+            },
+            {
+              "cmd": "query user /server:{{HOST}}",
+              "desc": "원격 서버 로그온 사용자 조회 (quser 와 같음)"
+            },
+            {
+              "cmd": "query session",
+              "desc": "콘솔·서비스 세션까지 포함한 전체 세션 목록"
+            },
+            {
+              "cmd": "logoff {{SESSION_ID}} [/server:{{HOST}}]",
+              "desc": "세션 강제 로그오프 (ID 는 quser 결과의 ID 열)",
+              "note": "저장하지 않은 작업이 모두 종료됩니다."
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "last",
@@ -226,7 +273,10 @@
       "task": "security.login-history",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -270,16 +320,38 @@
       "examples": [
         {
           "title": "최근 20건 로그인 이력",
-          "command": "last -n 20 -F -i"
+          "command": "last -n 20 -F -i",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "재부팅·종료 이력",
           "command": "last -x reboot shutdown | head",
-          "output": "reboot   system boot  5.14.0-427.el9.x86_64 Tue Oct 22 03:14   still running"
+          "output": "reboot   system boot  5.14.0-427.el9.x86_64 Tue Oct 22 03:14   still running",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "특정 기간 접속자",
-          "command": "last -s '2026-11-01 00:00' -t '2026-11-02 00:00'"
+          "command": "last -s '2026-11-01 00:00' -t '2026-11-02 00:00'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "최근 로그인·재부팅 이력 (Unix 공통)",
+          "command": "last | head -20\nlast reboot | head -5",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "note": "-F, -i, -s, -t, -x 같은 Linux 옵션은 없으므로 head 로 개수를 줄여 봅니다."
         }
       ],
       "cautions": [
@@ -300,7 +372,15 @@
         "w",
         "who",
         "journalctl"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "기록 파일은 /var/adm/wtmp 입니다. -f {{FILE}} 와 사용자·터미널 지정, last reboot 는 같고 -F, -i, -s, -t, -w, -x 는 없습니다.",
+        "hpux": "기록 파일은 /var/adm/wtmps (11i v3) 입니다. 최근 N건은 last -{{N}} 형식이며 -f, -R(원격 호스트 표시)이 있고 -F, -i, -s, -t, -x 는 없습니다.",
+        "solaris": "기록 파일은 /var/adm/wtmpx 입니다. -n {{N}}(또는 -{{N}}), -a(호스트명을 마지막 열에), -f 가 있고 -F, -i, -s, -t, -x 는 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lastb",
@@ -311,7 +391,8 @@
       "task": "security.login-history",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -346,11 +427,23 @@
       "examples": [
         {
           "title": "최근 로그인 실패 20건",
-          "command": "lastb -n 20 -i"
+          "command": "lastb -n 20 -i",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "실패 시도가 많은 출발지 IP 순위",
-          "command": "lastb -i | awk '{print $3}' | sort | uniq -c | sort -rn | head"
+          "command": "lastb -i | awk '{print $3}' | sort | uniq -c | sort -rn | head",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "최근 로그인 실패 (옵션 없이)",
+          "command": "lastb | head -20"
         },
         {
           "title": "SSH 실패 로그로 교차 확인",
@@ -362,7 +455,8 @@
         }
       ],
       "cautions": [
-        "btmp 에는 사용자가 실수로 아이디 칸에 입력한 비밀번호가 남을 수 있으므로 출력을 외부로 공유할 때 주의하세요."
+        "btmp 에는 사용자가 실수로 아이디 칸에 입력한 비밀번호가 남을 수 있으므로 출력을 외부로 공유할 때 주의하세요.",
+        "AIX·Solaris 에는 lastb 가 없습니다. AIX 는 who /etc/security/failedlogin, Solaris 는 /var/adm/loginlog (파일을 미리 만들어 두어야 하며 연속 실패가 RETRIES 횟수에 이를 때 기록) 를 확인하세요."
       ],
       "help": "man lastb",
       "keywords": [
@@ -377,7 +471,13 @@
         "last",
         "lastlog",
         "journalctl"
-      ]
+      ],
+      "platformNotes": {
+        "hpux": "기록 파일은 /var/adm/btmps (11i v3) 입니다. 최근 N건은 lastb -{{N}} 형식이며 -i, -F, -s, -t, -w 는 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lastlog",
@@ -425,7 +525,9 @@
           "command": "lastlog -b 90"
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "AIX·HP-UX·Solaris 에는 lastlog 가 없습니다. AIX 는 lsuser -a time_last_login time_last_unsuccessful_login unsuccessful_login_count {{USER}} 로 확인하며 시각은 epoch 초입니다. HP-UX·Solaris 는 last {{USER}} | head -1 로 대신합니다."
+      ],
       "platformNotes": {
         "debian": "Debian 13 등 최신 배포판 일부는 lastlog 대신 util-linux 의 lastlog2 를 사용합니다. 기준 버전(Ubuntu 22.04/24.04, Debian 12)에는 lastlog 가 있습니다."
       },
@@ -440,7 +542,10 @@
       "related": [
         "last",
         "lastb"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "getenforce",
@@ -466,6 +571,11 @@
           "title": "SELinux 모드 확인",
           "command": "getenforce",
           "output": "Enforcing"
+        },
+        {
+          "title": "현재 모드와 설정 파일 모드 비교",
+          "command": "getenforce\ngrep ^SELINUX= /etc/selinux/config",
+          "note": "둘이 다르면 setenforce 로 임시 변경된 상태입니다. sestatus 는 두 값을 한 번에 보여 줍니다 (Current mode / Mode from config file)."
         }
       ],
       "cautions": [],
@@ -486,7 +596,10 @@
       "related": [
         "setenforce",
         "sestatus"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "setenforce",
@@ -506,21 +619,37 @@
       "syntax": [
         "setenforce 0|1"
       ],
-      "options": [
-        {
-          "flag": "0 (Permissive)",
-          "desc": "차단하지 않고 위반만 기록"
-        },
-        {
-          "flag": "1 (Enforcing)",
-          "desc": "정책 위반을 차단"
-        }
-      ],
+      "options": [],
       "examples": [
         {
-          "title": "SELinux 원인 여부 잠깐 확인 후 되돌리기",
-          "command": "setenforce 0\n# 서비스 재시도\nsetenforce 1\nausearch -m AVC -ts recent",
-          "note": "ausearch 로 거부(AVC) 로그 확인 후 restorecon·semanage 로 해결"
+          "title": "SELinux 때문인지 확인하고 원복하기",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "getenforce",
+              "desc": "현재 모드 확인 (Enforcing)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "setenforce 0",
+              "desc": "임시로 Permissive 전환"
+            },
+            {
+              "prompt": "#",
+              "cmd": "systemctl restart {{SERVICE}}",
+              "desc": "문제 동작 재현. 이때 성공하면 SELinux 원인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "setenforce 1",
+              "desc": "즉시 Enforcing 으로 되돌림"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ausearch -m AVC -ts recent",
+              "desc": "거부 기록 확인 후 semanage·restorecon 으로 정식 조치"
+            }
+          ]
         },
         {
           "title": "영구 설정 확인",
@@ -551,7 +680,58 @@
         "sestatus",
         "semanage",
         "restorecon"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "인자",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "setenforce 0",
+              "desc": "Permissive: 차단하지 않고 위반만 기록 (setenforce Permissive 도 같음)"
+            },
+            {
+              "cmd": "setenforce 1",
+              "desc": "Enforcing: 정책 위반을 차단 (setenforce Enforcing 도 같음)"
+            }
+          ]
+        },
+        {
+          "title": "SELinux 모드 확인·변경 방법",
+          "type": "subcommand",
+          "columns": [
+            "지금 바로 (재부팅하면 원복)",
+            "영구 (/etc/selinux/config, 재부팅 후 적용)"
+          ],
+          "note": "sestatus 는 두 값을 함께 보여 줍니다. Current mode 는 지금 값, Mode from config file 은 설정 파일 값입니다.",
+          "items": [
+            {
+              "desc": "현재 모드 확인",
+              "left": "getenforce",
+              "right": "grep ^SELINUX= /etc/selinux/config"
+            },
+            {
+              "desc": "Permissive 로",
+              "left": "setenforce 0",
+              "right": "SELINUX=permissive"
+            },
+            {
+              "desc": "Enforcing 으로",
+              "left": "setenforce 1",
+              "right": "SELINUX=enforcing"
+            },
+            {
+              "desc": "완전히 끄기 (권장하지 않음)",
+              "left": "(런타임으로는 불가)",
+              "right": "SELINUX=disabled",
+              "note": "RHEL 9 는 config 의 disabled 대신 커널 인자 selinux=0 (grubby) 으로 끄도록 바뀌었습니다."
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sestatus",
@@ -611,7 +791,27 @@
         "getenforce",
         "setenforce",
         "semanage"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "/etc/selinux/config 항목",
+          "type": "directive",
+          "note": "파일을 바꾼 뒤에는 재부팅해야 적용됩니다. disabled 에서 다시 켤 때는 touch /.autorelabel 후 재부팅해 전체 relabel 이 일어납니다.",
+          "items": [
+            {
+              "cmd": "SELINUX=enforcing|permissive|disabled",
+              "desc": "부팅 시 적용할 모드 (getenforce 는 현재 값을 보여 줌)"
+            },
+            {
+              "cmd": "SELINUXTYPE=targeted",
+              "desc": "정책 종류 (기본 targeted, 다중 등급 보안은 mls)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "semanage",
@@ -635,35 +835,45 @@
       ],
       "options": [
         {
-          "flag": "port -l",
-          "desc": "포트 레이블 목록 (예: http_port_t 에 허용된 포트)"
-        },
-        {
-          "flag": "port -a -t {{TYPE}} -p tcp {{PORT}}",
-          "desc": "포트에 SELinux 타입 추가 (-m 수정, -d 삭제)"
-        },
-        {
-          "flag": "fcontext -l",
-          "desc": "파일 컨텍스트 규칙 목록"
-        },
-        {
-          "flag": "fcontext -a -t {{TYPE}} '{{REGEX}}'",
-          "desc": "경로 패턴에 컨텍스트 규칙 추가 (적용은 restorecon)"
-        },
-        {
-          "flag": "boolean -l",
-          "desc": "boolean 목록과 현재·기본 값"
-        },
-        {
-          "flag": "boolean -m --on {{BOOLEAN}}",
-          "desc": "boolean 영구 활성화 (--off 비활성화)"
-        },
-        {
           "flag": "-C",
           "desc": "(-l 과 함께) 로컬에서 추가·변경한 항목만 표시"
+        },
+        {
+          "flag": "-n",
+          "desc": "(-l 과 함께) 제목 줄 없이 출력 (스크립트용)"
         }
       ],
       "examples": [
+        {
+          "title": "서비스 포트를 바꿀 때 (변경 전 백업 포함)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "semanage export -f /root/semanage-$(date +%F).txt",
+              "desc": "현재 로컬 설정 백업"
+            },
+            {
+              "prompt": "#",
+              "cmd": "semanage port -l | grep http_port_t",
+              "desc": "허용된 포트 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "semanage port -a -t http_port_t -p tcp {{PORT}}",
+              "desc": "새 포트 허용 (다른 타입에 있으면 -m)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "systemctl restart {{SERVICE}}",
+              "desc": "서비스 재시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ss -ltnp | grep {{PORT}}",
+              "desc": "포트가 열렸는지 확인 (방화벽도 별도 허용 필요)"
+            }
+          ]
+        },
         {
           "title": "웹 서버를 8080 포트로 띄울 때",
           "command": "semanage port -l | grep http_port_t\nsemanage port -a -t http_port_t -p tcp 8080"
@@ -707,7 +917,106 @@
         "sestatus",
         "setenforce",
         "firewall-cmd"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "port: 포트 레이블",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "semanage port -l | grep {{TYPE}}",
+              "desc": "타입에 허용된 포트 확인 (예: http_port_t, ssh_port_t)"
+            },
+            {
+              "cmd": "semanage port -a -t {{TYPE}} -p tcp {{PORT}}",
+              "desc": "포트에 타입 추가"
+            },
+            {
+              "cmd": "semanage port -m -t {{TYPE}} -p tcp {{PORT}}",
+              "desc": "이미 다른 타입에 정의된 포트를 수정"
+            },
+            {
+              "cmd": "semanage port -d -t {{TYPE}} -p tcp {{PORT}}",
+              "desc": "로컬에서 추가한 포트 삭제 (정책 기본 포트는 삭제 불가)"
+            }
+          ]
+        },
+        {
+          "title": "fcontext: 파일 컨텍스트 규칙",
+          "type": "subcommand",
+          "note": "fcontext 는 규칙만 저장합니다. 기존 파일에는 restorecon 을 실행해야 반영됩니다.",
+          "items": [
+            {
+              "cmd": "semanage fcontext -l | grep '{{PATH}}'",
+              "desc": "경로에 적용되는 규칙 확인"
+            },
+            {
+              "cmd": "semanage fcontext -a -t {{TYPE}} '{{PATH}}(/.*)?'",
+              "desc": "디렉토리와 하위 전체에 타입 규칙 추가"
+            },
+            {
+              "cmd": "semanage fcontext -a -e {{SOURCE_PATH}} {{PATH}}",
+              "desc": "기존 경로와 같은 규칙을 따르게 지정 (예: -e /var/www /web)"
+            },
+            {
+              "cmd": "semanage fcontext -d '{{PATH}}(/.*)?'",
+              "desc": "로컬에서 추가한 규칙 삭제"
+            },
+            {
+              "cmd": "restorecon -Rv {{PATH}}",
+              "desc": "규칙을 실제 파일에 적용 (fcontext 다음에 반드시 실행)"
+            }
+          ]
+        },
+        {
+          "title": "boolean: 기능 스위치",
+          "type": "subcommand",
+          "note": "getsebool -a 로도 현재 값을 볼 수 있습니다.",
+          "items": [
+            {
+              "cmd": "semanage boolean -l | grep {{BOOLEAN}}",
+              "desc": "현재 값과 기본 값 확인"
+            },
+            {
+              "cmd": "semanage boolean -m --on {{BOOLEAN}}",
+              "desc": "영구 활성화 (setsebool -P {{BOOLEAN}} on 과 같음)"
+            },
+            {
+              "cmd": "semanage boolean -m --off {{BOOLEAN}}",
+              "desc": "영구 비활성화"
+            }
+          ]
+        },
+        {
+          "title": "백업·기타",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "semanage export -f {{FILE}}",
+              "desc": "로컬 변경 사항(port, fcontext, boolean 등)을 파일로 백업"
+            },
+            {
+              "cmd": "semanage import -f {{FILE}}",
+              "desc": "백업 파일의 변경 사항 적용 (다른 서버에 같은 설정 복제)"
+            },
+            {
+              "cmd": "semanage permissive -a {{DOMAIN_TYPE}}",
+              "desc": "특정 도메인만 permissive (예: httpd_t). 시스템 전체 setenforce 0 보다 범위가 좁음"
+            },
+            {
+              "cmd": "semanage permissive -d {{DOMAIN_TYPE}}",
+              "desc": "도메인 permissive 해제"
+            },
+            {
+              "cmd": "semanage login -l",
+              "desc": "Linux 계정과 SELinux 사용자 매핑 확인"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "restorecon",
@@ -787,7 +1096,10 @@
         "getenforce",
         "ls",
         "mv"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "aa-status",
@@ -869,7 +1181,10 @@
       "related": [
         "journalctl",
         "systemctl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "openssl",
@@ -880,7 +1195,10 @@
       "task": "security.certificate",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "safe",
@@ -888,52 +1206,72 @@
       "summary": "인증서 내용·만료일 확인, CSR 생성, 형식 변환",
       "description": "인증서 파일이나 원격 서버의 인증서를 조회하고, 만료일·체인을 확인하며, 개인키·CSR 생성과 PEM·PFX 형식 변환을 합니다. 하위 명령(x509, s_client, req, pkcs12 등)으로 기능을 나눠 사용합니다.",
       "syntax": [
-        "openssl x509 -in {{FILE}} -noout -text",
-        "openssl s_client -connect {{HOST}}:{{PORT}} -servername {{HOST}}"
+        "openssl x509 -in {{CERT}} -noout -text",
+        "openssl s_client -connect {{HOST}}:{{PORT}} -servername {{HOST}}",
+        "openssl {{SUBCOMMAND}} [{{OPTIONS}}]"
       ],
       "options": [
         {
-          "flag": "x509 -noout -text",
-          "desc": "인증서 전체 내용 (주체, 발급자, SAN, 유효기간)"
+          "flag": "-in {{FILE}}",
+          "desc": "입력 파일 (인증서·키·CSR·PFX)"
         },
         {
-          "flag": "x509 -noout -enddate / -dates",
-          "desc": "만료일 / 시작·만료일만"
+          "flag": "-out {{FILE}}",
+          "desc": "출력 파일"
         },
         {
-          "flag": "x509 -noout -subject -issuer",
-          "desc": "주체·발급자만"
+          "flag": "-noout",
+          "desc": "인코딩된 원문(PEM)을 출력하지 않음 (내용 확인용)"
         },
         {
-          "flag": "x509 -checkend {{SECONDS}}",
-          "desc": "지정 초 안에 만료되면 종료 코드 1 (모니터링용)"
+          "flag": "-text",
+          "desc": "사람이 읽을 수 있는 형태로 전체 내용 출력"
         },
         {
-          "flag": "s_client -connect {{HOST}}:{{PORT}}",
-          "desc": "원격 서버에 TLS 접속해 인증서·체인 확인"
+          "flag": "-inform DER / -outform DER",
+          "desc": "입력·출력 형식 지정 (기본 PEM)"
         },
         {
-          "flag": "s_client -servername {{HOST}}",
-          "desc": "SNI 지정 (한 IP 에 여러 인증서가 있을 때 필수)"
-        },
-        {
-          "flag": "s_client -showcerts",
-          "desc": "서버가 보내는 체인 전체 출력"
-        },
-        {
-          "flag": "req -new -newkey rsa:2048 -nodes",
-          "desc": "새 개인키와 CSR 생성"
-        },
-        {
-          "flag": "pkcs12",
-          "desc": "PFX(P12) ↔ PEM 변환"
-        },
-        {
-          "flag": "verify -CAfile {{FILE}}",
-          "desc": "인증서가 CA 로 검증되는지 확인"
+          "flag": "-CAfile {{CA_FILE}}",
+          "desc": "검증에 쓸 CA 인증서 파일 (verify, s_client)"
         }
       ],
       "examples": [
+        {
+          "title": "인증서 교체 전 점검 (만료 → 체인 → 키 짝)",
+          "steps": [
+            {
+              "prompt": "$",
+              "cmd": "openssl x509 -in {{CERT}} -noout -subject -issuer -dates",
+              "desc": "새 인증서의 주체·발급자·유효기간 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "openssl x509 -in {{CERT}} -noout -text | grep -A1 'Subject Alternative Name'",
+              "desc": "SAN 에 서비스 도메인이 있는지 확인"
+            },
+            {
+              "prompt": "$",
+              "cmd": "openssl verify -CAfile {{ROOT_CA}} -untrusted {{CHAIN}} {{CERT}}",
+              "desc": "중간·루트 체인으로 검증 (OK 확인)"
+            },
+            {
+              "prompt": "$",
+              "cmd": "openssl x509 -noout -pubkey -in {{CERT}} | openssl sha256",
+              "desc": "인증서 공개키 해시"
+            },
+            {
+              "prompt": "$",
+              "cmd": "openssl pkey -pubout -in {{KEY}} | openssl sha256",
+              "desc": "개인키 공개키 해시. 위와 같아야 짝이 맞음"
+            },
+            {
+              "prompt": "$",
+              "cmd": "echo | openssl s_client -connect {{HOST}}:443 -servername {{HOST}} 2>/dev/null | openssl x509 -noout -dates",
+              "desc": "교체·재시작 후 실제 서비스 인증서 만료일 재확인"
+            }
+          ]
+        },
         {
           "title": "원격 서버 인증서 만료일 확인",
           "command": "echo | openssl s_client -connect {{HOST}}:443 -servername {{HOST}} 2>/dev/null | openssl x509 -noout -subject -issuer -dates",
@@ -953,17 +1291,21 @@
           "command": "openssl pkcs12 -in {{FILE}}.pfx -clcerts -nokeys -out cert.pem\nopenssl pkcs12 -in {{FILE}}.pfx -nocerts -nodes -out key.pem"
         },
         {
-          "title": "인증서와 개인키 짝 확인",
-          "command": "openssl x509 -noout -pubkey -in cert.pem | openssl sha256\nopenssl pkey -pubout -in key.pem | openssl sha256",
-          "note": "두 해시가 같으면 짝이 맞음"
+          "title": "서버가 보내는 체인 확인",
+          "command": "echo | openssl s_client -connect {{HOST}}:443 -servername {{HOST}} -showcerts 2>/dev/null | grep -E ' s:| i:'",
+          "note": "s: 는 주체, i: 는 발급자입니다. 0 번(서버 인증서)의 i 와 1 번의 s 가 이어져야 합니다."
         }
       ],
       "cautions": [
         "-nodes 로 만든 개인키는 암호화되지 않으므로 권한을 600 으로 제한하세요.",
-        "s_client 에서 -servername 을 빼면 기본 인증서가 보여 실제와 다른 결과가 나올 수 있습니다."
+        "s_client 에서 -servername 을 빼면 기본 인증서가 보여 실제와 다른 결과가 나올 수 있습니다.",
+        "구버전(1.0.x 이하)에는 -ext, -addext(1.1.1 이상), -tls1_3 이 없습니다. Unix 서버에서는 openssl version 으로 버전을 먼저 확인하세요."
       ],
       "platformNotes": {
-        "rhel": "RHEL 9 는 OpenSSL 3.0 기반이며 SHA-1 서명 등 구형 알고리즘이 기본 정책에서 거부될 수 있습니다 (update-crypto-policies 참고)."
+        "rhel": "RHEL 9 는 OpenSSL 3.0 기반이며 SHA-1 서명 등 구형 알고리즘이 기본 정책에서 거부될 수 있습니다 (update-crypto-policies 참고).",
+        "aix": "AIX 7.2·7.3 은 openssl.base 파일셋으로 /usr/bin/openssl 이 제공됩니다. 버전이 낮으면 -ext, -addext, -tls1_3 이 없으니 openssl version 으로 먼저 확인하세요.",
+        "hpux": "HP-UX OpenSSL 제품으로 /opt/openssl/bin/openssl 에 설치되며 PATH 에 없을 수 있습니다. 버전이 오래된 경우가 많아 -ext, -addext, -tls1_3 등이 없을 수 있습니다.",
+        "solaris": "Solaris 11 은 /usr/bin/openssl, Solaris 10 은 /usr/sfw/bin/openssl (0.9.7 계열로 매우 오래되어 -servername, pkey 를 지원하지 않음) 입니다."
       },
       "help": "man openssl, man openssl-x509, man openssl-s_client",
       "keywords": [
@@ -975,14 +1317,188 @@
         "openssl",
         "x509",
         "s_client",
-        "pfx 변환"
+        "pfx 변환",
+        "키 짝 확인"
       ],
       "related": [
         "update-ca-trust",
         "update-ca-certificates",
         "curl",
         "sha256sum"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "x509: 인증서 파일 확인",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -text",
+              "desc": "전체 내용 (주체, 발급자, SAN, 유효기간, 키 길이)"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -dates",
+              "desc": "시작일(notBefore)·만료일(notAfter)"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -subject -issuer",
+              "desc": "주체·발급자만"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -ext subjectAltName",
+              "desc": "SAN(도메인 목록)만",
+              "version": "OpenSSL 1.1.1 이상"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -checkend {{SECONDS}}",
+              "desc": "지정 초 안에 만료되면 종료 코드 1 (2592000 = 30일)"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}} -noout -serial -fingerprint -sha256",
+              "desc": "일련번호·지문 (Windows 저장소와 대조할 때)"
+            },
+            {
+              "cmd": "openssl x509 -in {{CERT}}.der -inform DER -out {{CERT}}.pem",
+              "desc": "DER(.cer) → PEM 변환"
+            }
+          ]
+        },
+        {
+          "title": "s_client: 원격 서버 TLS 확인",
+          "type": "subcommand",
+          "note": "-servername 을 빼면 SNI 가 전달되지 않아 서버 기본 인증서가 보일 수 있습니다.",
+          "items": [
+            {
+              "cmd": "echo | openssl s_client -connect {{HOST}}:{{PORT}} -servername {{HOST}}",
+              "desc": "접속해 인증서·협상 결과 확인 (echo 로 바로 종료)"
+            },
+            {
+              "cmd": "openssl s_client -connect {{HOST}}:{{PORT}} -servername {{HOST}} -showcerts",
+              "desc": "서버가 보내는 체인 전체 출력 (중간 인증서 누락 확인)"
+            },
+            {
+              "cmd": "openssl s_client -connect {{HOST}}:{{PORT}} -CAfile {{CA_FILE}}",
+              "desc": "지정 CA 로 검증 (출력의 Verify return code 가 0 이면 정상)"
+            },
+            {
+              "cmd": "openssl s_client -connect {{HOST}}:{{PORT}} -tls1_2",
+              "desc": "TLS 1.2 로만 접속 시도 (-tls1_3 은 1.1.1 이상)"
+            },
+            {
+              "cmd": "openssl s_client -connect {{HOST}}:25 -starttls smtp",
+              "desc": "STARTTLS 서비스 확인 (smtp, imap, pop3, ftp 등)"
+            }
+          ]
+        },
+        {
+          "title": "req: 개인키·CSR",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "openssl req -new -newkey rsa:2048 -nodes -keyout {{KEY}} -out {{CSR}}",
+              "desc": "새 개인키와 CSR 생성"
+            },
+            {
+              "cmd": "openssl req -new -key {{KEY}} -out {{CSR}}",
+              "desc": "기존 개인키로 CSR 생성 (갱신)"
+            },
+            {
+              "cmd": "openssl req -in {{CSR}} -noout -text",
+              "desc": "CSR 내용 확인 (CN, SAN 이 맞는지 제출 전 점검)"
+            },
+            {
+              "cmd": "openssl req -x509 -newkey rsa:2048 -nodes -days 365 -keyout {{KEY}} -out {{CERT}}",
+              "desc": "테스트용 자체 서명 인증서"
+            }
+          ]
+        },
+        {
+          "title": "pkcs12: PFX(P12) 변환",
+          "type": "subcommand",
+          "note": "OpenSSL 3.0 으로 만든 PFX 를 오래된 Windows·Java 가 못 읽으면 -export 에 -legacy 를 붙입니다.",
+          "items": [
+            {
+              "cmd": "openssl pkcs12 -in {{FILE}}.pfx -info -noout",
+              "desc": "PFX 구조 확인 (비밀번호 입력)"
+            },
+            {
+              "cmd": "openssl pkcs12 -in {{FILE}}.pfx -clcerts -nokeys -out {{CERT}}",
+              "desc": "PFX 에서 서버 인증서만 추출"
+            },
+            {
+              "cmd": "openssl pkcs12 -in {{FILE}}.pfx -nocerts -nodes -out {{KEY}}",
+              "desc": "PFX 에서 개인키만 추출 (암호화 해제됨)"
+            },
+            {
+              "cmd": "openssl pkcs12 -export -in {{CERT}} -inkey {{KEY}} -certfile {{CHAIN}} -out {{FILE}}.pfx",
+              "desc": "인증서·키·체인을 PFX 로 묶기 (IIS·Java 용)"
+            }
+          ]
+        },
+        {
+          "title": "verify·키 확인",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "openssl verify -CAfile {{CA_FILE}} {{CERT}}",
+              "desc": "CA 로 인증서 검증 (OK 가 나오면 정상)"
+            },
+            {
+              "cmd": "openssl verify -CAfile {{ROOT_CA}} -untrusted {{CHAIN}} {{CERT}}",
+              "desc": "루트 + 중간 인증서로 체인 검증"
+            },
+            {
+              "cmd": "openssl rsa -in {{KEY}} -check -noout",
+              "desc": "RSA 개인키 무결성 확인"
+            },
+            {
+              "cmd": "openssl ec -in {{KEY}} -check -noout",
+              "desc": "EC 개인키 무결성 확인"
+            },
+            {
+              "cmd": "openssl pkey -in {{KEY}} -noout -text",
+              "desc": "키 종류·길이 확인 (RSA·EC 공통, OpenSSL 1.0 이상)"
+            }
+          ]
+        },
+        {
+          "title": "인증서·개인키 짝 확인",
+          "type": "subcommand",
+          "columns": [
+            "인증서 쪽",
+            "개인키 쪽"
+          ],
+          "note": "두 칸의 결과 해시가 같아야 짝이 맞습니다. CSR 은 openssl req -noout -modulus -in {{CSR}} | openssl md5 로 같은 방식 비교.",
+          "items": [
+            {
+              "desc": "공개키 해시 비교 (RSA·EC 공통)",
+              "left": "openssl x509 -noout -pubkey -in {{CERT}} | openssl sha256",
+              "right": "openssl pkey -pubout -in {{KEY}} | openssl sha256"
+            },
+            {
+              "desc": "modulus 해시 비교 (RSA 키)",
+              "left": "openssl x509 -noout -modulus -in {{CERT}} | openssl md5",
+              "right": "openssl rsa -noout -modulus -in {{KEY}} | openssl md5"
+            }
+          ]
+        },
+        {
+          "title": "기타",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "openssl version -a",
+              "desc": "버전·빌드 정보 (구버전이면 일부 옵션 없음)"
+            },
+            {
+              "cmd": "openssl dgst -sha256 {{FILE}}",
+              "desc": "파일 SHA-256 해시 (sha256sum 이 없는 Unix 에서도 사용)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "update-ca-trust",
@@ -1002,16 +1518,7 @@
       "syntax": [
         "update-ca-trust [extract]"
       ],
-      "options": [
-        {
-          "flag": "extract",
-          "desc": "source 디렉토리의 인증서로 통합 신뢰 저장소 재생성 (인자 생략 시 기본 동작)"
-        },
-        {
-          "flag": "trust list",
-          "desc": "(별도 명령) 신뢰하는 인증서 목록 확인"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "사설 CA 등록",
@@ -1043,6 +1550,29 @@
       "related": [
         "openssl",
         "curl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      },
+      "commandGroups": [
+        {
+          "title": "서브 명령·확인",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "update-ca-trust extract",
+              "desc": "source 디렉토리의 인증서로 통합 신뢰 저장소 재생성 (인자 생략 시 기본 동작)"
+            },
+            {
+              "cmd": "trust list | grep -i '{{CA_NAME}}'",
+              "desc": "(별도 명령) 신뢰 저장소에 등록되었는지 확인"
+            },
+            {
+              "cmd": "/etc/pki/ca-trust/source/anchors/",
+              "desc": "사설 CA 인증서를 넣는 위치 (PEM 또는 DER)"
+            }
+          ]
+        }
       ]
     },
     {
@@ -1104,7 +1634,10 @@
       "related": [
         "openssl",
         "curl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "certutil",
@@ -1128,42 +1661,47 @@
       ],
       "options": [
         {
-          "flag": "-store {{STORE}}",
-          "desc": "로컬 컴퓨터 저장소 조회 (My=개인, Root=신뢰 루트, CA=중간)"
-        },
-        {
           "flag": "-user",
           "desc": "로컬 컴퓨터 대신 현재 사용자 저장소 대상"
         },
         {
-          "flag": "-addstore {{STORE}} {{FILE}}",
-          "desc": "인증서를 저장소에 추가"
+          "flag": "-f",
+          "desc": "확인 없이 덮어쓰기"
         },
         {
-          "flag": "-delstore {{STORE}} {{SERIAL}}",
-          "desc": "저장소에서 인증서 삭제"
+          "flag": "-v",
+          "desc": "자세한 출력"
         },
         {
-          "flag": "-dump {{FILE}}",
-          "desc": "인증서·PFX 파일 내용 출력"
-        },
-        {
-          "flag": "-verify -urlfetch {{FILE}}",
-          "desc": "체인과 CRL/OCSP 해지 여부 검증"
-        },
-        {
-          "flag": "-importpfx {{FILE}}",
-          "desc": "PFX 를 개인 저장소로 가져오기"
-        },
-        {
-          "flag": "-hashfile {{FILE}} {{ALGORITHM}}",
-          "desc": "파일 해시 계산 (MD5, SHA1, SHA256, SHA512)"
+          "flag": "-p {{PASSWORD}}",
+          "desc": "PFX 가져오기·내보내기 비밀번호"
         }
       ],
       "examples": [
         {
-          "title": "사설 루트 CA 를 신뢰 루트에 등록",
-          "command": "certutil -addstore Root {{FILE}}.cer"
+          "title": "사설 루트 CA 등록 (확인 → 등록 → 검증)",
+          "steps": [
+            {
+              "prompt": "C:\\>",
+              "cmd": "certutil -dump {{FILE}}.cer",
+              "desc": "주체·발급자·만료일·지문이 받은 정보와 같은지 확인"
+            },
+            {
+              "prompt": "C:\\>",
+              "cmd": "certutil -addstore Root {{FILE}}.cer",
+              "desc": "로컬 컴퓨터 신뢰 루트에 등록 (관리자 CMD)"
+            },
+            {
+              "prompt": "C:\\>",
+              "cmd": "certutil -store Root | findstr /i \"{{CA_NAME}}\"",
+              "desc": "등록 확인"
+            },
+            {
+              "prompt": "C:\\>",
+              "cmd": "certutil -verify -urlfetch {{SERVER_CERT}}.cer",
+              "desc": "해당 CA 로 발급된 서버 인증서가 검증되는지 확인"
+            }
+          ]
         },
         {
           "title": "개인 저장소 인증서 목록·만료일",
@@ -1196,7 +1734,87 @@
         "certlm-msc",
         "get-filehash",
         "openssl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "인증서 저장소",
+          "type": "subcommand",
+          "note": "Linux 의 openssl x509 -serial 로 본 일련번호와 대조할 수 있습니다.",
+          "items": [
+            {
+              "cmd": "certutil -store My",
+              "desc": "로컬 컴퓨터 개인 저장소 (서버 인증서, 만료일·일련번호 확인)"
+            },
+            {
+              "cmd": "certutil -store Root",
+              "desc": "신뢰할 수 있는 루트 인증 기관"
+            },
+            {
+              "cmd": "certutil -store CA",
+              "desc": "중간 인증 기관"
+            },
+            {
+              "cmd": "certutil -user -store My",
+              "desc": "현재 사용자 개인 저장소"
+            },
+            {
+              "cmd": "certutil -addstore Root {{FILE}}.cer",
+              "desc": "신뢰 루트에 인증서 추가 (중간 인증서는 CA)"
+            },
+            {
+              "cmd": "certutil -delstore My {{SERIAL}}",
+              "desc": "저장소에서 인증서 삭제 (확인 없음)"
+            },
+            {
+              "cmd": "certutil -repairstore My {{SERIAL}}",
+              "desc": "인증서와 개인키 연결 복구 (가져온 뒤 개인키 없음으로 보일 때)"
+            }
+          ]
+        },
+        {
+          "title": "PFX 가져오기·내보내기",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "certutil -importpfx {{FILE}}.pfx",
+              "desc": "PFX 를 로컬 컴퓨터 개인 저장소로 가져오기 (비밀번호 입력)"
+            },
+            {
+              "cmd": "certutil -p {{PASSWORD}} -exportPFX My {{SERIAL}} {{FILE}}.pfx",
+              "desc": "개인키 포함 PFX 로 내보내기 (내보내기 가능 키만)"
+            }
+          ]
+        },
+        {
+          "title": "파일 확인·변환",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "certutil -dump {{FILE}}",
+              "desc": "인증서·PFX·CSR 파일 내용 출력"
+            },
+            {
+              "cmd": "certutil -verify -urlfetch {{FILE}}.cer",
+              "desc": "체인 구성과 CRL·OCSP 해지 여부 검증"
+            },
+            {
+              "cmd": "certutil -hashfile {{FILE}} SHA256",
+              "desc": "파일 해시 (MD5, SHA1, SHA256, SHA384, SHA512)"
+            },
+            {
+              "cmd": "certutil -encode {{IN_FILE}} {{OUT_FILE}}",
+              "desc": "Base64 인코딩 (DER → PEM 형태)"
+            },
+            {
+              "cmd": "certutil -decode {{IN_FILE}} {{OUT_FILE}}",
+              "desc": "Base64 디코딩"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "certlm-msc",
@@ -1218,28 +1836,7 @@
       "syntax": [
         "certlm.msc"
       ],
-      "options": [
-        {
-          "flag": "개인 → 인증서",
-          "desc": "서버 인증서(IIS·RDP 등) 위치"
-        },
-        {
-          "flag": "신뢰할 수 있는 루트 인증 기관",
-          "desc": "루트 CA 목록"
-        },
-        {
-          "flag": "우클릭 → 모든 작업 → 가져오기",
-          "desc": "CER·PFX 가져오기"
-        },
-        {
-          "flag": "우클릭 → 모든 작업 → 개인 키 관리",
-          "desc": "서비스 계정에 개인키 읽기 권한 부여"
-        },
-        {
-          "flag": "우클릭 → 모든 작업 → 내보내기",
-          "desc": "PFX(개인키 포함) 또는 CER 로 내보내기"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "로컬 컴퓨터 인증서 관리 열기",
@@ -1263,7 +1860,38 @@
       ],
       "related": [
         "certutil"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "개인 → 인증서",
+              "desc": "서버 인증서(IIS·RDP 등) 위치"
+            },
+            {
+              "cmd": "신뢰할 수 있는 루트 인증 기관",
+              "desc": "루트 CA 목록"
+            },
+            {
+              "cmd": "우클릭 → 모든 작업 → 가져오기",
+              "desc": "CER·PFX 가져오기"
+            },
+            {
+              "cmd": "우클릭 → 모든 작업 → 개인 키 관리",
+              "desc": "서비스 계정에 개인키 읽기 권한 부여"
+            },
+            {
+              "cmd": "우클릭 → 모든 작업 → 내보내기",
+              "desc": "PFX(개인키 포함) 또는 CER 로 내보내기"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sha256sum",
@@ -1321,9 +1949,16 @@
         {
           "title": "해시 목록 만들고 나중에 검증 (전송 전후 비교)",
           "command": "sha256sum *.tar.gz > SHA256SUMS\nsha256sum -c SHA256SUMS"
+        },
+        {
+          "title": "Unix 서버와 같은 방법으로 해시 비교",
+          "command": "openssl dgst -sha256 {{FILE}}",
+          "note": "sha256sum 이 없는 AIX·HP-UX·Solaris 에서도 openssl 로 같은 값을 얻을 수 있습니다."
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "AIX·HP-UX·Solaris 에는 기본으로 sha256sum 이 없습니다. Solaris 는 digest -a sha256 {{FILE}}, AIX 는 csum -h SHA256 {{FILE}}, HP-UX 는 openssl dgst -sha256 {{FILE}} 을 사용합니다."
+      ],
       "help": "man sha256sum",
       "keywords": [
         "해시",
@@ -1336,7 +1971,10 @@
       "related": [
         "md5sum",
         "openssl"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "md5sum",
@@ -1387,7 +2025,8 @@
         }
       ],
       "cautions": [
-        "MD5 는 보안상 취약합니다. 변조 검증에는 sha256sum 을 쓰세요."
+        "MD5 는 보안상 취약합니다. 변조 검증에는 sha256sum 을 쓰세요.",
+        "AIX·HP-UX·Solaris 에는 기본으로 md5sum 이 없습니다. Solaris 는 digest -a md5 {{FILE}}, AIX 는 csum -h MD5 {{FILE}}, HP-UX 는 openssl dgst -md5 {{FILE}} 을 사용합니다."
       ],
       "help": "man md5sum",
       "keywords": [
@@ -1400,7 +2039,10 @@
       ],
       "related": [
         "sha256sum"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-filehash",
@@ -1465,7 +2107,10 @@
       ],
       "related": [
         "certutil"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

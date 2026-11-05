@@ -1,0 +1,422 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "package",
+  "commands": [
+    {
+      "id": "solaris-pkg",
+      "name": "pkg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.install",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Solaris 11 IPS 패키지 조회·설치·업데이트(SRU)",
+      "description": "Solaris 11 의 패키지 관리자(IPS)입니다. 저장소(publisher)에서 패키지를 검색·설치·삭제하고, pkg update 로 시스템 전체를 새 SRU 로 올립니다. 커널 등 핵심 패키지가 바뀌면 자동으로 새 부트 환경(BE)을 만들어 그쪽에 적용하므로 재부팅 후 문제가 있으면 이전 BE 로 돌아갈 수 있습니다.",
+      "syntax": ["pkg {{SUBCOMMAND}} [{{OPTIONS}}] [{{PKG_FMRI}}...]"],
+      "options": [
+        {"flag": "-n", "desc": "install/update/uninstall 시 실제로 하지 않고 미리보기 (dry-run)"},
+        {"flag": "-v", "desc": "변경될 패키지와 BE 생성 여부 등 상세 출력"},
+        {"flag": "--accept", "desc": "라이선스 동의가 필요한 패키지 자동 동의"},
+        {"flag": "--be-name {{BE}}", "desc": "새 BE 를 만들 때 이름 지정"},
+        {"flag": "--require-new-be", "desc": "변경 내용과 관계없이 반드시 새 BE 에 적용"},
+        {"flag": "-R {{ROOT}}", "desc": "다른 루트(마운트한 BE 등)에 대해 실행"}
+      ],
+      "commandGroups": [
+        {"title": "조회", "type": "subcommand", "items": [
+          {"cmd": "pkg list [{{PKG}}]", "desc": "설치된 패키지 목록 (-a 설치 안 된 것 포함, -u 업데이트 가능한 것만)"},
+          {"cmd": "pkg info {{PKG}}", "desc": "패키지 정보·버전 (-r 저장소 기준)"},
+          {"cmd": "pkg info entire", "desc": "현재 SRU 수준 확인"},
+          {"cmd": "pkg search [-r | -l] {{KEYWORD}}", "desc": "패키지·파일 검색 (-r 저장소, -l 설치된 것)"},
+          {"cmd": "pkg contents {{PKG}}", "desc": "패키지에 포함된 파일 목록"},
+          {"cmd": "pkg history [-l]", "desc": "pkg 작업 이력 (-l 상세)"}
+        ]},
+        {"title": "설치·업데이트", "type": "subcommand", "items": [
+          {"cmd": "pkg install {{PKG}}", "desc": "패키지 설치"},
+          {"cmd": "pkg uninstall {{PKG}}", "desc": "패키지 삭제"},
+          {"cmd": "pkg update", "desc": "설치된 모든 패키지를 최신 SRU 로 업데이트"},
+          {"cmd": "pkg update entire@{{VERSION}}", "desc": "특정 SRU 버전으로 업데이트 (pkg list -af entire 로 가능한 버전 확인)"}
+        ]},
+        {"title": "저장소·무결성", "type": "subcommand", "items": [
+          {"cmd": "pkg publisher", "desc": "설정된 저장소(publisher)와 URI 확인"},
+          {"cmd": "pkg set-publisher -G '*' -g {{URI}} solaris", "desc": "solaris publisher 의 저장소 주소 교체 (로컬 저장소로 전환)"},
+          {"cmd": "pkg verify [-v] [{{PKG}}]", "desc": "설치된 파일이 패키지 정의와 같은지 검사 (권한·내용 변조 점검)"},
+          {"cmd": "pkg fix {{PKG}}", "desc": "verify 에서 발견된 문제를 패키지 원본대로 복구"}
+        ]}
+      ],
+      "examples": [
+        {"title": "SRU 업데이트 (BE 로 안전하게)", "steps": [
+          {"prompt": "#", "cmd": "pkg info entire | grep -i version", "desc": "현재 SRU 확인"},
+          {"prompt": "#", "cmd": "beadm create {{BACKUP_BE}}", "desc": "현재 상태 백업 BE 생성 (롤백 지점)"},
+          {"prompt": "#", "cmd": "pkg update -nv", "desc": "바뀔 패키지와 새 BE 생성 여부 미리보기"},
+          {"prompt": "#", "cmd": "pkg update --accept --be-name {{NEW_BE}}", "desc": "업데이트 실행 (새 BE 에 적용)"},
+          {"prompt": "#", "cmd": "beadm list", "desc": "새 BE 의 Active 열에 R(다음 부팅) 표시 확인"},
+          {"prompt": "#", "cmd": "init 6", "desc": "재부팅 후 pkg info entire 로 새 버전 확인. 문제 시 beadm activate {{BACKUP_BE}} 후 init 6"}
+        ]},
+        {"title": "패키지 설치 전 미리보기", "command": "pkg install -nv {{PKG}}\npkg install {{PKG}}"},
+        {"title": "시스템 파일 변조 점검", "command": "pkg verify -v 2>&1 | tee /var/tmp/pkg_verify.txt", "note": "관리자가 의도적으로 바꾼 설정 파일도 ERROR 로 보일 수 있습니다."},
+        {"title": "업데이트 가능한 패키지 확인", "command": "pkg list -u"}
+      ],
+      "cautions": [
+        "pkg update 는 publisher 에 접근할 수 있어야 합니다. 폐쇄망은 로컬 저장소(pkgrepo)를 만들어 set-publisher 로 지정하세요.",
+        "pkg fix 는 수정된 설정 파일을 패키지 원본으로 되돌릴 수 있습니다. 먼저 pkg verify 결과를 검토하세요.",
+        "Zone 이 있는 시스템은 pkg update 가 Zone 도 함께 업데이트합니다. Zone 수와 크기만큼 시간이 늘어납니다."
+      ],
+      "versions": {"solaris": "11 이상"},
+      "platformNotes": {"solaris": "Solaris 11 이상. Solaris 10 은 pkgadd/pkginfo(SVR4 패키지)와 patchadd(패치)를 씁니다. Solaris 11 에서도 SVR4 패키지 설치는 pkgadd 로 가능합니다."},
+      "help": "man pkg · pkg help",
+      "keywords": ["패키지 설치", "IPS", "SRU", "업데이트", "pkg update", "pkg", "publisher", "패치"],
+      "related": ["solaris-beadm", "solaris-pkgrepo", "solaris-pkgadd", "solaris-etc-release", "dnf"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-pkgrepo",
+      "name": "pkgrepo",
+      "aliases": ["pkgrecv"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.offline",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Solaris 11 로컬 IPS 저장소 생성·관리 (폐쇄망)",
+      "description": "인터넷이 안 되는 운영망에서 쓸 IPS 패키지 저장소를 만들고 관리합니다. Oracle 이 제공하는 저장소 ISO(SRU repo 이미지)를 풀어 쓰거나, pkgrecv 로 다른 저장소에서 패키지를 받아 채웁니다. 저장소를 만든 뒤 각 서버에서 pkg set-publisher 로 이 위치를 지정합니다.",
+      "syntax": ["pkgrepo create {{REPO_DIR}}", "pkgrepo info | list | rebuild | verify -s {{REPO}}", "pkgrecv -s {{SRC_REPO}} -d {{DST_REPO}} {{PKG}}..."],
+      "options": [
+        {"flag": "-s {{REPO}}", "desc": "대상 저장소 경로·URI"},
+        {"flag": "pkgrecv -s {{SRC}} -d {{DST}}", "desc": "원본 저장소에서 대상 저장소로 패키지 복사"}
+      ],
+      "commandGroups": [
+        {"title": "서브 명령", "type": "subcommand", "items": [
+          {"cmd": "pkgrepo create {{REPO_DIR}}", "desc": "빈 저장소 생성"},
+          {"cmd": "pkgrepo -s {{REPO}} set publisher/prefix=solaris", "desc": "기본 publisher 이름 설정"},
+          {"cmd": "pkgrepo info -s {{REPO}}", "desc": "publisher 별 패키지 수·갱신 시각"},
+          {"cmd": "pkgrepo list -s {{REPO}} entire", "desc": "저장소에 있는 entire(SRU) 버전 목록"},
+          {"cmd": "pkgrepo rebuild -s {{REPO}}", "desc": "카탈로그·검색 인덱스 재생성"},
+          {"cmd": "pkgrepo verify -s {{REPO}}", "desc": "저장소 무결성 검사"}
+        ]}
+      ],
+      "examples": [
+        {"title": "SRU ISO 로 로컬 저장소 구성", "steps": [
+          {"prompt": "#", "cmd": "zfs create -o mountpoint=/export/repo rpool/export/repo", "desc": "저장소용 데이터셋 생성 (용량 충분히)"},
+          {"prompt": "#", "cmd": "mount -F hsfs {{REPO_ISO}} /mnt", "desc": "Oracle 저장소 ISO 마운트"},
+          {"prompt": "#", "cmd": "rsync -aP /mnt/repo/ /export/repo/", "desc": "저장소 복사 (rsync 가 없으면 cd /mnt/repo; tar cf - . | (cd /export/repo; tar xfp -))"},
+          {"prompt": "#", "cmd": "pkgrepo rebuild -s /export/repo", "desc": "인덱스 재생성"},
+          {"prompt": "#", "cmd": "pkg set-publisher -G '*' -g file:///export/repo solaris", "desc": "이 서버의 publisher 를 로컬 저장소로 지정"},
+          {"prompt": "#", "cmd": "pkg publisher", "desc": "변경 확인 후 pkg update -nv 로 테스트"}
+        ]},
+        {"title": "다른 서버에 HTTP 로 제공", "command": "svccfg -s application/pkg/server setprop pkg/inst_root=/export/repo\nsvccfg -s application/pkg/server setprop pkg/port=80\nsvcadm refresh application/pkg/server\nsvcadm enable application/pkg/server", "note": "클라이언트는 pkg set-publisher -G '*' -g http://{{REPO_HOST}}/ solaris"}
+      ],
+      "cautions": [
+        "전체 저장소는 수십 GB 이상입니다. 디스크 여유를 먼저 확인하세요.",
+        "SRU 저장소는 이전 SRU 를 포함하는 누적 형식입니다. 서버의 현재 SRU 보다 오래된 저장소로 바꾸면 pkg update·install 이 실패할 수 있습니다."
+      ],
+      "versions": {"solaris": "11 이상"},
+      "help": "man pkgrepo · man pkgrecv",
+      "keywords": ["로컬 저장소", "폐쇄망", "IPS 저장소", "pkgrepo", "pkgrecv", "repository", "오프라인 설치"],
+      "related": ["solaris-pkg", "createrepo"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-pkgadd",
+      "name": "pkgadd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.install",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SVR4 패키지(.pkg, 패키지 디렉토리) 설치",
+      "description": "SVR4 형식 패키지를 설치합니다. Solaris 10 의 기본 설치 방식이며, Solaris 11 에서도 벤더 에이전트·스토리지 드라이버 등 SVR4 로 배포되는 소프트웨어 설치에 씁니다. 설치 중 질문에 답해야 하는 경우가 많아 자동화할 때는 admin 파일(-a)과 응답 파일(-r)을 사용합니다.",
+      "syntax": ["pkgadd -d {{PKG_FILE_OR_DIR}} [{{PKGINST}}...]", "pkgadd -n -a {{ADMIN_FILE}} -d {{PKG_FILE}} all"],
+      "options": [
+        {"flag": "-d {{DEVICE}}", "desc": "패키지 위치 (.pkg 데이터스트림 파일 또는 패키지들이 있는 디렉토리)"},
+        {"flag": "-a {{ADMIN_FILE}}", "desc": "설치 동작 정책 파일 (덮어쓰기·의존성 확인 등. 기본 /var/sadm/install/admin/default)"},
+        {"flag": "-n", "desc": "비대화형 설치 (질문이 필요하면 실패)"},
+        {"flag": "-r {{RESPONSE_FILE}}", "desc": "미리 만든 응답 파일 사용 (pkgask 로 생성)"},
+        {"flag": "-G", "desc": "글로벌 존에만 설치 (non-global zone 으로 전파 안 함)"},
+        {"flag": "-R {{ROOT}}", "desc": "다른 루트 경로에 설치 (Live Upgrade 대체 BE 등)"}
+      ],
+      "examples": [
+        {"title": "패키지 파일 설치", "command": "pkgadd -d /var/tmp/{{PKG_FILE}}.pkg\npkginfo -l {{PKGINST}}"},
+        {"title": "디렉토리에서 특정 패키지만 설치", "command": "pkgadd -d /var/tmp/{{PKG_DIR}} {{PKGINST}}"},
+        {"title": "글로벌 존에만 설치", "command": "pkgadd -G -d /var/tmp/{{PKG_FILE}}.pkg"}
+      ],
+      "cautions": [
+        "설치 스크립트가 root 로 실행됩니다. 출처가 확인된 패키지만 설치하세요.",
+        "Zone 이 있는 Solaris 10 은 기본적으로 모든 Zone 에 함께 설치됩니다. 의도하지 않았다면 -G 를 쓰세요."
+      ],
+      "help": "man pkgadd · man admin",
+      "keywords": ["패키지 설치", "SVR4", "pkgadd", ".pkg", "Solaris 10 패키지"],
+      "related": ["solaris-pkginfo", "solaris-pkgrm", "solaris-pkg", "rpm"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-pkginfo",
+      "name": "pkginfo",
+      "aliases": ["pkgchk"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.single",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "설치된 SVR4 패키지 목록·상세 정보 확인",
+      "description": "설치된 SVR4 패키지 목록과 버전·설치일 등 상세 정보를 보여 줍니다. Solaris 10 의 기본 패키지 조회 명령이며, 파일이 어느 패키지에 속하는지는 pkgchk -l -p 로 확인합니다. Solaris 11 에서는 IPS 패키지가 대부분 보이지 않으므로 pkg list 를 씁니다.",
+      "syntax": ["pkginfo [-l] [{{PKGINST}}]", "pkginfo -d {{PKG_FILE}}", "pkgchk -l -p {{FILE_PATH}}"],
+      "options": [
+        {"flag": "-l", "desc": "상세 정보 (VERSION, INSTDATE, STATUS, 파일 수)"},
+        {"flag": "-x", "desc": "패키지 이름·아키텍처·버전을 짧게"},
+        {"flag": "-d {{PKG_FILE}}", "desc": "설치 전 패키지 파일의 정보 확인"},
+        {"flag": "-c {{CATEGORY}}", "desc": "카테고리로 필터 (system, application 등)"},
+        {"flag": "pkgchk -l -p {{FILE_PATH}}", "desc": "파일을 설치한 패키지 찾기"}
+      ],
+      "examples": [
+        {"title": "패키지 설치 여부·버전", "command": "pkginfo -l {{PKGINST}} | egrep 'PKGINST|VERSION|INSTDATE|STATUS'"},
+        {"title": "이름으로 검색", "command": "pkginfo | grep -i {{KEYWORD}}"},
+        {"title": "파일 소유 패키지 찾기", "command": "pkgchk -l -p /usr/bin/ls"}
+      ],
+      "cautions": [],
+      "help": "man pkginfo · man pkgchk",
+      "keywords": ["패키지 목록", "설치 확인", "pkginfo", "pkgchk", "버전 확인", "SVR4"],
+      "related": ["solaris-pkgadd", "solaris-pkgrm", "solaris-pkg", "rpm"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-pkgrm",
+      "name": "pkgrm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.install",
+      "platforms": ["solaris"],
+      "level": "basic",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "SVR4 패키지 삭제",
+      "description": "pkgadd 로 설치한 SVR4 패키지를 삭제합니다. 다른 패키지가 의존하고 있으면 경고하고 계속할지 묻습니다. 벤더 에이전트를 재설치하거나 버전을 바꿀 때 주로 씁니다.",
+      "syntax": ["pkgrm [-n] [-a {{ADMIN_FILE}}] {{PKGINST}}"],
+      "options": [
+        {"flag": "-n", "desc": "비대화형 삭제"},
+        {"flag": "-a {{ADMIN_FILE}}", "desc": "삭제 동작 정책 파일"},
+        {"flag": "-R {{ROOT}}", "desc": "다른 루트 경로에서 삭제"}
+      ],
+      "examples": [
+        {"title": "패키지 삭제", "command": "pkginfo -l {{PKGINST}}\npkgrm {{PKGINST}}"}
+      ],
+      "cautions": ["시스템(SUNW*) 패키지를 지우면 OS 기능이 깨질 수 있습니다. 의존성 경고가 나오면 중단하고 검토하세요."],
+      "help": "man pkgrm",
+      "keywords": ["패키지 삭제", "SVR4", "pkgrm", "제거"],
+      "related": ["solaris-pkgadd", "solaris-pkginfo"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-patchadd",
+      "name": "patchadd",
+      "aliases": ["patchrm", "installpatchset"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.update",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Solaris 10 패치 적용·제거",
+      "description": "Solaris 10 에 개별 패치(123456-07 형식)를 적용합니다. 여러 패치를 묶은 Recommended Patchset 은 압축을 푼 뒤 installpatchset 스크립트로 적용합니다. 커널 패치는 싱글 유저 모드나 Live Upgrade 대체 BE 에 적용하는 것이 안전하며, 대부분 재부팅이 필요합니다.",
+      "syntax": ["patchadd {{PATCH_DIR}}", "patchadd -M {{DIR}} {{PATCH_ID}}...", "patchrm {{PATCH_ID}}"],
+      "options": [
+        {"flag": "-M {{DIR}}", "desc": "디렉토리 안의 여러 패치를 지정 순서대로 적용"},
+        {"flag": "-G", "desc": "현재 Zone 에만 적용"},
+        {"flag": "-R {{ROOT}}", "desc": "대체 루트(마운트한 BE 등)에 적용"},
+        {"flag": "-d", "desc": "백아웃(되돌리기) 정보를 저장하지 않음 (patchrm 불가)"},
+        {"flag": "-p", "desc": "설치된 패치 목록 (showrev -p 와 같음)"}
+      ],
+      "examples": [
+        {"title": "개별 패치 적용", "steps": [
+          {"prompt": "#", "cmd": "showrev -p | grep {{PATCH_BASE_ID}}", "desc": "현재 적용된 리비전 확인"},
+          {"prompt": "#", "cmd": "cd /var/tmp && unzip {{PATCH_ID}}.zip", "desc": "패치 압축 해제 후 README 의 사전 조건·재부팅 요구 확인"},
+          {"prompt": "#", "cmd": "patchadd /var/tmp/{{PATCH_ID}}", "desc": "패치 적용"},
+          {"prompt": "#", "cmd": "showrev -p | grep {{PATCH_BASE_ID}}", "desc": "적용 확인 (필요 시 init 6)"}
+        ]},
+        {"title": "Recommended Patchset 을 대체 BE 에 적용", "command": "cd /var/tmp/10_Recommended\n./installpatchset -B {{NEW_BE}} --s10patchset", "note": "Live Upgrade(lucreate)로 만든 BE 에 적용한 뒤 luactivate {{NEW_BE}} → init 6."},
+        {"title": "패치 되돌리기", "command": "patchrm {{PATCH_ID}}"}
+      ],
+      "cautions": [
+        "커널 패치를 운영 중인 BE 에 바로 적용하면 실패 시 복구가 어렵습니다. Live Upgrade 대체 BE 나, SVM 미러 한쪽 분리(metadetach) 후 적용하세요.",
+        "-d 로 적용하면 patchrm 으로 되돌릴 수 없습니다.",
+        "Zone 이 있으면 모든 Zone 에 패치가 적용되므로 시간이 오래 걸리고, Zone 상태에 따라 실패할 수 있습니다."
+      ],
+      "versions": {"solaris": "10 전용"},
+      "platformNotes": {"solaris": "Solaris 10 전용. Solaris 11 은 패치 개념 없이 pkg update(SRU)로 업데이트합니다."},
+      "help": "man patchadd · 패치 README",
+      "keywords": ["패치", "패치 적용", "patchadd", "Recommended Patchset", "installpatchset", "Solaris 10 패치"],
+      "related": ["solaris-showrev", "solaris-lucreate", "solaris-metadetach", "solaris-pkg"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-beadm",
+      "name": "beadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.update",
+      "platforms": ["solaris"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "부트 환경(BE) 생성·활성화·롤백 (Solaris 11)",
+      "description": "ZFS 루트 파일시스템의 복제본인 부트 환경(BE)을 관리합니다. 업데이트·설정 변경 전에 BE 를 만들어 두면, 문제가 생겼을 때 이전 BE 를 활성화하고 재부팅하는 것만으로 롤백할 수 있습니다. pkg update 가 자동으로 만든 BE 도 여기서 관리합니다.",
+      "syntax": ["beadm list [-a | -d | -s] [{{BE}}]", "beadm create [-d {{DESC}}] [-e {{SOURCE_BE}}] {{BE}}", "beadm activate | destroy | mount | unmount | rename {{BE}} [{{ARGS}}]"],
+      "options": [],
+      "commandGroups": [
+        {"title": "서브 명령", "type": "subcommand", "items": [
+          {"cmd": "beadm list", "desc": "BE 목록. Active 열: N=현재 부팅된 BE, R=다음 부팅 BE, NR=둘 다"},
+          {"cmd": "beadm list -a", "desc": "BE 별 데이터셋·스냅샷까지 상세"},
+          {"cmd": "beadm create {{BE}}", "desc": "현재 BE 를 복제해 새 BE 생성 (스냅샷 기반이라 빠름)"},
+          {"cmd": "beadm create -e {{SOURCE_BE}} {{BE}}", "desc": "다른 BE 를 원본으로 생성"},
+          {"cmd": "beadm activate {{BE}}", "desc": "다음 부팅 BE 지정 (재부팅해야 전환)"},
+          {"cmd": "beadm mount {{BE}} {{MOUNT_DIR}}", "desc": "비활성 BE 를 마운트해 파일 확인·수정"},
+          {"cmd": "beadm unmount {{BE}}", "desc": "마운트 해제"},
+          {"cmd": "beadm rename {{BE}} {{NEW_NAME}}", "desc": "이름 변경 (활성 BE 는 불가)"},
+          {"cmd": "beadm destroy {{BE}}", "desc": "BE 삭제 (공간 회수)"}
+        ]}
+      ],
+      "examples": [
+        {"title": "패치·업데이트 전 BE 생성 → 업데이트 → 재부팅", "steps": [
+          {"prompt": "#", "cmd": "beadm list", "desc": "현재 BE 확인 (NR 표시)"},
+          {"prompt": "#", "cmd": "beadm create {{BACKUP_BE}}", "desc": "롤백용 BE 생성"},
+          {"prompt": "#", "cmd": "pkg update --accept --be-name {{NEW_BE}}", "desc": "새 BE 에 업데이트 적용"},
+          {"prompt": "#", "cmd": "beadm list", "desc": "{{NEW_BE}} 에 R 표시 확인"},
+          {"prompt": "#", "cmd": "init 6", "desc": "재부팅해서 새 BE 로 전환"}
+        ]},
+        {"title": "업데이트 후 문제 → 이전 BE 로 롤백", "command": "beadm activate {{BACKUP_BE}}\nbeadm list\ninit 6"},
+        {"title": "오래된 BE 정리", "command": "beadm list\nbeadm destroy {{OLD_BE}}"}
+      ],
+      "cautions": [
+        "BE 전환 재부팅은 서비스를 정상 종료하는 init 6 또는 shutdown -i6 -g0 -y 를 권장합니다.",
+        "BE 롤백은 루트 파일시스템(OS 영역)만 되돌립니다. 별도 데이터셋(/export, 애플리케이션 데이터)은 되돌아가지 않습니다.",
+        "BE 와 스냅샷이 쌓이면 rpool 공간을 차지합니다. 운영 확인이 끝난 오래된 BE 는 정리하세요."
+      ],
+      "versions": {"solaris": "11 이상"},
+      "platformNotes": {"solaris": "Solaris 11 이상. Solaris 10 은 Live Upgrade(lucreate/luactivate/lustatus)가 같은 역할을 합니다."},
+      "help": "man beadm",
+      "keywords": ["부트 환경", "BE", "롤백", "업데이트 전 백업", "beadm", "boot environment"],
+      "related": ["solaris-pkg", "solaris-zfs", "solaris-lucreate", "solaris-shutdown"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-lucreate",
+      "name": "lucreate",
+      "aliases": ["luupgrade", "ludelete", "lumount"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.upgrade",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Live Upgrade 대체 부트 환경 생성 (Solaris 10)",
+      "description": "Solaris 10 Live Upgrade 로 현재 OS 를 복제한 대체 부트 환경(BE)을 만듭니다. 운영 중인 BE 는 그대로 두고 대체 BE 에 패치(luupgrade -t, installpatchset -B)나 OS 업그레이드(luupgrade -u)를 적용한 뒤, luactivate 와 재부팅으로 전환합니다. 문제가 생기면 원래 BE 로 돌아갈 수 있어 다운타임과 위험이 줄어듭니다.",
+      "syntax": ["lucreate [-c {{CURRENT_BE}}] -n {{NEW_BE}} [-p {{ZFS_POOL}}] [-m {{MOUNT}}:{{DEVICE}}:{{FS_TYPE}}]"],
+      "options": [
+        {"flag": "-n {{NEW_BE}}", "desc": "새 BE 이름"},
+        {"flag": "-c {{CURRENT_BE}}", "desc": "현재 BE 이름 (처음 Live Upgrade 를 쓸 때 지정)"},
+        {"flag": "-p {{ZFS_POOL}}", "desc": "새 BE 를 만들 ZFS 풀 (UFS 루트 → ZFS 루트 이전 시)"},
+        {"flag": "-m {{MOUNT}}:{{DEVICE}}:{{FS_TYPE}}", "desc": "UFS 루트일 때 새 BE 의 파일시스템 위치 (예: /:/dev/dsk/c0t1d0s0:ufs)"}
+      ],
+      "commandGroups": [
+        {"title": "Live Upgrade 관련 명령", "type": "subcommand", "items": [
+          {"cmd": "lustatus", "desc": "BE 목록과 완료·활성 상태"},
+          {"cmd": "luupgrade -t -n {{BE}} -s {{PATCH_DIR}} {{PATCH_ID}}...", "desc": "대체 BE 에 패치 적용"},
+          {"cmd": "luupgrade -u -n {{BE}} -s {{OS_IMAGE_DIR}}", "desc": "대체 BE 를 새 Solaris 10 업데이트로 업그레이드"},
+          {"cmd": "lumount {{BE}} {{MOUNT_DIR}} / luumount {{BE}}", "desc": "대체 BE 마운트·해제"},
+          {"cmd": "luactivate {{BE}}", "desc": "다음 부팅 BE 지정"},
+          {"cmd": "ludelete {{BE}}", "desc": "BE 삭제"}
+        ]}
+      ],
+      "examples": [
+        {"title": "ZFS 루트에서 패치용 BE 만들기 → 적용 → 전환", "version": "Solaris 10", "steps": [
+          {"prompt": "#", "cmd": "lustatus", "desc": "현재 BE 확인"},
+          {"prompt": "#", "cmd": "lucreate -n {{NEW_BE}}", "desc": "ZFS 루트면 rpool 안에 스냅샷·클론으로 빠르게 생성"},
+          {"prompt": "#", "cmd": "cd /var/tmp/10_Recommended && ./installpatchset -B {{NEW_BE}} --s10patchset", "desc": "대체 BE 에 Recommended Patchset 적용"},
+          {"prompt": "#", "cmd": "luactivate {{NEW_BE}}", "desc": "다음 부팅 BE 로 지정 (출력되는 복구 절차를 저장해 둘 것)"},
+          {"prompt": "#", "cmd": "init 6", "desc": "반드시 init 또는 shutdown 으로 재부팅"}
+        ]},
+        {"title": "UFS 루트에서 다른 디스크로 BE 생성", "command": "lucreate -c {{CURRENT_BE}} -n {{NEW_BE}} -m /:/dev/dsk/{{DISK}}s0:ufs"}
+      ],
+      "cautions": [
+        "luactivate 후 reboot·halt·uadmin 으로 재부팅하면 BE 전환이 되지 않습니다. 반드시 init 6 또는 shutdown -i6 을 쓰세요.",
+        "Live Upgrade 패키지(SUNWlucfg, SUNWlur, SUNWluu)는 대상 릴리스 버전과 맞춰야 하고 사전 필수 패치가 있습니다. Oracle 의 Live Upgrade 사전 조건 문서를 확인하세요.",
+        "Zone 이 있는 시스템은 Zone 경로 구성에 따라 lucreate 가 실패하거나 제약이 있습니다."
+      ],
+      "versions": {"solaris": "10 전용"},
+      "platformNotes": {"solaris": "Solaris 10 전용. Solaris 11 은 beadm + pkg update 로 대체되었습니다."},
+      "help": "man lucreate · man luupgrade",
+      "keywords": ["Live Upgrade", "대체 BE", "lucreate", "luupgrade", "패치", "부트 환경", "Solaris 10"],
+      "related": ["solaris-luactivate", "solaris-lustatus", "solaris-patchadd", "solaris-beadm"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-luactivate",
+      "name": "luactivate",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.upgrade",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Live Upgrade 다음 부팅 BE 지정·롤백 (Solaris 10)",
+      "description": "Live Upgrade 로 만든 BE 중 다음에 부팅할 BE 를 지정합니다 (인수 없이 실행하면 다음 부팅 BE 이름만 출력). 패치를 적용한 새 BE 로 전환하거나, 문제가 생겼을 때 이전 BE 로 되돌릴 때 씁니다. 실행 결과에 새 BE 로 부팅하지 못할 때 이전 BE 로 돌아가는 방법이 출력되므로 반드시 저장해 둡니다.",
+      "syntax": ["luactivate {{BE}}", "luactivate"],
+      "options": [],
+      "examples": [
+        {"title": "새 BE 로 전환", "command": "luactivate {{NEW_BE}} | tee /var/tmp/luactivate.out\nlustatus\ninit 6"},
+        {"title": "이전 BE 로 롤백", "command": "luactivate {{OLD_BE}}\ninit 6"}
+      ],
+      "cautions": ["luactivate 후에는 init 6 또는 shutdown -i6 -g0 -y 로만 재부팅하세요. reboot 은 BE 전환을 완료하지 못합니다."],
+      "versions": {"solaris": "10 전용"},
+      "help": "man luactivate",
+      "keywords": ["Live Upgrade", "BE 전환", "롤백", "luactivate"],
+      "related": ["solaris-lucreate", "solaris-lustatus", "solaris-shutdown"],
+      "review": {"status": "ai-draft"}
+    },
+    {
+      "id": "solaris-lustatus",
+      "name": "lustatus",
+      "kind": "command",
+      "shell": "sh",
+      "category": "package",
+      "task": "package.upgrade",
+      "platforms": ["solaris"],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Live Upgrade BE 목록·활성 상태 확인 (Solaris 10)",
+      "description": "Live Upgrade BE 목록을 보여 줍니다. 각 BE 의 생성 완료 여부(Is Complete), 현재 활성(Active Now), 다음 부팅 활성(Active On Reboot), 삭제 가능 여부, 복사 상태를 확인할 수 있습니다.",
+      "syntax": ["lustatus [{{BE}}]"],
+      "options": [],
+      "examples": [
+        {"title": "BE 상태 확인", "command": "lustatus"}
+      ],
+      "cautions": [],
+      "versions": {"solaris": "10 전용"},
+      "help": "man lustatus",
+      "keywords": ["Live Upgrade", "BE 목록", "lustatus", "부트 환경"],
+      "related": ["solaris-lucreate", "solaris-luactivate"],
+      "review": {"status": "ai-draft"}
+    }
+  ]
+}

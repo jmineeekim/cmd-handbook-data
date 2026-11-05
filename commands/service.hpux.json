@@ -1,0 +1,1178 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "service",
+  "commands": [
+    {
+      "id": "hpux-var-adm-syslog-syslog-log",
+      "name": "/var/adm/syslog/syslog.log",
+      "kind": "file",
+      "category": "service",
+      "task": "service.logs",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "HP-UX 기본 시스템 로그 (Linux 의 messages)",
+      "description": "HP-UX 의 syslogd 가 기록하는 기본 시스템 로그입니다. 커널·디스크·LVM·네트워크·Serviceguard·로그인 관련 메시지가 대부분 여기 남습니다. 부팅할 때마다 이전 로그는 OLDsyslog.log 로 옮겨지므로 재부팅 전 장애 기록은 OLDsyslog.log 에서 찾습니다. 기록 규칙은 /etc/syslog.conf 에 있습니다.",
+      "syntax": [
+        "/var/adm/syslog/syslog.log",
+        "/var/adm/syslog/OLDsyslog.log"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "실시간 로그 보기",
+          "command": "tail -f /var/adm/syslog/syslog.log"
+        },
+        {
+          "title": "디스크·LVM 오류 찾기",
+          "command": "grep -i -E 'lvm|disk|scsi|error' /var/adm/syslog/syslog.log | tail -50"
+        },
+        {
+          "title": "재부팅 전 마지막 기록 확인",
+          "command": "tail -100 /var/adm/syslog/OLDsyslog.log"
+        },
+        {
+          "title": "syslog.conf 수정 후 다시 읽기",
+          "command": "cp -p /etc/syslog.conf /etc/syslog.conf.bak\nvi /etc/syslog.conf\nkill -HUP $(cat /var/run/syslog.pid)"
+        }
+      ],
+      "cautions": [
+        "syslog.log 는 자동 순환되지 않고 재부팅 때만 OLDsyslog.log 로 옮겨집니다. 오래 켜 둔 서버는 크기가 커지므로 cron 으로 보관·정리 정책을 두세요(감사 기준 보존 기간 확인).",
+        "syslog.conf 는 선택자와 동작 사이를 탭으로 구분해야 합니다."
+      ],
+      "help": "man syslogd · man syslog.conf",
+      "keywords": [
+        "시스템 로그",
+        "syslog.log",
+        "OLDsyslog",
+        "HP-UX 로그",
+        "messages",
+        "장애 로그"
+      ],
+      "related": [
+        "hpux-etc-rc-log",
+        "hpux-var-opt-resmon-log-event-log",
+        "tail",
+        "grep",
+        "var-log-messages"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-sbin-init-d",
+      "name": "/sbin/init.d",
+      "kind": "file",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "서비스 시작·종료 스크립트 위치 (start/stop)",
+      "description": "HP-UX 의 서비스 제어 스크립트가 있는 디렉토리입니다. 각 스크립트는 start·stop 인자를 받으며, /sbin/rcN.d 의 S(시작)·K(종료) 링크를 통해 런레벨 전환 때 순서대로 실행됩니다. 부팅 시 실행 여부는 /etc/rc.config.d 의 설정 변수로 정합니다. systemctl 이 없는 HP-UX 의 서비스 관리 방식입니다.",
+      "syntax": [
+        "/sbin/init.d/{{SERVICE}} start|stop"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "구성 요소",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "/sbin/init.d/{{SERVICE}}",
+              "desc": "실제 스크립트 (start, stop, start_msg, stop_msg 인자 처리)"
+            },
+            {
+              "cmd": "/sbin/rc3.d/S{{NNN}}{{SERVICE}}",
+              "desc": "런레벨 3 진입 시 시작 링크 (번호 작은 순서로 실행)"
+            },
+            {
+              "cmd": "/sbin/rc2.d/K{{NNN}}{{SERVICE}}",
+              "desc": "런레벨을 내릴 때 종료 링크 (보통 시작 런레벨보다 한 단계 아래)"
+            },
+            {
+              "cmd": "/etc/rc.config.d/{{SERVICE}}",
+              "desc": "부팅 시 시작 여부 변수 (예: =1 켬, =0 끔)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "서비스 재시작 (예: cron)",
+          "command": "/sbin/init.d/cron stop\n/sbin/init.d/cron start\nps -ef | grep cron"
+        },
+        {
+          "title": "NTP 데몬 재시작",
+          "command": "/sbin/init.d/xntpd stop\n/sbin/init.d/xntpd start"
+        },
+        {
+          "title": "어떤 순서로 시작되는지 확인",
+          "command": "ls /sbin/rc2.d /sbin/rc3.d\nwho -r"
+        },
+        {
+          "title": "애플리케이션 자동 시작 스크립트 등록",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cp /sbin/init.d/template /sbin/init.d/{{APP}}",
+              "desc": "기본 템플릿 복사 후 start/stop 부분 작성"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/rc.config.d/{{APP}}",
+              "desc": "시작 여부 변수 작성 (예: APP_START=1)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ln -s /sbin/init.d/{{APP}} /sbin/rc3.d/S900{{APP}}",
+              "desc": "런레벨 3 시작 링크"
+            },
+            {
+              "prompt": "#",
+              "cmd": "ln -s /sbin/init.d/{{APP}} /sbin/rc2.d/K100{{APP}}",
+              "desc": "종료 링크"
+            },
+            {
+              "prompt": "#",
+              "cmd": "/sbin/init.d/{{APP}} start",
+              "desc": "수동 실행으로 검증 (결과는 재부팅 후 /etc/rc.log 에서도 확인)"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "네트워크(/sbin/init.d/net) 같은 핵심 스크립트를 원격 세션에서 stop 하면 접속이 끊깁니다. 콘솔에서 하세요.",
+        "Serviceguard 가 관리하는 애플리케이션은 init 스크립트로 자동 시작하지 말고 패키지로 관리합니다.",
+        "/sbin/init.d/template 의 존재와 형식은 환경에 따라 다를 수 있으니 기존 스크립트를 참고해 작성하세요."
+      ],
+      "help": "man rc · man rc.config",
+      "keywords": [
+        "서비스 시작",
+        "서비스 재시작",
+        "init.d",
+        "rc 스크립트",
+        "자동 시작",
+        "런레벨",
+        "start stop"
+      ],
+      "related": [
+        "hpux-etc-rc-config-d",
+        "hpux-etc-rc-log",
+        "service",
+        "systemctl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-etc-rc-config-d",
+      "name": "/etc/rc.config.d",
+      "kind": "file",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "부팅 시 서비스 켜기·끄기 설정 변수 디렉토리",
+      "description": "부팅 때 /sbin/init.d 스크립트가 읽는 설정 파일 모음입니다. 서비스별 파일에 VAR=1(사용)·VAR=0(사용 안 함) 형태로 시작 여부와 인자를 적습니다. Linux 의 systemctl enable/disable 에 해당하는 역할이며, 네트워크 주소(netconf)도 여기 있습니다.",
+      "syntax": [
+        "/etc/rc.config.d/{{FILE}}"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 파일과 변수",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "netconf: HOSTNAME, INTERFACE_NAME[0], IP_ADDRESS[0] …",
+              "desc": "호스트명·IP·라우팅"
+            },
+            {
+              "cmd": "nfsconf: NFS_CLIENT=1, NFS_SERVER=1",
+              "desc": "NFS 클라이언트·서버 시작 여부"
+            },
+            {
+              "cmd": "netdaemons: XNTPD=1",
+              "desc": "NTP 데몬(xntpd) 시작 여부"
+            },
+            {
+              "cmd": "mailservs: SENDMAIL_SERVER=1",
+              "desc": "sendmail 데몬 시작 여부 (불필요하면 0)"
+            },
+            {
+              "cmd": "cmcluster: AUTOSTART_CMCLD=1",
+              "desc": "부팅 시 Serviceguard 클러스터 자동 참여"
+            },
+            {
+              "cmd": "nddconf: TRANSPORT_NAME[0], NDD_NAME[0], NDD_VALUE[0]",
+              "desc": "부팅 시 적용할 ndd 네트워크 파라미터"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "켜져 있는 서비스 변수 찾기",
+          "command": "grep -E '^[A-Z_]+=1' /etc/rc.config.d/*"
+        },
+        {
+          "title": "불필요 서비스(sendmail) 부팅 시 끄기 (보안 점검)",
+          "command": "cp -p /etc/rc.config.d/mailservs /etc/rc.config.d/mailservs.bak\nvi /etc/rc.config.d/mailservs\n/sbin/init.d/sendmail stop",
+          "note": "SENDMAIL_SERVER=0 으로 바꾸고 현재 실행 중인 데몬은 stop 으로 멈춥니다."
+        }
+      ],
+      "cautions": [
+        "파일은 셸 스크립트로 읽히므로 문법 오류(따옴표 누락 등)가 있으면 부팅 때 해당 서비스가 시작되지 않습니다. 수정 후 sh -n {{FILE}} 으로 문법을 점검하세요.",
+        "변수 변경은 다음 부팅 또는 해당 init.d 스크립트를 다시 실행해야 반영됩니다."
+      ],
+      "help": "man rc.config",
+      "keywords": [
+        "서비스 자동 시작",
+        "rc.config.d",
+        "부팅 설정",
+        "enable",
+        "disable",
+        "netconf",
+        "nfsconf"
+      ],
+      "related": [
+        "hpux-sbin-init-d",
+        "hpux-etc-rc-config-d-netconf",
+        "hpux-ndd",
+        "hpux-etc-rc-log"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-etc-rc-log",
+      "name": "/etc/rc.log",
+      "kind": "file",
+      "category": "service",
+      "task": "service.logs",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "부팅·종료 시 시작 스크립트 실행 결과 로그",
+      "description": "부팅과 런레벨 전환 때 /sbin/init.d 스크립트가 출력한 결과가 기록됩니다. 각 서비스가 OK, FAIL, N/A 중 무엇으로 끝났는지 볼 수 있어 재부팅 후 서비스가 안 올라올 때 가장 먼저 확인합니다. 이전 부팅 기록은 /etc/rc.log.old 에 있고, 종료·재부팅 이력은 /etc/shutdownlog 에 남습니다.",
+      "syntax": [
+        "/etc/rc.log",
+        "/etc/rc.log.old"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "실패한 시작 스크립트 찾기",
+          "command": "grep -n -i fail /etc/rc.log\nmore /etc/rc.log"
+        },
+        {
+          "title": "최근 종료·재부팅 이력",
+          "command": "tail -20 /etc/shutdownlog"
+        }
+      ],
+      "cautions": [],
+      "help": "man rc",
+      "keywords": [
+        "부팅 로그",
+        "rc.log",
+        "시작 스크립트 실패",
+        "shutdownlog",
+        "재부팅 이력"
+      ],
+      "related": [
+        "hpux-sbin-init-d",
+        "hpux-var-adm-syslog-syslog-log",
+        "hpux-shutdown"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-var-opt-resmon-log-event-log",
+      "name": "/var/opt/resmon/log/event.log",
+      "kind": "file",
+      "category": "service",
+      "task": "service.hw-errors",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "EMS 하드웨어 모니터 이벤트 로그",
+      "description": "EMS(Event Monitoring Service) 하드웨어 모니터가 감지한 디스크·메모리·CPU·전원·팬 등 하드웨어 이벤트가 심각도와 함께 기록됩니다. 하드웨어 장애 의심 시 syslog.log 와 함께 HPE 에 제출하는 주요 자료입니다. 모니터 설정은 /etc/opt/resmon/lbin/monconfig 로 확인합니다.",
+      "syntax": [
+        "/var/opt/resmon/log/event.log"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "최근 하드웨어 이벤트 확인",
+          "command": "tail -100 /var/opt/resmon/log/event.log"
+        },
+        {
+          "title": "심각한 이벤트만 찾기",
+          "command": "grep -i -E 'critical|serious|major' /var/opt/resmon/log/event.log"
+        }
+      ],
+      "cautions": [
+        "11i v3 최신 환경에서 System Fault Management(SFM, WBEM 기반)를 쓰는 경우 이벤트는 evweb 등 SFM 도구로도 조회합니다. 서버 구성에 따라 이 파일이 갱신되지 않을 수 있습니다."
+      ],
+      "help": "man monconfig",
+      "keywords": [
+        "하드웨어 장애",
+        "EMS",
+        "event.log",
+        "하드웨어 로그",
+        "resmon",
+        "디스크 장애"
+      ],
+      "related": [
+        "hpux-cstm",
+        "hpux-var-adm-syslog-syslog-log",
+        "hpux-ioscan"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cstm",
+      "name": "cstm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.hw-errors",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "STM 진단 도구(명령행) — CPU·메모리·디스크 정보·오류 로그",
+      "description": "Support Tools Manager(STM) 의 명령행 버전으로, 하드웨어 장치 목록을 보고 장치별 정보(info)와 오류 로그(infolog)를 수집합니다. 메모리 오류 이력, CPU·디스크 펌웨어 정보 확인에 씁니다. 대화형(cstm>)으로 쓰거나 echo 로 명령을 넘겨 한 번에 실행합니다.",
+      "syntax": [
+        "cstm",
+        "echo \"{{CSTM_COMMANDS}}\" | cstm"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "주요 내부 명령",
+          "type": "interactive",
+          "prompt": "cstm>",
+          "items": [
+            {
+              "cmd": "map",
+              "desc": "장치 목록과 번호·하드웨어 경로"
+            },
+            {
+              "cmd": "selclass qualifier {{CLASS}}",
+              "desc": "장치 종류로 선택 (cpu, memory 등)"
+            },
+            {
+              "cmd": "sel path {{HW_PATH}}",
+              "desc": "하드웨어 경로로 장치 선택"
+            },
+            {
+              "cmd": "selall",
+              "desc": "모든 장치 선택"
+            },
+            {
+              "cmd": "info",
+              "desc": "선택한 장치의 정보 수집 실행"
+            },
+            {
+              "cmd": "wait",
+              "desc": "실행 중인 작업이 끝날 때까지 대기"
+            },
+            {
+              "cmd": "infolog",
+              "desc": "수집 결과 보기 (메모리 오류 이력 등 포함)"
+            },
+            {
+              "cmd": "help",
+              "desc": "명령 목록"
+            },
+            {
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "메모리 정보·오류 이력 수집",
+          "command": "echo \"selclass qualifier memory;info;wait;infolog\" | cstm > /var/tmp/mem_info.txt"
+        },
+        {
+          "title": "CPU 정보 수집",
+          "command": "echo \"selclass qualifier cpu;info;wait;infolog\" | cstm"
+        },
+        {
+          "title": "대화형으로 디스크 정보 보기",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cstm",
+              "desc": "STM 실행"
+            },
+            {
+              "prompt": "cstm>",
+              "cmd": "map",
+              "desc": "장치 목록 확인"
+            },
+            {
+              "prompt": "cstm>",
+              "cmd": "sel path {{HW_PATH}}",
+              "desc": "대상 장치 선택"
+            },
+            {
+              "prompt": "cstm>",
+              "cmd": "info",
+              "desc": "정보 수집"
+            },
+            {
+              "prompt": "cstm>",
+              "cmd": "infolog",
+              "desc": "결과 확인"
+            },
+            {
+              "prompt": "cstm>",
+              "cmd": "exit",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "info·infolog 는 읽기 작업이지만 exercise·verify 같은 진단 실행은 I/O 부하가 있으니 운영 중에는 HPE 지침에 따라서만 하세요.",
+        "최신 Integrity 서버(일부 i2 이후 기종)·11i v3 환경에서는 STM 대신 SFM(WBEM) 기반 도구를 쓰도록 바뀌어 일부 장치가 지원되지 않을 수 있습니다."
+      ],
+      "install": {
+        "hpux": {
+          "package": "OnlineDiag",
+          "preinstalled": true,
+          "note": "Online Diagnostics(Support Tools) 번들. OE 설치 시 보통 포함"
+        }
+      },
+      "help": "cstm 실행 후 help · man cstm",
+      "keywords": [
+        "하드웨어 진단",
+        "STM",
+        "cstm",
+        "메모리 오류",
+        "CPU 정보",
+        "infolog",
+        "Support Tools"
+      ],
+      "related": [
+        "hpux-var-opt-resmon-log-event-log",
+        "hpux-machinfo",
+        "hpux-ioscan"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmviewcl",
+      "name": "cmviewcl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Serviceguard 클러스터·노드·패키지 상태 확인",
+      "description": "Serviceguard 클러스터의 상태와 각 노드, 패키지가 어느 노드에서 실행 중인지 보여 줍니다. -v 를 주면 네트워크·서비스·자동 전환(AUTO_RUN) 여부까지 나옵니다. 클러스터 작업 전후 반드시 확인하는 명령입니다.",
+      "syntax": [
+        "cmviewcl [-v]",
+        "cmviewcl -v -p {{PKG}}",
+        "cmviewcl -l package|node"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "자세히: 노드별 네트워크, 패키지 서비스·전환 설정"
+        },
+        {
+          "flag": "-p {{PKG}}",
+          "desc": "특정 패키지만"
+        },
+        {
+          "flag": "-n {{NODE}}",
+          "desc": "특정 노드만"
+        },
+        {
+          "flag": "-l package|node",
+          "desc": "패키지 또는 노드 정보만"
+        },
+        {
+          "flag": "-f line",
+          "desc": "한 줄 키=값 형식 출력 (스크립트용, 최신 Serviceguard)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "상태값 의미",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "CLUSTER STATUS up / down",
+              "desc": "클러스터 동작 여부"
+            },
+            {
+              "cmd": "NODE STATUS up, STATE running",
+              "desc": "노드가 클러스터에 참여 중"
+            },
+            {
+              "cmd": "NODE STATE halted",
+              "desc": "노드가 클러스터에서 빠짐 (cmhaltnode 했거나 미참여)"
+            },
+            {
+              "cmd": "PACKAGE STATUS up, STATE running",
+              "desc": "패키지 정상 실행 중 (NODE 열이 실행 노드)"
+            },
+            {
+              "cmd": "PACKAGE STATE halted / failed",
+              "desc": "중지됨 / 시작·실행 실패 (패키지 로그 확인)"
+            },
+            {
+              "cmd": "AUTO_RUN enabled / disabled",
+              "desc": "장애 시 다른 노드로 자동 전환 가능 여부. 수동 중지 후 disabled 로 남는 경우가 많음"
+            },
+            {
+              "cmd": "Node Switching Parameters: SWITCHING enabled",
+              "desc": "그 노드에서 패키지 실행 허용 여부"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "클러스터 전체 상태",
+          "command": "cmviewcl"
+        },
+        {
+          "title": "패키지 상세 (전환 가능 여부 포함)",
+          "command": "cmviewcl -v -p {{PKG}}"
+        },
+        {
+          "title": "AUTO_RUN 이 꺼진 패키지 찾기",
+          "command": "cmviewcl -v | grep -i -E 'package|auto_run'"
+        }
+      ],
+      "cautions": [
+        "작업 후 AUTO_RUN 이 disabled 로 남아 있으면 다음 장애 때 자동 전환되지 않습니다. 작업 종료 체크리스트에 cmviewcl -v 확인을 넣으세요."
+      ],
+      "install": {
+        "hpux": {
+          "package": "Serviceguard",
+          "preinstalled": false,
+          "note": "HPE Serviceguard 제품 (별도 라이선스, HA OE 등에 포함)"
+        }
+      },
+      "help": "man cmviewcl",
+      "keywords": [
+        "클러스터 상태",
+        "Serviceguard",
+        "cmviewcl",
+        "패키지 상태",
+        "HA",
+        "페일오버",
+        "AUTO_RUN"
+      ],
+      "related": [
+        "hpux-cmrunpkg",
+        "hpux-cmhaltpkg",
+        "hpux-cmmodpkg",
+        "hpux-cmruncl",
+        "hpux-cmhaltcl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmruncl",
+      "name": "cmruncl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Serviceguard 클러스터 시작 · 노드 참여(cmrunnode)",
+      "description": "멈춰 있는 Serviceguard 클러스터를 시작합니다. 노드를 지정하지 않으면 구성된 모든 노드에서 시작하며, 자동 실행이 켜진 패키지가 함께 올라옵니다. 이미 동작 중인 클러스터에 노드 하나를 다시 넣을 때는 cmrunnode 를 씁니다.",
+      "syntax": [
+        "cmruncl -v [-n {{NODE}} ...]",
+        "cmrunnode -v {{NODE}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "진행 상황 자세히 출력"
+        },
+        {
+          "flag": "-n {{NODE}}",
+          "desc": "지정한 노드에서만 클러스터 시작 (나머지 노드가 응답하지 않을 때 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "클러스터 전체 시작",
+          "command": "cmruncl -v\ncmviewcl -v"
+        },
+        {
+          "title": "점검 끝난 노드를 클러스터에 다시 참여",
+          "command": "cmrunnode -v {{NODE}}\ncmviewcl"
+        }
+      ],
+      "cautions": [
+        "-n 으로 일부 노드만 시작하면 다른 노드가 실제로 내려가 있는지 반드시 확인하세요. 두 쪽이 따로 클러스터를 구성하면(split brain) 공유 데이터가 손상될 수 있습니다."
+      ],
+      "help": "man cmruncl · man cmrunnode",
+      "keywords": [
+        "클러스터 시작",
+        "cmruncl",
+        "cmrunnode",
+        "Serviceguard",
+        "노드 참여"
+      ],
+      "related": [
+        "hpux-cmhaltcl",
+        "hpux-cmviewcl",
+        "hpux-cmrunpkg"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmhaltcl",
+      "name": "cmhaltcl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "Serviceguard 클러스터 중지 · 노드 제외(cmhaltnode)",
+      "description": "클러스터 전체를 멈춥니다. 패키지가 실행 중이면 -f 없이 실패하고, -f 를 주면 패키지를 먼저 중지한 뒤 클러스터를 멈춥니다. 노드 하나만 빼려면(점검·패치) cmhaltnode 를 쓰며, -f 를 주면 그 노드의 패키지가 중지되고 전환 가능한 패키지는 다른 노드로 옮겨집니다.",
+      "syntax": [
+        "cmhaltcl -v [-f]",
+        "cmhaltnode -v [-f] {{NODE}}"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "실행 중인 패키지가 있어도 중지하고 진행"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "노드 점검 전 패키지를 다른 노드로 넘기고 노드 제외",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v",
+              "desc": "이 노드에서 실행 중인 패키지와 AUTO_RUN 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmhaltnode -f -v {{NODE}}",
+              "desc": "노드를 클러스터에서 빼면서 패키지를 다른 노드로 전환"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl",
+              "desc": "패키지가 다른 노드에서 running 인지 확인"
+            }
+          ]
+        },
+        {
+          "title": "전체 클러스터 중지 (정기 점검)",
+          "command": "cmviewcl\ncmhaltcl -f -v\ncmviewcl"
+        }
+      ],
+      "cautions": [
+        "cmhaltcl -f 는 모든 패키지(업무 서비스)를 중지합니다. 업무 중단 승인 후에만 실행하세요.",
+        "/etc/rc.config.d/cmcluster 의 AUTOSTART_CMCLD=1 이면 재부팅 후 노드가 자동으로 클러스터에 다시 참여합니다."
+      ],
+      "help": "man cmhaltcl · man cmhaltnode",
+      "keywords": [
+        "클러스터 중지",
+        "cmhaltcl",
+        "cmhaltnode",
+        "노드 제외",
+        "Serviceguard",
+        "페일오버"
+      ],
+      "related": [
+        "hpux-cmruncl",
+        "hpux-cmviewcl",
+        "hpux-cmhaltpkg",
+        "hpux-shutdown"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmrunpkg",
+      "name": "cmrunpkg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "Serviceguard 패키지 시작 (노드 지정)",
+      "description": "중지된 패키지를 지정한 노드에서 시작합니다. 패키지는 VG 활성화, 파일시스템 마운트, 가상 IP 설정, 애플리케이션 시작을 순서대로 수행합니다. 수동으로 시작한 뒤에는 자동 전환을 cmmodpkg -e 로 다시 켜야 하는 경우가 많습니다.",
+      "syntax": [
+        "cmrunpkg -v -n {{NODE}} {{PKG}}"
+      ],
+      "options": [
+        {
+          "flag": "-n {{NODE}}",
+          "desc": "패키지를 실행할 노드"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패키지 수동 시작 후 자동 전환 켜기",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v -p {{PKG}}",
+              "desc": "현재 상태와 실행 가능 노드 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmrunpkg -v -n {{NODE}} {{PKG}}",
+              "desc": "지정 노드에서 시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmmodpkg -e {{PKG}}",
+              "desc": "자동 전환(AUTO_RUN) 다시 켜기"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v -p {{PKG}}",
+              "desc": "running · AUTO_RUN enabled 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "시작 실패 시 패키지 로그(패키지 설정의 script_log_file, 레거시 패키지는 /etc/cmcluster/{{PKG}}/ 아래 .log)와 syslog.log 를 확인하세요."
+      ],
+      "help": "man cmrunpkg",
+      "keywords": [
+        "패키지 시작",
+        "cmrunpkg",
+        "Serviceguard",
+        "페일오버",
+        "서비스 기동"
+      ],
+      "related": [
+        "hpux-cmhaltpkg",
+        "hpux-cmmodpkg",
+        "hpux-cmviewcl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmhaltpkg",
+      "name": "cmhaltpkg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "Serviceguard 패키지 중지 (서비스 중단)",
+      "description": "실행 중인 패키지를 중지합니다. 애플리케이션 종료, 가상 IP 해제, 파일시스템 umount, VG 비활성화를 순서대로 수행합니다. 중지하면 AUTO_RUN 이 꺼져 다른 노드로 자동 전환되지 않습니다.",
+      "syntax": [
+        "cmhaltpkg -v {{PKG}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패키지를 다른 노드로 수동 이동 (스위치오버)",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v -p {{PKG}}",
+              "desc": "현재 노드 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmhaltpkg -v {{PKG}}",
+              "desc": "패키지 중지"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmrunpkg -v -n {{TARGET_NODE}} {{PKG}}",
+              "desc": "대상 노드에서 시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmmodpkg -e {{PKG}}",
+              "desc": "자동 전환 다시 켜기"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v -p {{PKG}}",
+              "desc": "결과 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "업무 서비스가 중단됩니다. 승인된 작업 시간에만 실행하세요.",
+        "중지가 오래 걸리거나 실패하면 umount 할 수 없는 프로세스가 남은 경우가 많습니다. 패키지 로그와 fuser 로 확인하세요."
+      ],
+      "help": "man cmhaltpkg",
+      "keywords": [
+        "패키지 중지",
+        "cmhaltpkg",
+        "스위치오버",
+        "Serviceguard",
+        "서비스 중지"
+      ],
+      "related": [
+        "hpux-cmrunpkg",
+        "hpux-cmmodpkg",
+        "hpux-cmviewcl",
+        "fuser"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmmodpkg",
+      "name": "cmmodpkg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "패키지 자동 전환(AUTO_RUN)·노드 전환 허용 설정",
+      "description": "패키지의 자동 전환(AUTO_RUN, 패키지 스위칭)을 켜거나 끄고, 특정 노드에서 패키지를 실행할 수 있는지(노드 스위칭)를 바꿉니다. 수동 작업 뒤 자동 전환을 원래대로 돌리는 데 가장 많이 씁니다.",
+      "syntax": [
+        "cmmodpkg -e|-d {{PKG}}",
+        "cmmodpkg -e|-d -n {{NODE}} {{PKG}}"
+      ],
+      "options": [
+        {
+          "flag": "-e",
+          "desc": "켜기 (enable)"
+        },
+        {
+          "flag": "-d",
+          "desc": "끄기 (disable)"
+        },
+        {
+          "flag": "-n {{NODE}}",
+          "desc": "노드 스위칭: 해당 노드에서의 실행 허용 여부 변경"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "자동 전환 다시 켜기",
+          "command": "cmmodpkg -e {{PKG}}\ncmviewcl -v -p {{PKG}}"
+        },
+        {
+          "title": "점검 중인 노드로 전환되지 않게 막기",
+          "command": "cmmodpkg -d -n {{NODE}} {{PKG}}",
+          "note": "점검이 끝나면 cmmodpkg -e -n {{NODE}} {{PKG}} 로 되돌립니다."
+        }
+      ],
+      "cautions": [
+        "자동 전환을 끈 채로 두면 장애 시 서비스가 넘어가지 않습니다. 작업 후 cmviewcl -v 로 원상 복구를 확인하세요."
+      ],
+      "help": "man cmmodpkg",
+      "keywords": [
+        "자동 전환",
+        "AUTO_RUN",
+        "cmmodpkg",
+        "패키지 스위칭",
+        "Serviceguard"
+      ],
+      "related": [
+        "hpux-cmviewcl",
+        "hpux-cmrunpkg",
+        "hpux-cmhaltpkg"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmgetconf",
+      "name": "cmgetconf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "적용 중인 클러스터·패키지 설정을 파일로 추출",
+      "description": "현재 클러스터에 적용된(바이너리로 배포된) 클러스터 또는 패키지 설정을 ASCII 파일로 꺼냅니다. 설정 변경 전 백업이나, 원본 설정 파일이 실제 적용값과 같은지 비교할 때 씁니다.",
+      "syntax": [
+        "cmgetconf -c {{CLUSTER}} {{OUTPUT_FILE}}",
+        "cmgetconf -p {{PKG}} {{OUTPUT_FILE}}"
+      ],
+      "options": [
+        {
+          "flag": "-c {{CLUSTER}}",
+          "desc": "클러스터 설정 추출"
+        },
+        {
+          "flag": "-p {{PKG}}",
+          "desc": "패키지 설정 추출"
+        }
+      ],
+      "examples": [
+        {
+          "title": "변경 전 설정 백업",
+          "command": "cmgetconf -c {{CLUSTER}} /var/tmp/cluster_$(date +%Y%m%d).ascii\ncmgetconf -p {{PKG}} /var/tmp/{{PKG}}_$(date +%Y%m%d).conf"
+        }
+      ],
+      "cautions": [],
+      "help": "man cmgetconf",
+      "keywords": [
+        "클러스터 설정 백업",
+        "cmgetconf",
+        "패키지 설정",
+        "Serviceguard"
+      ],
+      "related": [
+        "hpux-cmcheckconf",
+        "hpux-cmapplyconf",
+        "hpux-cmviewcl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmcheckconf",
+      "name": "cmcheckconf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "클러스터·패키지 설정 파일 검증 (적용 전)",
+      "description": "수정한 클러스터 설정(-C) 또는 패키지 설정(-P)을 적용하기 전에 문법과 노드 간 일관성(VG, 네트워크 등)을 검사합니다. cmapplyconf 전에 반드시 실행합니다.",
+      "syntax": [
+        "cmcheckconf -v -C {{CLUSTER_ASCII}}",
+        "cmcheckconf -v -P {{PKG_CONF}}"
+      ],
+      "options": [
+        {
+          "flag": "-C {{CLUSTER_ASCII}}",
+          "desc": "클러스터 설정 파일 검증"
+        },
+        {
+          "flag": "-P {{PKG_CONF}}",
+          "desc": "패키지 설정 파일 검증 (-C 와 함께 지정 가능)"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패키지 설정 검증",
+          "command": "cmcheckconf -v -P /etc/cmcluster/{{PKG}}/{{PKG}}.conf"
+        }
+      ],
+      "cautions": [
+        "검증 통과가 애플리케이션 동작까지 보장하지는 않습니다. 적용 후 패키지 전환 시험을 계획하세요."
+      ],
+      "help": "man cmcheckconf",
+      "keywords": [
+        "설정 검증",
+        "cmcheckconf",
+        "클러스터 설정",
+        "패키지 설정",
+        "Serviceguard"
+      ],
+      "related": [
+        "hpux-cmapplyconf",
+        "hpux-cmgetconf",
+        "hpux-vgexport"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-cmapplyconf",
+      "name": "cmapplyconf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "클러스터·패키지 설정을 모든 노드에 적용",
+      "description": "검증한 클러스터·패키지 설정을 바이너리 구성으로 만들어 모든 노드에 배포합니다. 일부 변경(노드 추가, 특정 파라미터)은 클러스터나 패키지가 중지된 상태에서만 가능합니다.",
+      "syntax": [
+        "cmapplyconf -v -C {{CLUSTER_ASCII}}",
+        "cmapplyconf -v -P {{PKG_CONF}}"
+      ],
+      "options": [
+        {
+          "flag": "-C {{CLUSTER_ASCII}}",
+          "desc": "클러스터 설정 적용"
+        },
+        {
+          "flag": "-P {{PKG_CONF}}",
+          "desc": "패키지 설정 적용"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세히 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "패키지 설정 변경 절차",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "cmgetconf -p {{PKG}} /var/tmp/{{PKG}}.conf.bak",
+              "desc": "현재 적용 설정 백업 (롤백용)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi /etc/cmcluster/{{PKG}}/{{PKG}}.conf",
+              "desc": "설정 수정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmcheckconf -v -P /etc/cmcluster/{{PKG}}/{{PKG}}.conf",
+              "desc": "검증"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmapplyconf -v -P /etc/cmcluster/{{PKG}}/{{PKG}}.conf",
+              "desc": "적용 (확인 질문에 y)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "cmviewcl -v -p {{PKG}}",
+              "desc": "상태 확인"
+            }
+          ]
+        }
+      ],
+      "cautions": [
+        "모든 노드가 정상 통신 중일 때 실행하세요. 적용 중 오류가 나면 cmgetconf 로 받아 둔 백업으로 되돌립니다.",
+        "패키지 스크립트·애플리케이션 파일은 cmapplyconf 가 다른 노드로 복사하지 않습니다. 각 노드에 같은 파일이 있는지 따로 확인하세요."
+      ],
+      "help": "man cmapplyconf",
+      "keywords": [
+        "설정 적용",
+        "cmapplyconf",
+        "클러스터 구성",
+        "패키지 구성",
+        "Serviceguard"
+      ],
+      "related": [
+        "hpux-cmcheckconf",
+        "hpux-cmgetconf",
+        "hpux-cmviewcl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

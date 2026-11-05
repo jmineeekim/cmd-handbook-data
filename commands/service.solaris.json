@@ -1,0 +1,1177 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "service",
+  "commands": [
+    {
+      "id": "solaris-svcs",
+      "name": "svcs",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "SMF 서비스 상태 조회·장애 원인 설명",
+      "description": "SMF(Service Management Facility)에 등록된 서비스의 상태를 조회합니다. svcs -xv 는 정상 동작하지 않는 서비스와 그 원인, 로그 파일 위치, 영향받는 서비스를 설명해 주므로 장애 확인의 출발점입니다. 서비스는 svc:/network/ssh:default 같은 FMRI 로 표시되며 줄여서 ssh 처럼 써도 됩니다.",
+      "syntax": [
+        "svcs [-a] [-H] [-o {{COLUMNS}}] [{{FMRI}}]",
+        "svcs -x [-v] [{{FMRI}}]",
+        "svcs -l | -d | -D | -p {{FMRI}}"
+      ],
+      "options": [
+        {
+          "flag": "-a",
+          "desc": "disabled 포함 모든 서비스 (기본은 enabled 이거나 문제 있는 것만)"
+        },
+        {
+          "flag": "-x",
+          "desc": "문제 있는 서비스와 원인 설명"
+        },
+        {
+          "flag": "-v",
+          "desc": "-x 와 함께: 상세 설명·로그 위치·참고 문서"
+        },
+        {
+          "flag": "-l {{FMRI}}",
+          "desc": "서비스 상세 (상태, 로그 파일, 의존성)"
+        },
+        {
+          "flag": "-d {{FMRI}}",
+          "desc": "이 서비스가 의존하는 서비스"
+        },
+        {
+          "flag": "-D {{FMRI}}",
+          "desc": "이 서비스에 의존하는 서비스"
+        },
+        {
+          "flag": "-p {{FMRI}}",
+          "desc": "서비스에 속한 프로세스(PID) 표시"
+        },
+        {
+          "flag": "-L {{FMRI}}",
+          "desc": "서비스 로그 파일 경로 출력 (Solaris 11 이상)"
+        },
+        {
+          "flag": "-o state,stime,fmri",
+          "desc": "출력 열 지정"
+        },
+        {
+          "flag": "-H",
+          "desc": "헤더 생략 (스크립트용)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "SMF 서비스 상태 (STATE 열)",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "online",
+              "desc": "정상 실행 중"
+            },
+            {
+              "cmd": "offline",
+              "desc": "enabled 이지만 의존 서비스가 준비되지 않아 대기 중 (svcs -d 로 의존 서비스 확인)"
+            },
+            {
+              "cmd": "disabled",
+              "desc": "관리자가 비활성화함"
+            },
+            {
+              "cmd": "maintenance",
+              "desc": "시작 실패·반복 종료로 SMF 가 중지시킴. 원인 해결 후 svcadm clear 필요"
+            },
+            {
+              "cmd": "degraded",
+              "desc": "실행 중이지만 성능·기능이 일부 저하"
+            },
+            {
+              "cmd": "legacy_run",
+              "desc": "SMF 가 아닌 /etc/rc*.d 스크립트로 시작된 레거시 서비스 (상태 관리 불가)"
+            },
+            {
+              "cmd": "uninitialized",
+              "desc": "아직 설정을 읽지 않은 상태 (부팅 중 잠깐 보임)"
+            },
+            {
+              "cmd": "online*",
+              "desc": "* 표시는 상태 전환 중 (예: 시작 중)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "문제 있는 서비스 확인 (아무것도 안 나오면 정상)",
+          "command": "svcs -xv"
+        },
+        {
+          "title": "장애 서비스 복구",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "svcs -xv",
+              "desc": "maintenance 서비스와 원인, 로그 파일 경로 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "tail -50 $(svcs -L {{FMRI}})",
+              "desc": "서비스 로그 확인 (Solaris 10 은 svcs -l 의 logfile 경로, 보통 /var/svc/log/)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "vi {{CONFIG_FILE}}",
+              "desc": "로그에 나온 원인(설정 오류, 포트 충돌 등) 수정"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svcadm clear {{FMRI}}",
+              "desc": "maintenance 해제 → SMF 가 다시 시작"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svcs {{FMRI}}",
+              "desc": "online 이 되었는지 확인"
+            }
+          ]
+        },
+        {
+          "title": "서비스 상세와 프로세스",
+          "command": "svcs -l ssh\nsvcs -p ssh"
+        },
+        {
+          "title": "online 이 아닌 서비스만 보기",
+          "command": "svcs -a -H -o state,fmri | grep -v -e '^online' -e '^disabled' -e '^legacy_run'"
+        }
+      ],
+      "cautions": [
+        "offline 상태는 대부분 의존 서비스 문제입니다. 해당 서비스를 계속 재시작하지 말고 svcs -xv 가 가리키는 원인 서비스를 먼저 해결하세요."
+      ],
+      "platformNotes": {
+        "solaris": "Solaris 10 이상. Linux 의 systemctl status / list-units 에 해당합니다. 서비스 로그는 /var/svc/log/<FMRI 를 - 로 바꾼 이름>.log 입니다."
+      },
+      "help": "man svcs · man smf",
+      "keywords": [
+        "서비스 상태",
+        "SMF",
+        "maintenance",
+        "svcs -xv",
+        "svcs",
+        "service status",
+        "FMRI"
+      ],
+      "related": [
+        "solaris-svcadm",
+        "solaris-svccfg",
+        "solaris-svcprop",
+        "systemctl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-svcadm",
+      "name": "svcadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SMF 서비스 시작·중지·재시작·장애 해제",
+      "description": "SMF 서비스를 enable(시작+부팅 시 자동 시작), disable(중지+자동 시작 해제), restart, refresh(설정 다시 읽기)하고 maintenance 상태를 clear 로 해제합니다. enable/disable 은 기본적으로 영구 설정이며, -t 를 붙이면 재부팅 전까지만 적용됩니다.",
+      "syntax": [
+        "svcadm enable [-r] [-s] [-t] {{FMRI}}",
+        "svcadm disable [-s] [-t] {{FMRI}}",
+        "svcadm restart | refresh | clear {{FMRI}}"
+      ],
+      "options": [
+        {
+          "flag": "-t",
+          "desc": "임시 적용 (재부팅하면 원래 설정으로 돌아감)"
+        },
+        {
+          "flag": "-s",
+          "desc": "상태가 바뀔 때까지 기다렸다가 종료 (스크립트용)"
+        },
+        {
+          "flag": "-r",
+          "desc": "enable 시 의존하는 서비스도 함께 enable"
+        },
+        {
+          "flag": "-v",
+          "desc": "처리 내용 출력"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "서브 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "svcadm enable {{FMRI}}",
+              "desc": "시작 + 부팅 시 자동 시작"
+            },
+            {
+              "cmd": "svcadm disable {{FMRI}}",
+              "desc": "중지 + 자동 시작 해제"
+            },
+            {
+              "cmd": "svcadm restart {{FMRI}}",
+              "desc": "재시작 (online 상태일 때만)"
+            },
+            {
+              "cmd": "svcadm refresh {{FMRI}}",
+              "desc": "svccfg 로 바꾼 설정을 반영 (서비스에 따라 재시작 효과)"
+            },
+            {
+              "cmd": "svcadm clear {{FMRI}}",
+              "desc": "maintenance / degraded 상태 해제"
+            },
+            {
+              "cmd": "svcadm mark maintenance {{FMRI}}",
+              "desc": "서비스를 강제로 maintenance 로 표시 (점검 중 자동 재시작 방지)"
+            },
+            {
+              "cmd": "svcadm milestone {{MILESTONE}}",
+              "desc": "마일스톤 전환 (예: svc:/milestone/single-user:default, all)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "서비스 재시작 후 상태 확인",
+          "command": "svcadm restart {{FMRI}}\nsvcs {{FMRI}}"
+        },
+        {
+          "title": "maintenance 서비스 복구",
+          "command": "svcs -xv {{FMRI}}\nsvcadm clear {{FMRI}}"
+        },
+        {
+          "title": "보안 점검: telnet·ftp 비활성화",
+          "command": "svcadm disable svc:/network/telnet:default\nsvcadm disable svc:/network/ftp:default\nsvcs -a | egrep 'telnet|ftp'"
+        },
+        {
+          "title": "설정 변경 반영 (예: DNS 클라이언트)",
+          "command": "svcadm refresh svc:/network/dns/client:default\nsvcs dns/client"
+        }
+      ],
+      "cautions": [
+        "disable 은 재부팅 후에도 유지됩니다. 점검 중 잠시만 내리려면 disable -t 를 쓰세요.",
+        "maintenance 상태에서는 restart 가 동작하지 않습니다. 원인을 고친 뒤 clear 하세요.",
+        "ssh 를 restart/disable 하면 원격 세션이 끊길 수 있습니다. 콘솔 접근 경로를 확보하세요."
+      ],
+      "platformNotes": {
+        "solaris": "Solaris 10 이상. Linux 의 systemctl start/stop/enable/disable 을 합친 개념 (enable = start + enable)."
+      },
+      "help": "man svcadm",
+      "keywords": [
+        "서비스 시작",
+        "서비스 중지",
+        "재시작",
+        "maintenance 해제",
+        "svcadm",
+        "clear",
+        "SMF"
+      ],
+      "related": [
+        "solaris-svcs",
+        "solaris-svccfg",
+        "solaris-inetadm",
+        "systemctl"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-svccfg",
+      "name": "svccfg",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "SMF 서비스 설정(속성) 조회·변경·매니페스트 등록",
+      "description": "SMF 저장소의 서비스 속성(property)을 조회·변경하고, 매니페스트(XML)를 import/export 합니다. Solaris 11 에서는 DNS·nsswitch·호스트명·타임존 같은 시스템 설정도 SMF 속성으로 관리되므로 설정 파일 대신 svccfg setprop 후 svcadm refresh 로 반영합니다.",
+      "syntax": [
+        "svccfg -s {{FMRI}} listprop [{{PG}}]",
+        "svccfg -s {{FMRI}} setprop {{PG}}/{{PROP}} = {{TYPE}}: {{VALUE}}",
+        "svccfg import | export {{ARG}}"
+      ],
+      "options": [
+        {
+          "flag": "-s {{FMRI}}",
+          "desc": "작업할 서비스 선택"
+        },
+        {
+          "flag": "-v",
+          "desc": "상세 출력"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "서브 명령 (svccfg -s {{FMRI}} …)",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "listprop [{{PG}}]",
+              "desc": "속성 목록 (속성 그룹 지정 가능)"
+            },
+            {
+              "cmd": "setprop {{PG}}/{{PROP}} = {{TYPE}}: {{VALUE}}",
+              "desc": "속성 변경 (type 예: astring, boolean, count, net_address)"
+            },
+            {
+              "cmd": "delprop {{PG}}/{{PROP}}",
+              "desc": "속성 삭제"
+            },
+            {
+              "cmd": "listcust",
+              "desc": "관리자가 기본값에서 바꾼 항목만 표시",
+              "version": "Solaris 11 이상"
+            },
+            {
+              "cmd": "refresh",
+              "desc": "변경 사항을 실행 스냅샷에 반영 (svcadm refresh 와 같음)"
+            }
+          ]
+        },
+        {
+          "title": "매니페스트·백업",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "svccfg import {{MANIFEST_XML}}",
+              "desc": "사용자 정의 서비스 매니페스트 등록"
+            },
+            {
+              "cmd": "svccfg export {{FMRI}} > {{FILE}}.xml",
+              "desc": "서비스 정의를 XML 로 백업"
+            },
+            {
+              "cmd": "svccfg validate {{MANIFEST_XML}}",
+              "desc": "매니페스트 문법 검사"
+            },
+            {
+              "cmd": "svccfg delete {{FMRI}}",
+              "desc": "서비스 삭제 (먼저 disable)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "DNS 서버 설정 (Solaris 11)",
+          "version": "Solaris 11 이상",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client listprop config",
+              "desc": "현재 설정 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client setprop config/nameserver = net_address: \\( {{DNS1}} {{DNS2}} \\)",
+              "desc": "네임서버 지정 (여러 개는 괄호로)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s network/dns/client setprop config/search = astring: {{DOMAIN}}",
+              "desc": "검색 도메인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svccfg -s system/name-service/switch setprop config/host = astring: '\"files dns\"'",
+              "desc": "호스트 조회 순서 (nsswitch)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svcadm refresh network/dns/client system/name-service/switch",
+              "desc": "반영 (/etc/resolv.conf, /etc/nsswitch.conf 가 자동 재생성됨)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "svcadm enable network/dns/client",
+              "desc": "DNS 클라이언트 활성화"
+            }
+          ]
+        },
+        {
+          "title": "서비스의 시작 명령 확인",
+          "command": "svccfg -s {{FMRI}} listprop start/exec"
+        },
+        {
+          "title": "바꾼 설정만 보기",
+          "command": "svccfg -s {{FMRI}} listcust",
+          "version": "Solaris 11 이상"
+        }
+      ],
+      "cautions": [
+        "Solaris 11 에서 /etc/resolv.conf, /etc/nsswitch.conf 를 직접 고치면 서비스 refresh·재부팅 시 SMF 값으로 덮어써집니다. svccfg 로 바꾸세요.",
+        "setprop 만으로는 실행 중인 서비스에 반영되지 않습니다. svcadm refresh 를 해야 합니다.",
+        "변경 전 svccfg export {{FMRI}} 로 백업해 두세요."
+      ],
+      "help": "man svccfg",
+      "keywords": [
+        "SMF 설정",
+        "서비스 속성",
+        "setprop",
+        "매니페스트",
+        "svccfg",
+        "DNS 설정",
+        "nameserver"
+      ],
+      "related": [
+        "solaris-svcs",
+        "solaris-svcadm",
+        "solaris-svcprop",
+        "etc-resolv-conf"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-svcprop",
+      "name": "svcprop",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "SMF 서비스 속성 값 읽기 (스크립트용)",
+      "description": "SMF 서비스의 속성 값을 읽어 출력합니다. svccfg listprop 과 비슷하지만 읽기 전용이고, 실행 중인(반영된) 값을 보여 주므로 스크립트에서 설정 값을 확인할 때 편합니다.",
+      "syntax": [
+        "svcprop [-p {{PG}}/{{PROP}}] {{FMRI}}"
+      ],
+      "options": [
+        {
+          "flag": "-p {{PG}}/{{PROP}}",
+          "desc": "특정 속성(또는 속성 그룹)만 출력"
+        },
+        {
+          "flag": "-c",
+          "desc": "실행 스냅샷이 아닌 현재 저장소 값(refresh 전 값) 출력"
+        },
+        {
+          "flag": "-q",
+          "desc": "출력 없이 종료 코드로만 존재 여부 확인"
+        }
+      ],
+      "examples": [
+        {
+          "title": "DNS 네임서버 값 확인",
+          "command": "svcprop -p config/nameserver network/dns/client"
+        },
+        {
+          "title": "서비스 전체 속성",
+          "command": "svcprop {{FMRI}}"
+        },
+        {
+          "title": "refresh 전후 값 비교",
+          "command": "svcprop -c -p {{PG}}/{{PROP}} {{FMRI}}\nsvcprop -p {{PG}}/{{PROP}} {{FMRI}}"
+        }
+      ],
+      "cautions": [],
+      "help": "man svcprop",
+      "keywords": [
+        "SMF 속성",
+        "서비스 설정 확인",
+        "svcprop",
+        "property"
+      ],
+      "related": [
+        "solaris-svccfg",
+        "solaris-svcs"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-inetadm",
+      "name": "inetadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.manage",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "inetd 기반 서비스(telnet·ftp·rlogin 등) 조회·설정",
+      "description": "inetd 가 관리하는 네트워크 서비스(telnet, ftp, rlogin, finger 등)의 상태와 속성을 조회·변경합니다. 금융권 보안 점검에서 불필요한 inetd 서비스 비활성화를 확인할 때 많이 씁니다. Solaris 10 이상에서는 /etc/inetd.conf 가 아닌 SMF 로 관리됩니다.",
+      "syntax": [
+        "inetadm [-l {{FMRI}}]",
+        "inetadm -e | -d {{FMRI}}",
+        "inetadm -m {{FMRI}} {{PROP}}={{VALUE}}"
+      ],
+      "options": [
+        {
+          "flag": "-l {{FMRI}}",
+          "desc": "서비스 속성 상세"
+        },
+        {
+          "flag": "-e {{FMRI}}",
+          "desc": "서비스 활성화"
+        },
+        {
+          "flag": "-d {{FMRI}}",
+          "desc": "서비스 비활성화"
+        },
+        {
+          "flag": "-m {{FMRI}} {{PROP}}={{VALUE}}",
+          "desc": "서비스별 속성 변경 (예: tcp_trace=TRUE)"
+        },
+        {
+          "flag": "-p",
+          "desc": "전체 기본 속성 보기"
+        },
+        {
+          "flag": "-M {{PROP}}={{VALUE}}",
+          "desc": "전체 기본 속성 변경"
+        }
+      ],
+      "examples": [
+        {
+          "title": "활성화된 inetd 서비스 확인",
+          "command": "inetadm | grep enabled"
+        },
+        {
+          "title": "telnet 비활성화",
+          "command": "inetadm -d svc:/network/telnet:default\ninetadm | grep telnet"
+        },
+        {
+          "title": "접속 로그(TCP trace) 남기기",
+          "command": "inetadm -M tcp_trace=TRUE",
+          "note": "연결 정보가 syslog(daemon.notice)로 기록됩니다."
+        }
+      ],
+      "cautions": [
+        "Solaris 10 에서 /etc/inetd.conf 를 고친 경우 inetconv 로 SMF 에 다시 등록해야 반영됩니다."
+      ],
+      "help": "man inetadm",
+      "keywords": [
+        "inetd",
+        "telnet 비활성화",
+        "보안 점검",
+        "inetadm",
+        "ftp",
+        "불필요 서비스"
+      ],
+      "related": [
+        "solaris-svcadm",
+        "solaris-svcs"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-logadm",
+      "name": "logadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.logrotate",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "로그 파일 순환(rotate) 설정·실행",
+      "description": "Solaris 의 로그 순환 도구로 /etc/logadm.conf 의 규칙에 따라 로그를 크기·주기 기준으로 돌리고 오래된 것을 지웁니다. root crontab 에서 매일 실행됩니다. -w 로 규칙을 추가하면 logadm.conf 에 기록되며, 파일을 직접 편집하는 것보다 안전합니다.",
+      "syntax": [
+        "logadm [-n] [-v]",
+        "logadm -w {{LOG_FILE}} [-C {{COUNT}}] [-s {{SIZE}}] [-p {{PERIOD}}] [-z {{N}}] [-c]",
+        "logadm -r {{LOG_FILE}}",
+        "logadm -V"
+      ],
+      "options": [
+        {
+          "flag": "-w {{LOG_FILE}}",
+          "desc": "규칙을 /etc/logadm.conf 에 추가·갱신"
+        },
+        {
+          "flag": "-r {{LOG_FILE}}",
+          "desc": "규칙 삭제"
+        },
+        {
+          "flag": "-C {{COUNT}}",
+          "desc": "보관할 이전 로그 개수"
+        },
+        {
+          "flag": "-s {{SIZE}}",
+          "desc": "이 크기 이상이면 순환 (예: 100m)"
+        },
+        {
+          "flag": "-p {{PERIOD}}",
+          "desc": "주기 (예: 1d, 1w, now)"
+        },
+        {
+          "flag": "-z {{N}}",
+          "desc": "최근 N 개를 제외한 이전 로그를 gzip 압축"
+        },
+        {
+          "flag": "-c",
+          "desc": "파일을 옮기지 않고 복사 후 비우기 (파일을 계속 열고 쓰는 앱용)"
+        },
+        {
+          "flag": "-a '{{COMMAND}}'",
+          "desc": "순환 후 실행할 명령 (예: 데몬에 HUP 신호)"
+        },
+        {
+          "flag": "-n",
+          "desc": "실제로 하지 않고 할 일만 출력 (dry-run)"
+        },
+        {
+          "flag": "-v",
+          "desc": "처리 내용 출력"
+        },
+        {
+          "flag": "-V",
+          "desc": "logadm.conf 검증 후 내용 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "애플리케이션 로그 순환 규칙 추가",
+          "command": "logadm -w /var/log/{{APP}}/app.log -C 30 -p 1d -z 1 -c\nlogadm -V | grep {{APP}}"
+        },
+        {
+          "title": "지금 바로 순환 테스트 (dry-run 후 실행)",
+          "command": "logadm -n -v -p now /var/log/{{APP}}/app.log\nlogadm -p now /var/log/{{APP}}/app.log"
+        },
+        {
+          "title": "messages 순환 규칙 확인",
+          "command": "grep messages /etc/logadm.conf"
+        }
+      ],
+      "cautions": [
+        "-C 보관 개수를 줄이면 다음 실행 때 초과분이 바로 삭제됩니다. 감사·보존 기간 규정(예: 1년)을 확인하세요.",
+        "-c(copytruncate)는 복사와 비우기 사이에 쓰인 로그가 유실될 수 있습니다."
+      ],
+      "platformNotes": {
+        "solaris": "Linux logrotate 에 해당. 설정 파일 /etc/logadm.conf, 실행은 root crontab 의 /usr/sbin/logadm."
+      },
+      "help": "man logadm",
+      "keywords": [
+        "로그 순환",
+        "로그 정리",
+        "rotate",
+        "logadm",
+        "logadm.conf",
+        "로그 보관"
+      ],
+      "related": [
+        "solaris-var-adm-messages",
+        "logrotate",
+        "crontab"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-var-adm-messages",
+      "name": "/var/adm/messages",
+      "kind": "file",
+      "category": "service",
+      "task": "service.logs",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Solaris 시스템 로그 (커널·디스크·네트워크 메시지)",
+      "description": "syslogd 가 기록하는 Solaris 기본 시스템 로그입니다. 커널 경고, 디스크·HBA 오류, NIC 링크 다운, 서비스 메시지가 여기에 남습니다. logadm 이 주기적으로 messages.0, messages.1 … 로 순환합니다. 어떤 메시지를 어디에 기록할지는 /etc/syslog.conf 에서 정합니다.",
+      "syntax": [
+        "tail -f /var/adm/messages",
+        "grep -i {{PATTERN}} /var/adm/messages*"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "관련 파일",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "/var/adm/messages",
+              "desc": "현재 시스템 로그"
+            },
+            {
+              "cmd": "/var/adm/messages.0, .1 …",
+              "desc": "순환된 이전 로그 (숫자가 클수록 오래됨)"
+            },
+            {
+              "cmd": "/etc/syslog.conf",
+              "desc": "기록 규칙 (선택자와 대상 사이는 반드시 탭)"
+            },
+            {
+              "cmd": "/var/svc/log/*.log",
+              "desc": "SMF 서비스별 로그 (svcs -xv 가 경로 안내)"
+            },
+            {
+              "cmd": "/var/adm/sulog",
+              "desc": "su 사용 기록"
+            },
+            {
+              "cmd": "/var/log/authlog",
+              "desc": "인증 로그 (syslog.conf 에서 auth 를 설정한 경우)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "실시간 확인",
+          "command": "tail -f /var/adm/messages"
+        },
+        {
+          "title": "디스크·SCSI 오류 찾기",
+          "command": "egrep -i 'scsi|retryable|fatal|offline' /var/adm/messages*"
+        },
+        {
+          "title": "NIC 링크 다운 기록",
+          "command": "grep -i 'link down' /var/adm/messages*"
+        },
+        {
+          "title": "syslog.conf 변경 후 반영",
+          "command": "cp -p /etc/syslog.conf /etc/syslog.conf.bak\nvi /etc/syslog.conf\nsvcadm refresh svc:/system/system-log:default"
+        }
+      ],
+      "cautions": [
+        "/etc/syslog.conf 는 선택자와 대상 사이에 공백이 아닌 탭을 써야 합니다. 공백이면 그 줄이 무시됩니다.",
+        "하드웨어 장애는 messages 보다 FMA(fmadm faulty, fmdump)에 정확히 기록됩니다."
+      ],
+      "platformNotes": {
+        "solaris": "Linux 의 /var/log/messages 에 해당. Solaris 11.4 는 rsyslog 를 선택적으로 쓸 수 있으며 이 경우 설정 파일은 /etc/rsyslog.conf 입니다."
+      },
+      "keywords": [
+        "시스템 로그",
+        "messages",
+        "syslog",
+        "/var/adm/messages",
+        "오류 로그",
+        "커널 메시지"
+      ],
+      "related": [
+        "solaris-logadm",
+        "solaris-fmdump",
+        "solaris-svcs",
+        "var-log-messages",
+        "dmesg"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-fmadm",
+      "name": "fmadm",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.hw-errors",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "하드웨어 장애(FMA) 목록 확인·수리 완료 처리",
+      "description": "Solaris FMA(Fault Management Architecture)가 진단한 장애 목록을 보고, 부품 교체 후 장애를 해제합니다. fmadm faulty 는 CPU·메모리·디스크·PCI·팬·전원 장애를 부품 위치, 영향, 조치 안내(Oracle 지식 문서 ID)와 함께 보여 주므로 일일 점검의 핵심 명령입니다.",
+      "syntax": [
+        "fmadm faulty [-a] [-r]",
+        "fmadm repaired | replaced | acquit {{FMRI_OR_UUID}}",
+        "fmadm config"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "서브 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "fmadm faulty",
+              "desc": "현재 장애·격리된 부품 목록 (아무것도 안 나오면 정상)"
+            },
+            {
+              "cmd": "fmadm faulty -a",
+              "desc": "정상으로 돌아오지 않은 모든 리소스 포함"
+            },
+            {
+              "cmd": "fmadm faulty -r",
+              "desc": "부품(FMRI)과 상태만 간단히"
+            },
+            {
+              "cmd": "fmadm replaced {{FRU}}",
+              "desc": "부품을 교체했음을 알림"
+            },
+            {
+              "cmd": "fmadm repaired {{FRU}}",
+              "desc": "교체 없이 수리했음을 알림"
+            },
+            {
+              "cmd": "fmadm acquit {{UUID}}",
+              "desc": "장애 진단이 잘못되었거나 무시해도 됨을 알림"
+            },
+            {
+              "cmd": "fmadm config",
+              "desc": "FMA 진단 모듈 상태"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "하드웨어 장애 확인 → 상세 이력 → 조치",
+          "steps": [
+            {
+              "prompt": "#",
+              "cmd": "fmadm faulty",
+              "desc": "장애 부품, 이벤트 ID(UUID), 메시지 ID(MSG-ID), 조치 안내 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fmdump -v -u {{UUID}}",
+              "desc": "해당 장애의 진단 이력 상세"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fmdump -eV -t 24h | more",
+              "desc": "장애 직전의 오류 보고(ereport) 원본 확인"
+            },
+            {
+              "prompt": "#",
+              "cmd": "explorer",
+              "desc": "벤더 접수용 자료 수집 (설치된 경우)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fmadm replaced {{FRU}}",
+              "desc": "부품 교체 후 장애 해제 (대부분 교체 시 자동 해제)"
+            },
+            {
+              "prompt": "#",
+              "cmd": "fmadm faulty",
+              "desc": "목록에서 사라졌는지 확인"
+            }
+          ]
+        },
+        {
+          "title": "일일 점검 (장애가 있으면 메일로)",
+          "command": "fmadm faulty -r | grep . && fmadm faulty | mailx -s \"FMA fault $(hostname)\" {{EMAIL}}"
+        }
+      ],
+      "cautions": [
+        "장애가 실제로 해결되지 않았는데 repaired/acquit 하면 FMA 가 격리했던 CPU·메모리가 다시 사용되어 시스템 장애로 이어질 수 있습니다. 벤더 확인 후 실행하세요.",
+        "SPARC 서버는 ILOM 에도 같은 장애가 기록되며, 교체 후 ILOM 쪽 장애도 해제되었는지 확인하세요.",
+        "Solaris 10 초기 업데이트에는 repaired/replaced/acquit 대신 fmadm repair 만 있습니다."
+      ],
+      "help": "man fmadm",
+      "keywords": [
+        "하드웨어 장애",
+        "FMA",
+        "fault",
+        "fmadm faulty",
+        "부품 교체",
+        "장애 점검",
+        "fmadm"
+      ],
+      "related": [
+        "solaris-fmdump",
+        "solaris-fmstat",
+        "solaris-prtdiag",
+        "solaris-explorer"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-fmdump",
+      "name": "fmdump",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.hw-errors",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "FMA 장애·오류 이력(fault log, error log) 조회",
+      "description": "FMA 로그를 읽습니다. 기본은 진단 결과인 fault log(장애 판정 이력)를 보여 주고, -e 는 진단 전 단계의 원본 오류 보고(ereport: 정정된 메모리 오류, 디스크 재시도 등)를 보여 줍니다. 장애 판정 전에 오류가 쌓이고 있는지, 과거에 어떤 부품이 문제였는지 확인할 때 씁니다.",
+      "syntax": [
+        "fmdump [-v | -V] [-u {{UUID}}] [-t {{TIME}}] [-T {{TIME}}]",
+        "fmdump -e [-V] [-t {{TIME}}]"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "장애별 부품·확률 등 상세"
+        },
+        {
+          "flag": "-V",
+          "desc": "이벤트 전체 내용(name-value) 출력"
+        },
+        {
+          "flag": "-e",
+          "desc": "fault log 대신 error log(ereport) 조회"
+        },
+        {
+          "flag": "-u {{UUID}}",
+          "desc": "특정 장애 이벤트만 (fmadm faulty 의 EVENT-ID)"
+        },
+        {
+          "flag": "-t {{TIME}}",
+          "desc": "이 시각 이후만 (예: 24h, 7d 처럼 현재 기준 상대 시간, 또는 mm/dd/yy 형식)"
+        },
+        {
+          "flag": "-T {{TIME}}",
+          "desc": "이 시각 이전만"
+        },
+        {
+          "flag": "-c {{CLASS}}",
+          "desc": "이벤트 클래스로 필터 (예: ereport.io.*)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "과거 장애 판정 이력",
+          "command": "fmdump"
+        },
+        {
+          "title": "특정 장애 상세",
+          "command": "fmdump -v -u {{UUID}}"
+        },
+        {
+          "title": "최근 7일 오류 보고 (장애 전조 확인)",
+          "command": "fmdump -e -t 7d"
+        },
+        {
+          "title": "오류 보고 원본 (벤더 전달용)",
+          "command": "fmdump -eV -t 7d > /var/tmp/fmdump_eV_$(hostname).txt"
+        }
+      ],
+      "cautions": [
+        "ereport 가 있다고 모두 장애는 아닙니다 (정정된 오류 포함). 장애 여부는 fmadm faulty 와 fault log 로 판단하고, 반복·급증하는 ereport 는 벤더에 문의하세요."
+      ],
+      "help": "man fmdump",
+      "keywords": [
+        "장애 이력",
+        "에러 로그",
+        "ereport",
+        "FMA",
+        "fmdump",
+        "fault log"
+      ],
+      "related": [
+        "solaris-fmadm",
+        "solaris-fmstat",
+        "solaris-var-adm-messages"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-fmstat",
+      "name": "fmstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.hw-errors",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "FMA 진단 모듈별 처리 통계 확인",
+      "description": "FMA 데몬(fmd)의 진단 모듈별로 받은 이벤트 수, 처리 시간, 진단한 장애 수 등을 보여 줍니다. FMA 가 정상 동작하는지, 특정 모듈에 오류 이벤트가 몰리는지 확인하는 보조 도구입니다.",
+      "syntax": [
+        "fmstat [-m {{MODULE}}] [{{INTERVAL}} [{{COUNT}}]]"
+      ],
+      "options": [
+        {
+          "flag": "-m {{MODULE}}",
+          "desc": "특정 모듈의 상세 통계"
+        },
+        {
+          "flag": "-a",
+          "desc": "전체 통계 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "모듈별 통계",
+          "command": "fmstat"
+        },
+        {
+          "title": "5초 간격으로 3번",
+          "command": "fmstat 5 3"
+        }
+      ],
+      "cautions": [],
+      "help": "man fmstat",
+      "keywords": [
+        "FMA 통계",
+        "fmd",
+        "fmstat",
+        "진단 모듈"
+      ],
+      "related": [
+        "solaris-fmadm",
+        "solaris-fmdump"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "solaris-auditreduce",
+      "name": "auditreduce",
+      "aliases": [
+        "praudit",
+        "auditconfig"
+      ],
+      "kind": "command",
+      "shell": "sh",
+      "category": "service",
+      "task": "service.audit",
+      "platforms": [
+        "solaris"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Solaris 감사(audit) 로그 추출·읽기 (praudit 와 함께)",
+      "description": "Solaris 감사 로그(/var/audit 의 이진 파일)에서 조건에 맞는 레코드를 골라내는 명령입니다. 이진 레코드이므로 praudit 로 사람이 읽을 수 있는 형태로 바꿔 봅니다. 감사 대상 이벤트(클래스) 설정은 auditconfig 로 확인·변경합니다.",
+      "syntax": [
+        "auditreduce [-u {{USER}}] [-c {{CLASS}}] [-a {{FROM}}] [-b {{TO}}] [{{AUDIT_FILE}}...] | praudit [-l] [-s]",
+        "auditconfig -getflags"
+      ],
+      "options": [
+        {
+          "flag": "-u {{USER}}",
+          "desc": "특정 사용자(감사 ID 기준)의 레코드만"
+        },
+        {
+          "flag": "-c {{CLASS}}",
+          "desc": "감사 클래스로 필터 (lo=로그인·로그아웃, ex=명령 실행, fm=파일 속성 변경 등)"
+        },
+        {
+          "flag": "-a {{YYYYMMDD}}",
+          "desc": "이 날짜·시각 이후 (예: 20261101 또는 20261101093000)"
+        },
+        {
+          "flag": "-b {{YYYYMMDD}}",
+          "desc": "이 날짜·시각 이전"
+        },
+        {
+          "flag": "praudit -l",
+          "desc": "레코드 하나를 한 줄로 출력 (grep 하기 쉬움)"
+        },
+        {
+          "flag": "praudit -s",
+          "desc": "짧은 형식으로 출력"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "감사 설정 확인·변경",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "auditconfig -getflags",
+              "desc": "현재 감사 대상 클래스 (기본·활성)"
+            },
+            {
+              "cmd": "auditconfig -setflags lo,ex",
+              "desc": "감사 클래스 변경 (Solaris 11. 영구 적용)",
+              "version": "Solaris 11 이상"
+            },
+            {
+              "cmd": "auditconfig -getcond",
+              "desc": "감사 동작 여부"
+            },
+            {
+              "cmd": "audit -s",
+              "desc": "변경한 설정을 감사 서비스에 반영 (Solaris 11)",
+              "version": "Solaris 11 이상"
+            },
+            {
+              "cmd": "audit -n",
+              "desc": "현재 감사 파일을 닫고 새 파일 시작"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "최근 로그인·로그아웃 기록",
+          "command": "auditreduce -c lo -a {{YYYYMMDD}} /var/audit/* | praudit -l"
+        },
+        {
+          "title": "특정 사용자의 명령 실행 기록",
+          "command": "auditreduce -u {{USER}} -c ex /var/audit/* | praudit -l | more"
+        },
+        {
+          "title": "감사 설정 확인",
+          "command": "auditconfig -getflags\nsvcs auditd"
+        }
+      ],
+      "cautions": [
+        "ex(명령 실행) 클래스를 전체 사용자에게 켜면 감사 로그가 매우 빠르게 늘어납니다. /var/audit 용량과 보관·순환 정책을 먼저 정하세요.",
+        "Solaris 10 은 bsmconv 로 감사를 활성화해야 하며 재부팅이 필요합니다. Solaris 11 은 auditd 서비스가 기본으로 켜져 있습니다."
+      ],
+      "help": "man auditreduce · man praudit · man auditconfig",
+      "keywords": [
+        "감사 로그",
+        "audit",
+        "praudit",
+        "auditreduce",
+        "auditconfig",
+        "접속 기록",
+        "명령 이력"
+      ],
+      "related": [
+        "solaris-var-adm-messages",
+        "ausearch",
+        "last"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

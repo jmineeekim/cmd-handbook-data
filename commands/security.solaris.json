@@ -1,0 +1,38 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "security",
+  "commands": [
+    {
+      "id": "solaris-digest",
+      "name": "digest",
+      "kind": "command",
+      "shell": "sh",
+      "category": "security",
+      "task": "security.hash",
+      "platforms": ["solaris"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일 해시(MD5·SHA-256 등) 계산 (sha256sum 대체)",
+      "description": "파일의 메시지 다이제스트(해시)를 계산합니다. Solaris 에는 sha256sum·md5sum 이 기본으로 없으므로, 패치·설치 파일을 받은 뒤 벤더가 공개한 체크섬과 비교하거나 파일 변조를 확인할 때 digest 를 씁니다.",
+      "syntax": ["digest -a {{ALGORITHM}} [-v] {{FILE}}...", "digest -l"],
+      "options": [
+        {"flag": "-a {{ALGORITHM}}", "desc": "알고리즘 (md5, sha1, sha256, sha384, sha512)"},
+        {"flag": "-v", "desc": "알고리즘 (파일명) = 해시 형식으로 출력 (여러 파일일 때 편리)"},
+        {"flag": "-l", "desc": "사용 가능한 알고리즘 목록"}
+      ],
+      "examples": [
+        {"title": "SHA-256 해시 계산", "command": "digest -a sha256 {{FILE}}"},
+        {"title": "벤더 공개값과 비교", "command": "[ \"$(digest -a sha256 {{FILE}})\" = \"{{EXPECTED_HASH}}\" ] && echo OK || echo MISMATCH"},
+        {"title": "여러 파일 해시를 기록 (변조 점검 기준값)", "command": "digest -v -a sha256 /usr/bin/* > /var/tmp/bin_sha256_$(date +%Y%m%d).txt"}
+      ],
+      "cautions": ["MD5·SHA-1 은 무결성 검증용으로 권장되지 않습니다. 가능하면 sha256 이상을 쓰세요."],
+      "platformNotes": {"solaris": "Solaris 10·11 기본 포함. Linux 의 sha256sum, md5sum 에 해당. Solaris 11 은 openssl dgst -sha256 도 사용 가능합니다."},
+      "help": "man digest",
+      "keywords": ["해시", "체크섬", "SHA-256", "MD5", "digest", "무결성", "sha256sum"],
+      "related": ["sha256sum", "md5sum", "openssl", "solaris-pkg"],
+      "review": {"status": "ai-draft"}
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "network",
+  "commands": [
+    {
+      "id": "aix-entstat",
+      "name": "entstat",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.nic",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "이더넷 어댑터 링크 상태·속도·오류 통계",
+      "description": "이더넷 어댑터(entN)의 링크 상태, 협상 속도·Duplex, 송수신 패킷과 오류·드롭 통계를 보여 줍니다. Linux 의 ethtool 에 해당합니다. EtherChannel 장치에 쓰면 구성원 어댑터별 상태와 현재 활성 어댑터를 함께 볼 수 있습니다.",
+      "syntax": [
+        "entstat [-d] {{ENT}}",
+        "entstat -r {{ENT}}"
+      ],
+      "options": [
+        { "flag": "-d", "desc": "어댑터 고유 상세 통계 포함 (링크 상태, 속도, 하드웨어 오류)" },
+        { "flag": "-r", "desc": "통계 카운터 초기화 (root)" }
+      ],
+      "examples": [
+        { "title": "링크 상태와 속도 확인", "command": "entstat -d {{ENT}} | grep -i -E 'link status|media speed'" },
+        { "title": "오류·드롭 카운터 확인", "command": "entstat -d {{ENT}} | grep -i -E 'error|drop|overflow|no resource'" },
+        { "title": "EtherChannel 활성 어댑터 확인", "command": "entstat -d {{ENT}} | grep -i -E 'active channel|link status'" }
+      ],
+      "cautions": [
+        "en0(인터페이스)이 아니라 ent0(어댑터) 이름을 써야 합니다.",
+        "-r 로 카운터를 지우면 이전 오류 기록이 사라집니다. 장애 분석 중이면 결과를 저장한 뒤 초기화하세요."
+      ],
+      "help": "man entstat",
+      "keywords": ["NIC 상태", "링크 상태", "entstat", "ethtool", "속도", "duplex", "패킷 오류", "EtherChannel"],
+      "related": ["aix-lsattr", "aix-lsdev", "aix-mkdev", "ethtool", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mktcpip",
+      "name": "mktcpip",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.config",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "호스트명·IP·게이트웨이·DNS 기본 TCP/IP 설정",
+      "description": "인터페이스 IP, 넷마스크, 호스트명, 기본 게이트웨이, DNS 서버를 한 번에 설정하고 ODM 에 저장해 재부팅 후에도 유지되게 합니다. 서버 최초 구성 때 주로 쓰며, smitty mktcpip 와 같은 동작입니다. 이후 개별 변경은 chdev 로 하는 것이 일반적입니다.",
+      "syntax": [
+        "mktcpip -h {{HOSTNAME}} -a {{IP}} -m {{NETMASK}} -i {{INTERFACE}} [-g {{GATEWAY}}] [-n {{DNS_SERVER}} -d {{DOMAIN}}] [-s]"
+      ],
+      "options": [
+        { "flag": "-h {{HOSTNAME}}", "desc": "호스트명" },
+        { "flag": "-a {{IP}}", "desc": "IP 주소" },
+        { "flag": "-m {{NETMASK}}", "desc": "넷마스크" },
+        { "flag": "-i {{INTERFACE}}", "desc": "인터페이스 (en0 등)" },
+        { "flag": "-g {{GATEWAY}}", "desc": "기본 게이트웨이" },
+        { "flag": "-n {{DNS_SERVER}}", "desc": "DNS 서버 (/etc/resolv.conf 생성)" },
+        { "flag": "-d {{DOMAIN}}", "desc": "DNS 도메인" },
+        { "flag": "-s", "desc": "TCP/IP 데몬 시작" }
+      ],
+      "examples": [
+        {
+          "title": "최초 네트워크 설정 (HMC 콘솔에서)",
+          "steps": [
+            { "prompt": "#", "cmd": "lsdev -Cc if", "desc": "인터페이스 이름 확인" },
+            { "prompt": "#", "cmd": "mktcpip -h {{HOSTNAME}} -a {{IP}} -m {{NETMASK}} -i en0 -g {{GATEWAY}}", "desc": "IP·호스트명·게이트웨이 설정" },
+            { "prompt": "#", "cmd": "lsattr -El en0; netstat -rn", "desc": "설정 값과 라우팅 확인" },
+            { "prompt": "#", "cmd": "ping -c 3 {{GATEWAY}}", "desc": "게이트웨이 연결 확인" }
+          ]
+        },
+        { "title": "현재 설정 확인 (변경 전 기록)", "command": "lsattr -El en0\nlsattr -El inet0\nnetstat -rn > /tmp/route.before" }
+      ],
+      "cautions": [
+        "원격 접속 중 실행하면 IP·게이트웨이 변경으로 접속이 끊길 수 있습니다. HMC 콘솔(vterm)에서 작업하세요.",
+        "이미 설정된 인터페이스에 다시 실행하면 기존 IP·게이트웨이를 덮어씁니다. 별칭 IP 추가는 chdev -l en0 -a alias4=... 를 쓰세요."
+      ],
+      "help": "man mktcpip · smitty mktcpip",
+      "keywords": ["IP 설정", "mktcpip", "호스트명", "게이트웨이", "DNS 설정", "네트워크 초기 설정"],
+      "related": ["aix-chdev", "aix-lsattr", "aix-smitty", "ifconfig", "route", "etc-resolv-conf"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-iptrace",
+      "name": "iptrace",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.capture",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "AIX 패킷 캡처 (ipreport 로 해석)",
+      "description": "AIX 기본 패킷 캡처 도구로, 지정한 조건의 패킷을 바이너리 파일에 기록합니다. 기록 파일은 ipreport 로 읽기 쉬운 텍스트로 바꾸거나 Wireshark 로 열 수 있습니다. 데몬처럼 계속 돌기 때문에 SRC(startsrc/stopsrc)로 시작·종료하는 방식이 안전합니다. tcpdump 도 AIX 에 기본 포함되어 있습니다.",
+      "syntax": [
+        "startsrc -s iptrace -a \"[-i {{INTERFACE}}] [-p {{PORT}}] [-s {{HOST}} [-b]] {{TRACE_FILE}}\"",
+        "stopsrc -s iptrace",
+        "ipreport -rns {{TRACE_FILE}} > {{REPORT_FILE}}"
+      ],
+      "options": [
+        { "flag": "-i {{INTERFACE}}", "desc": "캡처할 인터페이스 (en0 등)" },
+        { "flag": "-p {{PORT}}", "desc": "포트 조건" },
+        { "flag": "-s {{HOST}}", "desc": "출발지 호스트 조건" },
+        { "flag": "-d {{HOST}}", "desc": "목적지 호스트 조건" },
+        { "flag": "-b", "desc": "-s/-d 조건을 양방향으로 적용" },
+        { "flag": "-P {{PROTOCOL}}", "desc": "프로토콜 조건 (tcp, udp, icmp)" },
+        { "flag": "-a", "desc": "ARP 패킷 제외" }
+      ],
+      "examples": [
+        {
+          "title": "특정 서버와의 DB 통신 캡처",
+          "steps": [
+            { "prompt": "#", "cmd": "df -g /tmp", "desc": "캡처 파일 저장 공간 확인" },
+            { "prompt": "#", "cmd": "startsrc -s iptrace -a \"-i en0 -s {{HOST}} -b -p {{PORT}} /tmp/iptrace.bin\"", "desc": "조건을 걸어 캡처 시작" },
+            { "prompt": "#", "cmd": "lssrc -s iptrace", "desc": "active 상태 확인 후 문제 재현" },
+            { "prompt": "#", "cmd": "stopsrc -s iptrace", "desc": "캡처 종료 (반드시 종료할 것)" },
+            { "prompt": "#", "cmd": "ipreport -rns /tmp/iptrace.bin > /tmp/iptrace.txt", "desc": "텍스트 보고서로 변환 (-r RPC 해석, -n 패킷 번호, -s 프로토콜 접두어)" }
+          ]
+        },
+        { "title": "tcpdump 로 간단히 보기", "command": "tcpdump -i en0 -n host {{HOST}} and port {{PORT}}" }
+      ],
+      "cautions": [
+        "조건 없이 캡처하면 파일이 매우 빨리 커져 /tmp 가 가득 찹니다. 인터페이스·호스트·포트 조건을 꼭 거세요.",
+        "캡처 파일에는 평문 데이터(계정, 개인정보)가 들어 있을 수 있습니다. 분석 후 삭제하고 외부 반출 시 승인을 받으세요.",
+        "iptrace 를 SRC 없이 직접 실행했다면 프로세스를 kill 로 종료해야 합니다. 종료하지 않으면 계속 기록됩니다."
+      ],
+      "help": "man iptrace · man ipreport",
+      "keywords": ["패킷 캡처", "iptrace", "ipreport", "tcpdump", "네트워크 분석", "Wireshark"],
+      "related": ["tcpdump", "aix-startsrc", "aix-stopsrc", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-nfso",
+      "name": "nfso",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.config",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NFS 커널 파라미터 조회·변경",
+      "description": "NFS 클라이언트·서버 동작에 관한 튜닝 값을 조회하고 바꿉니다. Linux NFS 서버(기본 secure 옵션)에 마운트할 때 필요한 예약 포트 사용(nfs_use_reserved_ports) 설정이 대표적입니다. 플래그 사용법은 no·vmo 와 같습니다.",
+      "syntax": [
+        "nfso -a",
+        "nfso -o {{TUNABLE}}",
+        "nfso -p -o {{TUNABLE}}={{VALUE}}"
+      ],
+      "options": [
+        { "flag": "-a", "desc": "모든 값 표시" },
+        { "flag": "-L [{{TUNABLE}}]", "desc": "상세(현재·기본·범위·유형) 표시" },
+        { "flag": "-o {{TUNABLE}}[={{VALUE}}]", "desc": "조회·변경" },
+        { "flag": "-p", "desc": "즉시 + 영구 적용" },
+        { "flag": "-d {{TUNABLE}}", "desc": "기본값으로 되돌림" }
+      ],
+      "examples": [
+        { "title": "Linux NFS 서버 마운트 시 'permission denied' 해결", "command": "nfso -o nfs_use_reserved_ports\nnfso -p -o nfs_use_reserved_ports=1", "note": "Linux NFS 서버는 기본적으로 1024 미만 포트에서 온 요청만 허용(secure)합니다. AIX 클라이언트가 예약 포트를 쓰도록 바꿉니다." },
+        { "title": "AIX NFS 서버가 예약 포트 요청만 받도록 (보안 강화)", "command": "nfso -p -o portcheck=1" }
+      ],
+      "cautions": [
+        "-p 없이 바꾸면 재부팅 후 원래대로 돌아갑니다."
+      ],
+      "help": "man nfso",
+      "keywords": ["NFS 튜닝", "nfso", "nfs_use_reserved_ports", "portcheck", "NFS 마운트 오류"],
+      "related": ["aix-mknfsexp", "aix-no", "mount", "showmount"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-mknfsexp",
+      "name": "mknfsexp",
+      "aliases": ["lsnfsexp", "chnfsexp", "rmnfsexp"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.config",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NFS 공유(export) 추가·조회·변경·삭제",
+      "description": "AIX NFS 서버에서 디렉토리를 공유(export)합니다. /etc/exports 에 기록하고 즉시 export 하는 작업을 한 번에 처리하며, lsnfsexp 로 조회, chnfsexp 로 변경, rmnfsexp 로 해제합니다. NFS 서버 데몬은 startsrc -g nfs 로 올립니다.",
+      "syntax": [
+        "mknfsexp -d {{DIR}} -t rw|ro [-c {{HOST}}[,{{HOST2}}]] [-r {{HOST}}] [-B|-I|-N]",
+        "lsnfsexp",
+        "rmnfsexp -d {{DIR}} [-B|-I|-N]"
+      ],
+      "options": [
+        { "flag": "-d {{DIR}}", "desc": "공유할 디렉토리" },
+        { "flag": "-t rw|ro|rm", "desc": "권한: 읽기쓰기, 읽기 전용, 대부분 읽기 전용(rm, -h 의 호스트만 쓰기)" },
+        { "flag": "-c {{HOST}},...", "desc": "접근 허용 클라이언트 목록 (지정 안 하면 모두 허용)" },
+        { "flag": "-h {{HOST}},...", "desc": "-t rm 일 때 쓰기 허용 호스트" },
+        { "flag": "-r {{HOST}},...", "desc": "root 권한을 그대로 인정할 클라이언트 (root squash 해제)" },
+        { "flag": "-a {{UID}}", "desc": "익명 사용자로 매핑할 UID" },
+        { "flag": "-v {{VERSION}}", "desc": "허용할 NFS 버전 (2,3,4)" },
+        { "flag": "-B", "desc": "/etc/exports 기록 + 즉시 export (기본)" },
+        { "flag": "-I", "desc": "/etc/exports 에만 기록 (다음 부팅 때 적용)" },
+        { "flag": "-N", "desc": "즉시 export 만 (재부팅 시 사라짐)" }
+      ],
+      "examples": [
+        {
+          "title": "백업 디렉토리를 특정 서버에만 공유",
+          "steps": [
+            { "prompt": "#", "cmd": "lssrc -g nfs", "desc": "nfsd, rpc.mountd 상태 확인 (멈춰 있으면 startsrc -g nfs)" },
+            { "prompt": "#", "cmd": "mknfsexp -d {{DIR}} -t rw -c {{CLIENT}} -r {{CLIENT}} -B", "desc": "공유 등록 + 즉시 적용 (root 접근이 필요할 때만 -r)" },
+            { "prompt": "#", "cmd": "lsnfsexp", "desc": "공유 목록 확인" },
+            { "prompt": "$", "cmd": "showmount -e {{NFS_SERVER}}", "desc": "클라이언트에서 공유가 보이는지 확인" }
+          ]
+        },
+        { "title": "공유 해제", "command": "rmnfsexp -d {{DIR}} -B" },
+        { "title": "/etc/exports 를 직접 고친 뒤 반영", "command": "exportfs -va" }
+      ],
+      "cautions": [
+        "-c 를 지정하지 않으면 네트워크의 모든 호스트가 마운트할 수 있습니다. 운영 서버에서는 반드시 클라이언트를 제한하세요.",
+        "-r(root 접근 허용)은 클라이언트 root 가 서버 파일을 root 로 다룰 수 있게 합니다. 꼭 필요한 호스트에만 주세요.",
+        "공유를 해제하면 마운트 중인 클라이언트에서 I/O 오류·hang 이 날 수 있습니다. 먼저 클라이언트에서 umount 하세요."
+      ],
+      "help": "man mknfsexp · man rmnfsexp · man exportfs",
+      "keywords": ["NFS 공유", "export", "mknfsexp", "lsnfsexp", "rmnfsexp", "/etc/exports", "NFS 서버"],
+      "related": ["aix-nfso", "etc-exports", "showmount", "aix-startsrc", "aix-etc-filesystems"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-genfilt",
+      "name": "genfilt",
+      "aliases": ["mkfilt", "lsfilt", "rmfilt", "chfilt"],
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.firewall",
+      "platforms": ["aix"],
+      "level": "critical",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "AIX IP Security 필터(호스트 방화벽) 규칙 관리",
+      "description": "AIX 기본 IP Security 기능의 패킷 필터 규칙을 다룹니다. genfilt 로 규칙을 규칙 DB 에 추가하고, mkfilt -u 로 커널에 활성화하며, lsfilt 로 조회합니다. bos.net.ipsec 계열 fileset 이 설치되고 IP Security 가 시작되어 있어야 합니다(smitty ipsec4). 규칙은 위에서부터 처음 일치하는 것이 적용됩니다.",
+      "syntax": [
+        "genfilt -v 4 -a P|D -s {{SRC_IP}} -m {{SRC_MASK}} -d {{DST_IP}} -M {{DST_MASK}} -c tcp -O eq -P {{PORT}} -w I [-l Y]",
+        "mkfilt -v 4 -u",
+        "lsfilt -v 4 [-O]",
+        "rmfilt -v 4 -n {{FILTER_ID}}"
+      ],
+      "options": [
+        { "flag": "-v 4|6", "desc": "IP 버전" },
+        { "flag": "-a P|D", "desc": "허용(Permit) / 차단(Deny)" },
+        { "flag": "-s {{SRC_IP}} -m {{SRC_MASK}}", "desc": "출발지 주소와 마스크" },
+        { "flag": "-d {{DST_IP}} -M {{DST_MASK}}", "desc": "목적지 주소와 마스크" },
+        { "flag": "-c {{PROTOCOL}}", "desc": "프로토콜 (tcp, udp, icmp, all 등)" },
+        { "flag": "-o {{OP}} -p {{PORT}}", "desc": "출발지 포트 조건 (eq, lt, gt, any 등)" },
+        { "flag": "-O {{OP}} -P {{PORT}}", "desc": "목적지 포트 조건" },
+        { "flag": "-w I|O|B", "desc": "방향: 들어오는, 나가는, 양방향" },
+        { "flag": "-i {{INTERFACE}}", "desc": "적용 인터페이스 (기본 all)" },
+        { "flag": "-l Y|N", "desc": "일치한 패킷 로그 기록" }
+      ],
+      "commandGroups": [
+        {
+          "title": "관련 명령",
+          "type": "subcommand",
+          "items": [
+            { "cmd": "lsfilt -v 4", "desc": "규칙 DB 의 규칙 목록 (번호 포함)" },
+            { "cmd": "lsfilt -v 4 -O", "desc": "현재 커널에 활성화된 규칙" },
+            { "cmd": "genfilt -v 4 ...", "desc": "규칙 DB 에 규칙 추가 (아직 미적용)" },
+            { "cmd": "chfilt -v 4 -n {{FILTER_ID}} ...", "desc": "규칙 수정" },
+            { "cmd": "rmfilt -v 4 -n {{FILTER_ID}}", "desc": "규칙 삭제 (all 이면 전체)" },
+            { "cmd": "mkfilt -v 4 -u", "desc": "규칙 DB 내용을 커널에 활성화" },
+            { "cmd": "mkfilt -v 4 -d", "desc": "필터 비활성화 (모든 규칙 해제)" }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "관리망에서만 SSH 허용",
+          "steps": [
+            { "prompt": "#", "cmd": "lsfilt -v 4 > /tmp/filt.before", "desc": "현재 규칙 백업" },
+            { "prompt": "#", "cmd": "genfilt -v 4 -a P -s {{MGMT_NET}} -m {{MGMT_MASK}} -d 0.0.0.0 -M 0.0.0.0 -c tcp -O eq -P 22 -w I", "desc": "관리망 → 22번 포트 허용 (응답 패킷 방향 규칙도 필요한지 검토)" },
+            { "prompt": "#", "cmd": "genfilt -v 4 -a D -s 0.0.0.0 -m 0.0.0.0 -d 0.0.0.0 -M 0.0.0.0 -c tcp -O eq -P 22 -w I -l Y", "desc": "그 밖의 22번 접근 차단 + 로그" },
+            { "prompt": "#", "cmd": "lsfilt -v 4", "desc": "규칙 순서 확인 (허용이 차단보다 위에 있어야 함)" },
+            { "prompt": "#", "cmd": "mkfilt -v 4 -u", "desc": "커널에 적용" },
+            { "prompt": "$", "cmd": "ssh {{USER}}@{{HOST}}", "desc": "다른 창에서 새 접속 테스트. 실패하면 콘솔에서 mkfilt -v 4 -d 로 해제" }
+          ]
+        }
+      ],
+      "cautions": [
+        "규칙 순서가 잘못되거나 차단 범위가 넓으면 SSH·모니터링·클러스터 통신이 즉시 끊깁니다. 반드시 HMC 콘솔 접속을 확보한 상태에서 작업하세요.",
+        "genfilt 로 추가한 규칙은 mkfilt -u 전까지 적용되지 않고, mkfilt -u 를 하면 DB 의 모든 규칙이 한꺼번에 적용됩니다.",
+        "응답 패킷(서버 → 클라이언트)도 필터를 거칩니다. 상태 추적이 없으므로 양방향 규칙을 함께 설계하세요."
+      ],
+      "help": "man genfilt · man mkfilt · man lsfilt",
+      "keywords": ["방화벽", "IP 필터", "genfilt", "mkfilt", "lsfilt", "IPsec", "접근 제어", "호스트 방화벽"],
+      "related": ["firewall-cmd", "iptables", "aix-lssrc", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "aix-rmsock",
+      "name": "rmsock",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.ports",
+      "platforms": ["aix"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "포트(소켓)를 점유한 프로세스 찾기",
+      "description": "netstat -A 로 얻은 소켓 제어 블록(PCB) 주소로 그 소켓을 쥐고 있는 프로세스를 찾아 줍니다. lsof 가 없는 AIX 에서 '이 포트를 누가 쓰는가'를 확인하는 표준 방법입니다. 어떤 프로세스도 쥐고 있지 않은 소켓이면 그 소켓을 제거합니다.",
+      "syntax": [
+        "rmsock {{PCB_ADDRESS}} tcpcb",
+        "rmsock {{PCB_ADDRESS}} inpcb"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "포트를 점유한 프로세스 찾기",
+          "steps": [
+            { "prompt": "#", "cmd": "netstat -Aan | grep '\\.{{PORT}} '", "desc": "첫 열의 16진수 PCB 주소 확인" },
+            { "prompt": "#", "cmd": "rmsock {{PCB_ADDRESS}} tcpcb", "desc": "'held by process {{PID}} ({{NAME}})' 형태로 프로세스 표시 (UDP 는 inpcb)" },
+            { "prompt": "#", "cmd": "ps -fp {{PID}}", "desc": "프로세스 상세 확인" }
+          ]
+        }
+      ],
+      "cautions": [
+        "소켓을 쥔 프로세스가 없으면 rmsock 이 소켓을 실제로 제거합니다. 조회 목적이라도 이 동작을 알고 사용하세요."
+      ],
+      "help": "man rmsock",
+      "keywords": ["포트 점유", "rmsock", "netstat -A", "포트 사용 프로세스", "lsof 대체", "소켓"],
+      "related": ["netstat", "lsof", "fuser", "aix-procfiles"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}

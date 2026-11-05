@@ -1,0 +1,185 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "users",
+  "commands": [
+    {
+      "id": "hpux-etc-default-security",
+      "name": "/etc/default/security",
+      "kind": "file",
+      "category": "users",
+      "task": "users.password-policy",
+      "platforms": ["hpux"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "비밀번호 복잡도·만료·로그인 실패 잠금 정책 파일",
+      "description": "HP-UX 표준 모드(trusted 모드가 아닌 일반·shadow 모드)에서 비밀번호 길이·복잡도·이력·만료와 로그인 실패 잠금, su 제한 같은 보안 정책을 정하는 파일입니다. 금융권 보안 점검(취약점 진단) 항목 대부분이 이 파일의 값으로 확인됩니다. 변경 내용은 다음 로그인·비밀번호 변경부터 적용됩니다.",
+      "syntax": [
+        "{{DIRECTIVE}}={{VALUE}}"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "비밀번호 정책",
+          "type": "directive",
+          "items": [
+            { "cmd": "MIN_PASSWORD_LENGTH=8", "desc": "최소 길이" },
+            { "cmd": "PASSWORD_MIN_UPPER_CASE_CHARS=1", "desc": "대문자 최소 개수" },
+            { "cmd": "PASSWORD_MIN_LOWER_CASE_CHARS=1", "desc": "소문자 최소 개수" },
+            { "cmd": "PASSWORD_MIN_DIGIT_CHARS=1", "desc": "숫자 최소 개수" },
+            { "cmd": "PASSWORD_MIN_SPECIAL_CHARS=1", "desc": "특수문자 최소 개수" },
+            { "cmd": "PASSWORD_HISTORY_DEPTH=5", "desc": "최근 사용한 비밀번호 재사용 금지 개수" },
+            { "cmd": "PASSWORD_MAXDAYS=90", "desc": "최대 사용 기간(일) — shadow 모드 필요" },
+            { "cmd": "PASSWORD_MINDAYS=1", "desc": "최소 사용 기간(일) — shadow 모드 필요" },
+            { "cmd": "PASSWORD_WARNDAYS=7", "desc": "만료 전 경고(일) — shadow 모드 필요" }
+          ]
+        },
+        {
+          "title": "로그인·계정 정책",
+          "type": "directive",
+          "items": [
+            { "cmd": "AUTH_MAXTRIES=5", "desc": "로그인 연속 실패 허용 횟수 (초과 시 잠금)" },
+            { "cmd": "INACTIVITY_MAXDAYS=90", "desc": "장기 미사용 계정 잠금 기준(일)" },
+            { "cmd": "NUMBER_OF_LOGINS_ALLOWED=0", "desc": "사용자당 동시 로그인 수 (0 은 제한 없음)" },
+            { "cmd": "ABORT_LOGIN_ON_MISSING_HOMEDIR=1", "desc": "홈 디렉토리가 없으면 로그인 거부" },
+            { "cmd": "SU_ROOT_GROUP={{GROUP}}", "desc": "root 로 su 할 수 있는 그룹 제한" },
+            { "cmd": "UMASK=022", "desc": "로그인 기본 umask" }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "보안 점검 기준으로 정책 반영",
+          "steps": [
+            { "prompt": "#", "cmd": "cp -p /etc/default/security /etc/default/security.$(date +%Y%m%d)", "desc": "원본 백업" },
+            { "prompt": "#", "cmd": "ls -l /etc/shadow", "desc": "shadow 모드 여부 확인 (없으면 pwconv 로 전환 검토)" },
+            { "prompt": "#", "cmd": "vi /etc/default/security", "desc": "점검 기준 값 반영" },
+            { "prompt": "#", "cmd": "grep -v '^#' /etc/default/security | grep -v '^$'", "desc": "적용 값 확인" },
+            { "prompt": "#", "cmd": "passwd -s {{USER}}", "desc": "계정 상태·만료 정보 확인" }
+          ]
+        },
+        { "title": "현재 설정된 값만 보기", "command": "grep -v '^#' /etc/default/security | grep -v '^$'" }
+      ],
+      "cautions": [
+        "변경은 기존 세션에 적용되지 않습니다. 새 세션으로 로그인 테스트를 하되 root 세션 하나는 열어 둔 채로 하세요.",
+        "AUTH_MAXTRIES 를 root 에도 적용하면 잠금 시 콘솔 접속까지 막히지 않는지 운영 절차를 확인하세요.",
+        "만료 관련 항목(PASSWORD_MAXDAYS 등)은 shadow 모드에서만 동작합니다. trusted 모드 서버는 getprpw·modprpw 체계를 씁니다.",
+        "지원 항목은 OS 업데이트·패치 수준에 따라 다를 수 있으니 man security 로 확인하세요."
+      ],
+      "help": "man security",
+      "keywords": ["비밀번호 정책", "계정 잠금", "/etc/default/security", "복잡도", "AUTH_MAXTRIES", "보안 점검", "취약점 진단"],
+      "related": ["hpux-getprpw", "hpux-modprpw", "passwd", "chage", "useradd"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-getprpw",
+      "name": "getprpw",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "trusted 모드 계정 보안 속성·잠금 상태 조회",
+      "description": "trusted(신뢰) 모드로 운영되는 HP-UX 에서 계정의 보안 데이터베이스(/tcb) 속성을 조회합니다. 비밀번호 만료, 로그인 실패 횟수, 잠금 상태를 확인합니다. 명령은 /usr/lbin 에 있으며 trusted 모드가 아니면 쓰지 않습니다.",
+      "syntax": [
+        "/usr/lbin/getprpw {{USER}}",
+        "/usr/lbin/getprpw -m {{FIELD}} {{USER}}"
+      ],
+      "options": [
+        { "flag": "-m {{FIELD}}", "desc": "특정 항목만 출력 (예: lockout, umaxlntr)" },
+        { "flag": "-l", "desc": "로컬 계정만 대상" }
+      ],
+      "examples": [
+        { "title": "계정 잠금 상태 확인", "command": "/usr/lbin/getprpw -m lockout {{USER}}", "note": "lockout=0000000 이면 잠기지 않은 상태. 자리마다 잠금 사유(만료, 미사용, 로그인 실패 초과, 관리자 잠금 등)를 뜻합니다." },
+        { "title": "trusted 모드 여부 확인", "command": "ls -d /tcb/files/auth" }
+      ],
+      "cautions": [
+        "11i v3 에서 trusted 모드는 더 이상 권장되지 않습니다(표준 모드 + /etc/default/security 권장)."
+      ],
+      "help": "man getprpw",
+      "keywords": ["계정 잠금 확인", "getprpw", "trusted 모드", "lockout", "/tcb"],
+      "related": ["hpux-modprpw", "hpux-etc-default-security", "passwd"],
+      "review": { "status": "ai-draft", "note": "lockout 각 자리 의미는 man getprpw 로 확인 권장" }
+    },
+    {
+      "id": "hpux-modprpw",
+      "name": "modprpw",
+      "kind": "command",
+      "shell": "sh",
+      "category": "users",
+      "task": "users.account",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "trusted 모드 계정 잠금 해제·보안 속성 변경",
+      "description": "trusted 모드 HP-UX 에서 계정의 보안 속성을 바꿉니다. 로그인 실패로 잠긴 계정을 -k 로 풀어 주는 용도로 가장 많이 씁니다. -m 으로 계정별 최대 실패 횟수 같은 속성도 바꿀 수 있습니다.",
+      "syntax": [
+        "/usr/lbin/modprpw -k {{USER}}",
+        "/usr/lbin/modprpw -m {{FIELD}}={{VALUE}} {{USER}}"
+      ],
+      "options": [
+        { "flag": "-k", "desc": "잠금 해제 (로그인 실패 횟수 초기화)" },
+        { "flag": "-l", "desc": "로컬 계정만 대상 (NIS·LDAP 계정 제외)" },
+        { "flag": "-m {{FIELD}}={{VALUE}}", "desc": "보안 속성 변경" }
+      ],
+      "examples": [
+        { "title": "잠긴 계정 확인 후 해제", "command": "/usr/lbin/getprpw -m lockout {{USER}}\n/usr/lbin/modprpw -l -k {{USER}}\n/usr/lbin/getprpw -m lockout {{USER}}" }
+      ],
+      "cautions": [
+        "잠금 해제 전 계정 소유자 확인과 잠금 원인(무차별 대입 시도 여부, syslog·btmp 이력)을 점검하고 해제 이력을 남기세요."
+      ],
+      "help": "man modprpw",
+      "keywords": ["계정 잠금 해제", "modprpw", "trusted 모드", "unlock", "로그인 실패"],
+      "related": ["hpux-getprpw", "hpux-etc-default-security", "passwd", "lastb"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-smh",
+      "name": "smh (System Management Homepage)",
+      "aliases": ["sam", "HP SMH"],
+      "kind": "gui",
+      "category": "users",
+      "task": "users.account",
+      "platforms": ["hpux"],
+      "level": "basic",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "HP-UX 웹·터미널 관리 도구 (구 SAM 대체)",
+      "description": "HP System Management Homepage 는 사용자 계정, 커널 파라미터, 디스크·파일시스템, 네트워크, 주변 장치 등을 메뉴로 관리하는 도구입니다. 웹 브라우저(https://{{HOST}}:2381)로 쓰거나 서버에서 smh 를 실행해 터미널 메뉴로 씁니다. 11i v3 에서는 예전 sam 을 실행해도 SMH 로 연결됩니다.",
+      "syntax": [
+        "smh",
+        "https://{{HOST}}:2381"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "자주 하는 작업",
+          "type": "action",
+          "items": [
+            { "cmd": "Accounts for Users and Groups", "desc": "사용자·그룹 추가, 수정, 비밀번호 초기화" },
+            { "cmd": "Kernel Configuration", "desc": "커널 파라미터 조회·변경 (kctune 과 같은 기능)" },
+            { "cmd": "Disks and File Systems", "desc": "디스크·VG·LV·파일시스템 관리" },
+            { "cmd": "Network and Communications", "desc": "NIC·IP·네트워크 서비스 설정" },
+            { "cmd": "Security Attributes Configuration", "desc": "시스템·사용자별 보안 속성 (/etc/default/security 관련)" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "터미널 메뉴로 실행", "command": "export TERM=vt100\nsmh" }
+      ],
+      "cautions": [
+        "웹 포트(2381)는 관리망에서만 접근하도록 제한하세요. 운영망에 열려 있으면 보안 점검에서 지적됩니다.",
+        "GUI 로 바꾼 내용도 결국 같은 파일·명령을 바꿉니다. 변경 이력은 작업 기록으로 따로 남기세요."
+      ],
+      "help": "smh 실행 후 도움말 메뉴",
+      "keywords": ["SMH", "SAM", "관리 도구", "웹 관리", "System Management Homepage", "GUI"],
+      "related": ["hpux-kctune", "useradd", "hpux-etc-default-security"],
+      "review": { "status": "ai-draft", "note": "메뉴 이름은 SMH 버전에 따라 다를 수 있음" }
+    }
+  ]
+}

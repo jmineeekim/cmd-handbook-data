@@ -12,7 +12,10 @@
       "task": "system.os-version",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -25,15 +28,19 @@
       "options": [
         {
           "flag": "-a",
-          "desc": "모든 정보 출력"
+          "desc": "모든 정보 출력 (모든 OS 공통)"
         },
         {
           "flag": "-r",
-          "desc": "커널 릴리스 (예: 5.14.0-427.13.1.el9_4.x86_64)"
+          "desc": "릴리스 (Linux 커널 5.14.0-..., Solaris 5.11, HP-UX B.11.31, AIX 는 하위 버전 숫자만)"
+        },
+        {
+          "flag": "-v",
+          "desc": "버전 (Linux 는 커널 빌드 정보, AIX 는 주 버전 숫자)"
         },
         {
           "flag": "-m",
-          "desc": "하드웨어 아키텍처 (x86_64, aarch64)"
+          "desc": "하드웨어 (Linux x86_64·aarch64, HP-UX ia64. AIX 는 아키텍처가 아니라 머신 ID)"
         },
         {
           "flag": "-n",
@@ -41,18 +48,30 @@
         },
         {
           "flag": "-s",
-          "desc": "커널 이름 (Linux)"
+          "desc": "OS 이름 (Linux, AIX, HP-UX, SunOS)"
         },
         {
-          "flag": "-v",
-          "desc": "커널 빌드 정보·날짜"
+          "flag": "-p",
+          "desc": "프로세서 종류 (AIX powerpc, Solaris sparc·i386. Linux 는 unknown 으로 나올 수 있음)"
+        },
+        {
+          "flag": "-M",
+          "desc": "(AIX 전용) 시스템 모델 (예: IBM,9009-42A)"
+        },
+        {
+          "flag": "-L",
+          "desc": "(AIX 전용) LPAR 번호와 이름"
         }
       ],
       "examples": [
         {
           "title": "커널 버전 확인",
           "command": "uname -r",
-          "output": "5.14.0-427.13.1.el9_4.x86_64"
+          "output": "5.14.0-427.13.1.el9_4.x86_64",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "전체 정보",
@@ -71,6 +90,14 @@
           "platforms": [
             "debian"
           ]
+        },
+        {
+          "title": "AIX 버전·TL·SP 와 모델 확인",
+          "command": "oslevel -s\nuname -M\nuname -L",
+          "platforms": [
+            "aix"
+          ],
+          "note": "oslevel -s 결과 7200-05-03-2148 은 AIX 7.2 TL5 SP3 을 뜻합니다."
         }
       ],
       "cautions": [],
@@ -86,7 +113,15 @@
         "hostnamectl",
         "etc-os-release",
         "lscpu"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "uname -v 가 주 버전(7), uname -r 이 하위 버전(2)을 출력해 7.2 처럼 합쳐 읽습니다. TL·SP 까지는 oslevel -s 로 확인합니다. uname -m 은 머신 ID 이므로 아키텍처 확인에는 uname -p 를 씁니다.",
+        "hpux": "uname -r 은 B.11.31 형식, uname -m 은 ia64 또는 9000/800 형식입니다. 서버 모델명은 model 명령이나 machinfo 로 확인합니다.",
+        "solaris": "uname -r 은 SunOS 릴리스(5.10 = Solaris 10, 5.11 = Solaris 11)입니다. 정확한 업데이트 버전은 cat /etc/release, Solaris 11 은 pkg info entire 로도 확인합니다. uname -i 는 플랫폼 이름(하드웨어 모델)을 보여 줍니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "hostnamectl",
@@ -109,14 +144,6 @@
         "hostnamectl set-hostname {{HOSTNAME}}"
       ],
       "options": [
-        {
-          "flag": "status",
-          "desc": "호스트·OS·커널·가상화 정보 (기본 동작)"
-        },
-        {
-          "flag": "set-hostname {{HOSTNAME}}",
-          "desc": "호스트명 영구 변경"
-        },
         {
           "flag": "--static / --transient / --pretty",
           "desc": "변경·조회할 호스트명 종류 지정"
@@ -153,7 +180,30 @@
         "hostname",
         "uname",
         "etc-os-release"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "서브 명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "hostnamectl status",
+              "desc": "호스트·OS·커널·가상화 정보 (서브 명령 생략 시 기본 동작)"
+            },
+            {
+              "cmd": "hostnamectl set-hostname {{HOSTNAME}}",
+              "desc": "호스트명 영구 변경 (/etc/hostname 갱신)"
+            },
+            {
+              "cmd": "hostnamectl set-hostname --pretty \"{{TEXT}}\"",
+              "desc": "설명용 이름만 변경 (실제 호스트명은 그대로)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-os-release",
@@ -174,24 +224,7 @@
         "cat /etc/os-release",
         ". /etc/os-release; echo $ID $VERSION_ID"
       ],
-      "options": [
-        {
-          "flag": "PRETTY_NAME",
-          "desc": "사람이 읽기 좋은 전체 이름"
-        },
-        {
-          "flag": "ID / ID_LIKE",
-          "desc": "배포판 ID (rhel, rocky, ubuntu, debian) / 계열"
-        },
-        {
-          "flag": "VERSION_ID",
-          "desc": "버전 번호 (9.4, 22.04, 12)"
-        },
-        {
-          "flag": "VERSION_CODENAME",
-          "desc": "코드명 (jammy, noble, bookworm)"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "OS 버전 확인",
@@ -216,7 +249,35 @@
         "hostnamectl",
         "lsb-release",
         "etc-redhat-release"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 항목",
+          "type": "directive",
+          "note": "KEY=값 형식이라 셸에서 . /etc/os-release 로 읽어 변수로 쓸 수 있습니다.",
+          "items": [
+            {
+              "cmd": "PRETTY_NAME",
+              "desc": "사람이 읽기 좋은 전체 이름"
+            },
+            {
+              "cmd": "ID / ID_LIKE",
+              "desc": "배포판 ID (rhel, rocky, ubuntu, debian) / 계열"
+            },
+            {
+              "cmd": "VERSION_ID",
+              "desc": "버전 번호 (9.4, 22.04, 12)"
+            },
+            {
+              "cmd": "VERSION_CODENAME",
+              "desc": "코드명 (jammy, noble, bookworm)"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "etc-redhat-release",
@@ -260,7 +321,10 @@
       "related": [
         "etc-os-release",
         "uname"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lsb-release",
@@ -339,7 +403,10 @@
       "related": [
         "etc-os-release",
         "uname"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "systeminfo",
@@ -415,7 +482,10 @@
         "get-computerinfo",
         "get-ciminstance",
         "msinfo32"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "winver",
@@ -456,7 +526,10 @@
       "related": [
         "systeminfo",
         "get-computerinfo"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-computerinfo",
@@ -532,7 +605,10 @@
         "systeminfo",
         "get-ciminstance",
         "winver"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "hostname",
@@ -543,7 +619,10 @@
       "task": "system.hostname",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "caution",
@@ -551,29 +630,30 @@
       "summary": "호스트명·FQDN·IP 주소 확인",
       "description": "현재 호스트명을 출력하고, 옵션으로 FQDN, 짧은 이름, 모든 IP 주소를 확인합니다. 인자를 주면 호스트명을 임시로(재부팅 전까지) 변경합니다. 영구 변경은 hostnamectl set-hostname 을 사용합니다.",
       "syntax": [
+        "hostname",
         "hostname [-f | -s | -I | -i]",
         "hostname {{HOSTNAME}}"
       ],
       "options": [
         {
           "flag": "-f",
-          "desc": "FQDN (DNS·/etc/hosts 기준)"
+          "desc": "FQDN (DNS·/etc/hosts 기준) (GNU/Linux 전용)"
         },
         {
           "flag": "-s",
-          "desc": "첫 번째 점 앞의 짧은 이름"
+          "desc": "첫 번째 점 앞의 짧은 이름 (GNU/Linux 전용)"
         },
         {
           "flag": "-I",
-          "desc": "모든 인터페이스의 IP 주소 (루프백 제외)"
+          "desc": "모든 인터페이스의 IP 주소, 루프백 제외 (GNU/Linux 전용)"
         },
         {
           "flag": "-i",
-          "desc": "호스트명이 해석되는 IP 주소"
+          "desc": "호스트명이 해석되는 IP 주소 (GNU/Linux 전용)"
         },
         {
           "flag": "-d",
-          "desc": "DNS 도메인 이름"
+          "desc": "DNS 도메인 이름 (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -583,15 +663,40 @@
         },
         {
           "title": "서버 IP 빠르게 확인",
-          "command": "hostname -I"
+          "command": "hostname -I",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "FQDN 확인 (클러스터·인증서 설정 전)",
-          "command": "hostname -f"
+          "command": "hostname -f",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "호스트명 영구 변경 (AIX)",
+          "command": "chdev -l inet0 -a hostname={{HOSTNAME}}",
+          "platforms": [
+            "aix"
+          ],
+          "note": "/etc/hosts 의 이름도 함께 바꾸세요."
+        },
+        {
+          "title": "호스트명 영구 변경 (Solaris 11)",
+          "command": "svccfg -s system/identity:node setprop config/nodename = {{HOSTNAME}}\nsvcadm refresh system/identity:node\nsvcadm restart system/identity:node",
+          "platforms": [
+            "solaris"
+          ],
+          "version": "Solaris 11 이상",
+          "note": "Solaris 10 은 /etc/nodename 파일을 수정하고 재부팅합니다."
         }
       ],
       "cautions": [
-        "hostname {{HOSTNAME}} 으로 바꾼 이름은 재부팅하면 원래대로 돌아갑니다.",
+        "hostname {{HOSTNAME}} 으로 바꾼 이름은 재부팅하면 원래대로 돌아갑니다 (모든 OS 공통). 영구 변경은 OS 별 방법을 쓰세요.",
         "hostname -i 가 127.0.1.1 이나 127.0.0.1 을 반환하면 /etc/hosts 설정 때문에 클러스터 소프트웨어가 잘못된 IP 로 바인딩할 수 있습니다."
       ],
       "help": "man hostname",
@@ -606,7 +711,17 @@
         "hostnamectl",
         "ip",
         "etc-hosts"
-      ]
+      ],
+      "platformNotes": {
+        "rhel": "영구 변경은 hostnamectl set-hostname.",
+        "debian": "영구 변경은 hostnamectl set-hostname.",
+        "aix": "옵션 없이 이름만 출력합니다. 영구 변경은 chdev -l inet0 -a hostname=새이름 (smitty hostname 도 가능). IP 확인은 ifconfig -a.",
+        "hpux": "옵션 없이 이름만 출력합니다. 영구 변경은 /etc/rc.config.d/netconf 의 HOSTNAME= 값을 바꾸거나 set_parms hostname 을 사용합니다. IP 확인은 netstat -in.",
+        "solaris": "옵션 없이 이름만 출력합니다. 영구 변경은 Solaris 11 은 svccfg 로 system/identity:node 의 config/nodename, Solaris 10 은 /etc/nodename 입니다. IP 확인은 ifconfig -a (Solaris 11 은 ipadm show-addr)."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "win-hostname",
@@ -652,7 +767,10 @@
       "related": [
         "rename-computer",
         "systeminfo"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "rename-computer",
@@ -722,7 +840,10 @@
       "related": [
         "win-hostname",
         "systeminfo"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "uptime",
@@ -733,7 +854,10 @@
       "task": "system.uptime",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -741,16 +865,17 @@
       "summary": "가동 시간·로그인 사용자 수·load average",
       "description": "현재 시각, 부팅 후 가동 시간, 로그인 사용자 수, 1·5·15분 평균 부하(load average)를 출력합니다. load average 는 실행 대기 + 디스크 대기(D 상태) 프로세스 수의 평균으로, CPU 코어 수와 비교해 판단합니다.",
       "syntax": [
+        "uptime",
         "uptime [-p | -s]"
       ],
       "options": [
         {
           "flag": "-p",
-          "desc": "가동 시간을 읽기 쉬운 형식으로 (up 3 weeks, 2 days)"
+          "desc": "가동 시간을 읽기 쉬운 형식으로 (up 3 weeks, 2 days) (GNU/Linux 전용)"
         },
         {
           "flag": "-s",
-          "desc": "부팅 시각 (YYYY-MM-DD HH:MM:SS)"
+          "desc": "부팅 시각 (YYYY-MM-DD HH:MM:SS) (GNU/Linux 전용)"
         }
       ],
       "examples": [
@@ -761,15 +886,28 @@
         },
         {
           "title": "부팅 시각 확인 (예기치 않은 재부팅 확인)",
-          "command": "uptime -s\nlast -x reboot | head -5"
+          "command": "uptime -s\nlast -x reboot | head -5",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "부하를 코어 수와 비교",
-          "command": "uptime\nnproc"
+          "command": "uptime\nnproc",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "부팅 시각 확인 (모든 OS 공통)",
+          "command": "who -b"
         }
       ],
       "cautions": [
-        "load average 가 높아도 CPU 가 아니라 디스크·NFS I/O 대기(D 상태) 때문일 수 있습니다. top 의 wa 와 vmstat 의 b 열을 함께 확인하세요."
+        "load average 가 높아도 CPU 가 아니라 디스크·NFS I/O 대기(D 상태) 때문일 수 있습니다. top 의 wa 와 vmstat 의 b 열을 함께 확인하세요.",
+        "load average 를 해석하려면 논리 CPU 수와 비교해야 합니다. Linux 는 nproc, AIX 는 bindprocessor -q, Solaris 는 psrinfo | wc -l, HP-UX 는 machinfo 로 확인합니다."
       ],
       "help": "man uptime",
       "keywords": [
@@ -785,7 +923,15 @@
         "vmstat",
         "last",
         "w"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "옵션 없이 사용합니다. 부팅 시각은 who -b. 공유 프로세서 LPAR 에서는 load average 만으로 판단하지 말고 lparstat 의 physc 도 함께 보세요.",
+        "hpux": "옵션 없이 사용합니다. 부팅 시각은 who -b.",
+        "solaris": "옵션 없이 사용합니다. 부팅 시각은 who -b, 재부팅 이력은 last reboot."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "free",
@@ -849,7 +995,8 @@
       ],
       "cautions": [
         "free 열이 작다고 메모리 부족이 아닙니다. 판단은 available 열로 하세요.",
-        "스왑 사용량이 있어도 si/so(vmstat) 가 계속 발생하지 않으면 문제가 아닐 수 있습니다."
+        "스왑 사용량이 있어도 si/so(vmstat) 가 계속 발생하지 않으면 문제가 아닐 수 있습니다.",
+        "AIX·HP-UX·Solaris 에는 free 가 없습니다. AIX: svmon -G (-O unit=MB 로 MB 표시), lsps -a(페이징 공간). HP-UX: swapinfo -tam (root), machinfo(전체 메모리). Solaris: prtconf | grep Memory(전체), vmstat 의 free 열, echo ::memstat | mdb -k (사용 내역, root)."
       ],
       "help": "man free",
       "keywords": [
@@ -867,7 +1014,42 @@
         "top",
         "dmesg",
         "swapon"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "출력 열 의미",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "total",
+              "desc": "설치된 전체 메모리 (커널 예약분 제외)"
+            },
+            {
+              "cmd": "used",
+              "desc": "사용 중 메모리 (total - free - buff/cache)"
+            },
+            {
+              "cmd": "free",
+              "desc": "아무 용도로도 쓰이지 않는 메모리. 작아도 정상"
+            },
+            {
+              "cmd": "buff/cache",
+              "desc": "파일 캐시·버퍼. 필요하면 커널이 회수"
+            },
+            {
+              "cmd": "available",
+              "desc": "새 프로그램이 스왑 없이 쓸 수 있는 추정치. 메모리 부족 판단 기준"
+            },
+            {
+              "cmd": "shared",
+              "desc": "tmpfs·공유 메모리 사용량"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "proc-meminfo",
@@ -888,32 +1070,7 @@
         "cat /proc/meminfo",
         "grep -E '{{FIELD}}' /proc/meminfo"
       ],
-      "options": [
-        {
-          "flag": "MemTotal / MemAvailable",
-          "desc": "전체 / 실제 사용 가능 메모리"
-        },
-        {
-          "flag": "SwapTotal / SwapFree",
-          "desc": "스왑 전체 / 여유"
-        },
-        {
-          "flag": "HugePages_Total / HugePages_Free / Hugepagesize",
-          "desc": "HugePages 할당·여유·페이지 크기"
-        },
-        {
-          "flag": "Slab / SReclaimable / SUnreclaim",
-          "desc": "커널 slab 캐시 (회수 가능 / 불가)"
-        },
-        {
-          "flag": "Dirty / Writeback",
-          "desc": "디스크에 아직 쓰지 않은 페이지"
-        },
-        {
-          "flag": "Committed_AS / CommitLimit",
-          "desc": "할당 약속된 메모리 / 오버커밋 한계"
-        }
-      ],
+      "options": [],
       "examples": [
         {
           "title": "HugePages 설정 확인 (Oracle 등)",
@@ -939,7 +1096,43 @@
         "free",
         "vmstat",
         "sysctl"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 항목",
+          "type": "directive",
+          "note": "값의 단위는 kB 입니다 (HugePages_* 는 개수).",
+          "items": [
+            {
+              "cmd": "MemTotal / MemAvailable",
+              "desc": "전체 / 실제 사용 가능 메모리"
+            },
+            {
+              "cmd": "SwapTotal / SwapFree",
+              "desc": "스왑 전체 / 여유"
+            },
+            {
+              "cmd": "HugePages_Total / HugePages_Free / Hugepagesize",
+              "desc": "HugePages 할당·여유·페이지 크기"
+            },
+            {
+              "cmd": "Slab / SReclaimable / SUnreclaim",
+              "desc": "커널 slab 캐시 (회수 가능 / 불가)"
+            },
+            {
+              "cmd": "Dirty / Writeback",
+              "desc": "디스크에 아직 쓰지 않은 페이지"
+            },
+            {
+              "cmd": "Committed_AS / CommitLimit",
+              "desc": "할당 약속된 메모리 / 오버커밋 한계"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "df",
@@ -950,7 +1143,9 @@
       "task": "system.disk-usage",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -958,63 +1153,98 @@
       "summary": "파일시스템별 디스크 용량·inode 사용률",
       "description": "마운트된 파일시스템별 전체·사용·여유 용량과 사용률, 마운트 위치를 출력합니다. -i 로 inode 사용률을 확인할 수 있어 '공간이 있는데 파일을 못 만드는' 문제 진단에도 씁니다.",
       "syntax": [
-        "df [-h] [-T] [-i] [{{PATH}}]"
+        "df [-h] [-T] [-i] [{{PATH}}]",
+        "df -k [{{PATH}}]",
+        "df -g [{{PATH}}]"
       ],
       "options": [
         {
           "flag": "-h",
-          "desc": "사람이 읽기 쉬운 단위 (G, M)"
+          "desc": "사람이 읽기 쉬운 단위 (G, M) (Linux·Solaris. AIX 는 없음)"
+        },
+        {
+          "flag": "-k",
+          "desc": "KB 단위 (모든 OS 공통, 스크립트에 안전)"
+        },
+        {
+          "flag": "-g / -m",
+          "desc": "(AIX) GB / MB 단위"
         },
         {
           "flag": "-T",
-          "desc": "파일시스템 종류 표시 (xfs, ext4, nfs)"
+          "desc": "파일시스템 종류 표시 (xfs, ext4, nfs) (GNU/Linux 전용. Solaris 는 -n)"
+        },
+        {
+          "flag": "-n",
+          "desc": "(Solaris) 파일시스템 종류만 표시"
         },
         {
           "flag": "-i",
-          "desc": "inode 사용률"
+          "desc": "inode 사용률 (Linux·AIX. AIX 는 기본 출력에도 %Iused 포함)"
         },
         {
           "flag": "-x tmpfs -x devtmpfs",
-          "desc": "지정 종류 제외"
+          "desc": "지정 종류 제외 (GNU/Linux 전용)"
         },
         {
           "flag": "-t {{FSTYPE}}",
-          "desc": "지정 종류만 표시"
+          "desc": "지정 종류만 표시 (GNU/Linux 전용. AIX 의 -t 는 의미가 다름)"
         },
         {
           "flag": "-P",
-          "desc": "POSIX 형식 (한 줄에 한 파일시스템, 스크립트용)"
+          "desc": "POSIX 형식, 한 줄에 한 파일시스템 (Linux·AIX, 스크립트용)"
         },
         {
           "flag": "-l",
-          "desc": "로컬 파일시스템만 (NFS 제외)"
+          "desc": "로컬 파일시스템만, NFS 제외 (Linux·Solaris)"
         },
         {
           "flag": "{{PATH}}",
-          "desc": "해당 경로가 속한 파일시스템만"
+          "desc": "해당 경로가 속한 파일시스템만 (모든 OS 공통)"
         }
       ],
       "examples": [
         {
           "title": "디스크 사용량 확인",
-          "command": "df -hT"
+          "command": "df -hT",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "inode 고갈 확인",
-          "command": "df -i"
+          "command": "df -i",
+          "platforms": [
+            "rhel",
+            "debian",
+            "aix"
+          ]
         },
         {
           "title": "특정 경로가 속한 파일시스템",
-          "command": "df -h {{PATH}}"
+          "command": "df -k {{PATH}}"
         },
         {
           "title": "사용률 80% 이상 파일시스템",
-          "command": "df -hP | awk 'NR>1 && $5+0 >= 80'"
+          "command": "df -hP | awk 'NR>1 && $5+0 >= 80'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "디스크 사용량 확인 (AIX, GB 단위)",
+          "command": "df -g",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
-        "응답하지 않는 NFS 마운트가 있으면 df 가 멈춥니다. df -l 로 로컬만 확인하세요.",
-        "df 사용량이 du 합계보다 훨씬 크면 삭제됐지만 프로세스가 열고 있는 파일이 원인일 수 있습니다 (lsof +L1)."
+        "응답하지 않는 NFS 마운트가 있으면 df 가 멈춥니다. Linux·Solaris 는 df -l 로 로컬만 확인하세요.",
+        "df 사용량이 du 합계보다 훨씬 크면 삭제됐지만 프로세스가 열고 있는 파일이 원인일 수 있습니다 (Linux 는 lsof +L1).",
+        "HP-UX 의 df 는 파일시스템마다 여러 줄로 출력되어 보기 어렵습니다. HP-UX 에서는 bdf (KB 단위, 한 줄에 한 파일시스템) 를 쓰세요."
       ],
       "help": "man df",
       "keywords": [
@@ -1030,7 +1260,14 @@
         "lsblk",
         "lsof",
         "mount"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-h 가 없어 df -g(GB)·df -m(MB)를 씁니다. 옵션이 없으면 512바이트 블록 단위입니다. 기본 출력에 inode 사용률(%Iused)이 함께 나옵니다.",
+        "solaris": "df -h, df -k 를 씁니다. 종류는 df -n 으로 확인합니다. ZFS 는 같은 풀의 데이터셋이 공간을 나눠 쓰므로 zfs list 로 풀 전체 여유도 함께 확인하세요."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "du",
@@ -1041,7 +1278,10 @@
       "task": "system.disk-usage",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "basic",
       "risk": "safe",
@@ -1049,55 +1289,78 @@
       "summary": "디렉토리·파일별 디스크 사용량",
       "description": "디렉토리와 파일이 실제로 차지하는 디스크 용량을 계산합니다. 디스크가 찼을 때 어느 디렉토리가 큰지 단계적으로 찾아 들어가는 데 사용합니다. 권한이 없는 디렉토리는 계산되지 않으므로 전체 점검은 root 로 실행합니다.",
       "syntax": [
+        "du -sk {{PATH}}",
         "du [-sh] {{PATH}}",
         "du -h --max-depth={{N}} {{PATH}}"
       ],
       "options": [
         {
           "flag": "-s",
-          "desc": "지정 경로의 합계만"
+          "desc": "지정 경로의 합계만 (모든 OS 공통)"
+        },
+        {
+          "flag": "-k",
+          "desc": "KB 단위 (모든 OS 공통. Unix 기본 단위는 512바이트 블록)"
         },
         {
           "flag": "-h",
-          "desc": "사람이 읽기 쉬운 단위"
-        },
-        {
-          "flag": "-d {{N}}, --max-depth={{N}}",
-          "desc": "출력할 하위 디렉토리 깊이"
-        },
-        {
-          "flag": "-x",
-          "desc": "다른 파일시스템(마운트)으로 넘어가지 않음"
+          "desc": "사람이 읽기 쉬운 단위 (Linux·Solaris)"
         },
         {
           "flag": "-a",
-          "desc": "디렉토리뿐 아니라 파일도 표시"
+          "desc": "디렉토리뿐 아니라 파일도 표시 (모든 OS 공통)"
+        },
+        {
+          "flag": "-x",
+          "desc": "다른 파일시스템(마운트)으로 넘어가지 않음 (Linux·AIX·HP-UX. Solaris 는 -d)"
+        },
+        {
+          "flag": "-d {{N}}, --max-depth={{N}}",
+          "desc": "출력할 하위 디렉토리 깊이 (GNU/Linux 전용. Solaris 의 -d 는 파일시스템 경계 제한)"
         },
         {
           "flag": "-c",
-          "desc": "마지막에 총합 표시"
+          "desc": "마지막에 총합 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "--apparent-size",
-          "desc": "실제 블록 대신 파일 크기 기준 (sparse 파일 비교)"
+          "desc": "실제 블록 대신 파일 크기 기준, sparse 파일 비교 (GNU/Linux 전용)"
         },
         {
           "flag": "--exclude={{PATTERN}}",
-          "desc": "패턴에 맞는 파일 제외"
+          "desc": "패턴에 맞는 파일 제외 (GNU/Linux 전용)"
         }
       ],
       "examples": [
         {
           "title": "루트 파일시스템에서 큰 디렉토리 찾기",
-          "command": "du -xh --max-depth=1 / 2>/dev/null | sort -hr | head -15"
+          "command": "du -xh --max-depth=1 / 2>/dev/null | sort -hr | head -15",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "디렉토리 총 용량",
-          "command": "du -sh {{DIR}}"
+          "command": "du -sh {{DIR}}",
+          "platforms": [
+            "rhel",
+            "debian",
+            "solaris"
+          ]
         },
         {
           "title": "/var/log 아래 큰 파일·디렉토리 상위 20",
-          "command": "du -ah /var/log 2>/dev/null | sort -hr | head -20"
+          "command": "du -ah /var/log 2>/dev/null | sort -hr | head -20",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "큰 디렉토리 찾기 (모든 OS 공통)",
+          "command": "du -sk {{DIR}}/* 2>/dev/null | sort -rn | head -15",
+          "note": "결과는 KB 단위입니다. 숨김 디렉토리(.으로 시작)는 * 에 포함되지 않습니다."
         }
       ],
       "cautions": [
@@ -1116,7 +1379,15 @@
         "df",
         "find",
         "lsof"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "-h 가 없습니다. du -sk 로 KB 단위를 보고 sort -rn 으로 정렬하세요. 옵션이 없으면 512바이트 블록 단위입니다.",
+        "hpux": "-h 가 없고 옵션이 없으면 512바이트 블록 단위입니다. du -sk 를 쓰세요.",
+        "solaris": "-h 를 지원합니다. -d 는 다른 파일시스템으로 넘어가지 않는 옵션(GNU 의 -x)이며 깊이 제한 옵션은 없습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-volume",
@@ -1178,7 +1449,10 @@
         "get-psdrive",
         "get-ciminstance",
         "get-disk"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-psdrive",
@@ -1233,7 +1507,10 @@
       "related": [
         "get-volume",
         "get-ciminstance"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lscpu",
@@ -1283,7 +1560,8 @@
         }
       ],
       "cautions": [
-        "한글 로케일에서는 항목 이름이 번역되어 grep 이 실패할 수 있습니다. LC_ALL=C lscpu 로 실행하세요."
+        "한글 로케일에서는 항목 이름이 번역되어 grep 이 실패할 수 있습니다. LC_ALL=C lscpu 로 실행하세요.",
+        "AIX·HP-UX·Solaris 에는 없습니다. AIX: prtconf (CPU 종류·개수 요약), lparstat -i (LPAR 할당 CPU), bindprocessor -q (논리 CPU). HP-UX: machinfo. Solaris: psrinfo -pv, prtdiag."
       ],
       "install": {
         "rhel": {
@@ -1309,7 +1587,10 @@
         "dmidecode",
         "mpstat",
         "lsblk"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lsblk",
@@ -1384,7 +1665,10 @@
           "note": "root 필요"
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "AIX·HP-UX·Solaris 에는 없습니다. AIX: lspv, lsdev -Cc disk, bootinfo -s hdiskN (MB). HP-UX: ioscan -fnC disk, diskinfo. Solaris: echo | format (디스크 목록), iostat -En.",
+        "새 디스크 인식(재스캔)은 Unix 마다 다릅니다. AIX: cfgmgr, HP-UX: ioscan -fnC disk 후 insf -e, Solaris: devfsadm (또는 cfgadm -al 확인)."
+      ],
       "install": {
         "rhel": {
           "package": "util-linux",
@@ -1411,7 +1695,10 @@
         "fdisk",
         "lvs",
         "lscpu"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lspci",
@@ -1473,7 +1760,8 @@
         }
       ],
       "cautions": [
-        "장치 이름은 pci.ids 데이터베이스 기준이라 최신 장치는 이름 대신 ID 로만 보일 수 있습니다 (update-pciids)."
+        "장치 이름은 pci.ids 데이터베이스 기준이라 최신 장치는 이름 대신 ID 로만 보일 수 있습니다 (update-pciids).",
+        "AIX·HP-UX·Solaris 에는 없습니다. AIX: lsdev -Cc adapter, lscfg -vl 어댑터명 (FRU·펌웨어). HP-UX: ioscan -fn. Solaris: prtdiag -v, prtconf -D (장치별 드라이버)."
       ],
       "install": {
         "rhel": {
@@ -1501,7 +1789,10 @@
         "lsusb",
         "dmidecode",
         "ethtool"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "lsusb",
@@ -1578,7 +1869,10 @@
       "related": [
         "lspci",
         "dmesg"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dmidecode",
@@ -1650,7 +1944,8 @@
       ],
       "cautions": [
         "VM 에서는 하이퍼바이저가 제공하는 가상 정보(예: VMware, QEMU)가 출력됩니다.",
-        "SMBIOS 정보는 제조사가 기입한 값이라 'To Be Filled By O.E.M.' 처럼 비어 있을 수 있습니다."
+        "SMBIOS 정보는 제조사가 기입한 값이라 'To Be Filled By O.E.M.' 처럼 비어 있을 수 있습니다.",
+        "AIX·HP-UX·Solaris 에는 없습니다. AIX: prtconf (모델·시리얼·펌웨어), lsattr -El sys0 -a systemid. HP-UX: machinfo. Solaris: prtdiag -v, x86 은 smbios."
       ],
       "install": {
         "rhel": {
@@ -1678,7 +1973,10 @@
         "lscpu",
         "lspci",
         "free"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "msinfo32",
@@ -1709,10 +2007,6 @@
         {
           "flag": "/computer {{COMPUTER}}",
           "desc": "원격 컴퓨터 정보 조회"
-        },
-        {
-          "flag": "시스템 요약 > BIOS 모드 / 보안 부팅 상태",
-          "desc": "UEFI 여부, Secure Boot 확인"
         }
       ],
       "examples": [
@@ -1740,7 +2034,34 @@
         "systeminfo",
         "get-ciminstance",
         "get-computerinfo"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 보는 화면",
+          "type": "action",
+          "items": [
+            {
+              "cmd": "시스템 요약 > BIOS 모드 / 보안 부팅 상태",
+              "desc": "UEFI 여부, Secure Boot 확인"
+            },
+            {
+              "cmd": "시스템 요약 > 시스템 제조업체 / 시스템 모델",
+              "desc": "서버 제조사·모델 확인"
+            },
+            {
+              "cmd": "소프트웨어 환경 > 시스템 드라이버",
+              "desc": "설치된 드라이버와 상태"
+            },
+            {
+              "cmd": "파일 > 내보내기",
+              "desc": "현재 화면 정보를 텍스트 파일로 저장"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-ciminstance",
@@ -1838,7 +2159,10 @@
         "get-computerinfo",
         "systeminfo",
         "get-counter"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "wmic",
@@ -1859,30 +2183,6 @@
         "wmic {{ALIAS}} [where \"{{CONDITION}}\"] get {{PROPERTY}}[,...] [/format:list]"
       ],
       "options": [
-        {
-          "flag": "bios get serialnumber",
-          "desc": "시리얼 번호"
-        },
-        {
-          "flag": "os get caption,version,lastbootuptime",
-          "desc": "OS 이름·버전·마지막 부팅"
-        },
-        {
-          "flag": "cpu get name,numberofcores,numberoflogicalprocessors",
-          "desc": "CPU 정보"
-        },
-        {
-          "flag": "memorychip get capacity,speed,devicelocator",
-          "desc": "메모리 모듈"
-        },
-        {
-          "flag": "logicaldisk get name,size,freespace",
-          "desc": "드라이브 용량"
-        },
-        {
-          "flag": "process where name=\"{{NAME}}.exe\" get processid,commandline",
-          "desc": "프로세스 실행 명령줄"
-        },
         {
           "flag": "/format:list",
           "desc": "목록 형식 출력"
@@ -1924,7 +2224,43 @@
       "related": [
         "get-ciminstance",
         "systeminfo"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 조회 (별칭 get 속성)",
+          "type": "subcommand",
+          "note": "wmic 뒤에 별칭(bios, os, cpu ...)과 get 으로 볼 속성을 씁니다.",
+          "items": [
+            {
+              "cmd": "wmic bios get serialnumber",
+              "desc": "시리얼 번호"
+            },
+            {
+              "cmd": "wmic os get caption,version,lastbootuptime",
+              "desc": "OS 이름·버전·마지막 부팅"
+            },
+            {
+              "cmd": "wmic cpu get name,numberofcores,numberoflogicalprocessors",
+              "desc": "CPU 정보"
+            },
+            {
+              "cmd": "wmic memorychip get capacity,speed,devicelocator",
+              "desc": "메모리 모듈"
+            },
+            {
+              "cmd": "wmic logicaldisk get name,size,freespace",
+              "desc": "드라이브 용량"
+            },
+            {
+              "cmd": "wmic process where name=\"{{NAME}}.exe\" get processid,commandline",
+              "desc": "프로세스 실행 명령줄"
+            }
+          ]
+        }
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "vmstat",
@@ -1935,7 +2271,10 @@
       "task": "system.perf-stats",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -1948,42 +2287,73 @@
       "options": [
         {
           "flag": "{{INTERVAL}} {{COUNT}}",
-          "desc": "간격(초)과 횟수 (첫 줄은 부팅 후 평균)"
-        },
-        {
-          "flag": "-S M",
-          "desc": "메모리 단위를 MB 로"
-        },
-        {
-          "flag": "-w",
-          "desc": "넓은 출력 (큰 숫자 정렬)"
-        },
-        {
-          "flag": "-t",
-          "desc": "각 줄에 시각 추가"
-        },
-        {
-          "flag": "-a",
-          "desc": "active/inactive 메모리 표시"
+          "desc": "간격(초)과 횟수, 첫 줄은 부팅 후 평균 (모든 OS 공통)"
         },
         {
           "flag": "-s",
-          "desc": "메모리·이벤트 누적 통계 표"
+          "desc": "메모리·이벤트 누적 통계 (모든 OS 공통)"
+        },
+        {
+          "flag": "-S M",
+          "desc": "메모리 단위를 MB 로 (GNU/Linux 전용. Solaris·HP-UX 의 -S 는 스와핑 열 표시)"
+        },
+        {
+          "flag": "-w",
+          "desc": "넓은 출력 (Linux·AIX)"
+        },
+        {
+          "flag": "-t",
+          "desc": "각 줄에 시각 추가 (Linux·AIX)"
+        },
+        {
+          "flag": "-a",
+          "desc": "active/inactive 메모리 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-d",
-          "desc": "디스크별 통계"
+          "desc": "디스크별 통계 (GNU/Linux 전용)"
+        },
+        {
+          "flag": "-v",
+          "desc": "(AIX) 메모리 상세 카운터 (numperm, pinned 페이지 등)"
+        },
+        {
+          "flag": "-I",
+          "desc": "(AIX) I/O 중심 출력 (fi, fo 열 추가)"
+        },
+        {
+          "flag": "-p",
+          "desc": "(Solaris) 페이징 상세 (실행·익명·파일 페이지 구분)"
         }
       ],
       "examples": [
         {
           "title": "1초 간격 10회 (시각 포함)",
-          "command": "vmstat -t -w 1 10"
+          "command": "vmstat -t -w 1 10",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "스왑 발생 여부 확인",
           "command": "vmstat -S M 2 5",
-          "note": "si/so 가 지속적으로 0 이 아니면 메모리 부족"
+          "note": "si/so 가 지속적으로 0 이 아니면 메모리 부족",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "5초 간격 5회 (모든 OS 공통)",
+          "command": "vmstat 5 5"
+        },
+        {
+          "title": "메모리 상세 카운터 (AIX)",
+          "command": "vmstat -v",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
@@ -2014,7 +2384,114 @@
         "sar",
         "free",
         "top"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 열 의미",
+          "type": "directive",
+          "note": "OS 마다 열 구성이 다릅니다. 항목에 표시된 OS 에서만 나오는 열이 있습니다.",
+          "items": [
+            {
+              "cmd": "r",
+              "desc": "CPU 를 기다리거나 실행 중인 프로세스 수. 논리 CPU 수보다 계속 크면 CPU 부족"
+            },
+            {
+              "cmd": "b",
+              "desc": "I/O 등으로 대기(블록) 중인 프로세스 수. 계속 0 보다 크면 디스크·NFS 지연 의심"
+            },
+            {
+              "cmd": "w",
+              "desc": "스왑아웃된 실행 대기 프로세스 수",
+              "platforms": [
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "swpd / free / buff / cache",
+              "desc": "사용 중 스왑 / 여유 / 버퍼 / 캐시 (KB)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "avm / fre",
+              "desc": "활성 가상 메모리 / 여유 메모리 (4KB 페이지 단위)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "si / so",
+              "desc": "초당 스왑 인 / 아웃. 계속 0 이 아니면 메모리 부족",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "pi / po",
+              "desc": "AIX: 페이징 공간 인/아웃 (계속 발생하면 메모리 부족). Solaris: 파일 페이지 입출력이라 바로 문제는 아님",
+              "platforms": [
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "sr",
+              "desc": "페이지 스캔 속도. 계속 높으면 여유 메모리를 찾느라 애쓰는 상태 (메모리 부족 신호)",
+              "platforms": [
+                "aix",
+                "hpux",
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "bi / bo",
+              "desc": "블록 장치 읽기 / 쓰기 (블록/초)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "in / cs",
+              "desc": "초당 인터럽트 / 컨텍스트 스위치 (Unix 는 faults 아래 in sy cs)"
+            },
+            {
+              "cmd": "us / sy / id",
+              "desc": "사용자 / 커널 / 유휴 CPU %"
+            },
+            {
+              "cmd": "wa",
+              "desc": "I/O 대기 CPU %. 높으면 디스크 병목 의심",
+              "platforms": [
+                "rhel",
+                "debian",
+                "aix"
+              ]
+            },
+            {
+              "cmd": "st",
+              "desc": "가상화 호스트에 빼앗긴(steal) CPU %",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "메모리 열(avm, fre)은 4KB 페이지 단위입니다. 페이징 공간 사용은 pi/po 열과 lsps -a 로 확인합니다. -t, -w, -v, -I 를 쓸 수 있습니다.",
+        "hpux": "열 구성이 다르고 wa 열이 없습니다. CPU 의 I/O 대기는 sar -u 의 %wio 로 확인합니다.",
+        "solaris": "wa 열이 없습니다. I/O 대기는 iostat -xn 의 %w·%b 로 확인합니다. 메모리 부족은 sr(스캔율)이 계속 0 보다 큰지로 판단하며, pi/po 는 파일 입출력도 포함하므로 바로 문제를 뜻하지 않습니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "iostat",
@@ -2025,7 +2502,10 @@
       "task": "system.perf-stats",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -2033,50 +2513,106 @@
       "summary": "디스크별 I/O 처리량·지연·사용률",
       "description": "디스크(장치)별 초당 읽기·쓰기 횟수(r/s, w/s)와 처리량, 평균 대기 시간(r_await, w_await), 큐 길이, 사용률(%util)과 CPU iowait 을 출력합니다. 스토리지 지연이나 특정 디스크 포화를 확인할 때 사용합니다.",
       "syntax": [
-        "iostat [-x] [-z] [-m] [-d] [{{DEVICE}}] [{{INTERVAL}} [{{COUNT}}]]"
+        "iostat [-x] [-z] [-m] [-d] [{{DEVICE}}] [{{INTERVAL}} [{{COUNT}}]]",
+        "iostat -xnz {{INTERVAL}} {{COUNT}}",
+        "iostat -D [-l] {{INTERVAL}} {{COUNT}}"
       ],
       "options": [
         {
+          "flag": "{{INTERVAL}} {{COUNT}}",
+          "desc": "간격(초)과 횟수 (모든 OS 공통)"
+        },
+        {
           "flag": "-x",
-          "desc": "확장 통계 (await, aqu-sz, %util 등)"
+          "desc": "확장 통계 (Linux·Solaris)"
         },
         {
           "flag": "-z",
-          "desc": "I/O 가 없는 장치 생략"
+          "desc": "I/O 가 없는 장치 생략 (Linux·Solaris)"
         },
         {
           "flag": "-m / -k",
-          "desc": "MB / KB 단위"
+          "desc": "MB / KB 단위 (GNU/Linux 전용)"
         },
         {
           "flag": "-d",
-          "desc": "디스크 통계만 (CPU 제외)"
+          "desc": "디스크 통계만, CPU 제외 (Linux·AIX)"
         },
         {
           "flag": "-c",
-          "desc": "CPU 통계만"
+          "desc": "CPU 통계만 (Linux·Solaris)"
         },
         {
           "flag": "-N",
-          "desc": "device-mapper(LVM) 이름 표시"
+          "desc": "device-mapper(LVM) 이름 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-p {{DEVICE}}",
-          "desc": "지정 디스크와 파티션 통계"
+          "desc": "지정 디스크와 파티션 통계 (GNU/Linux 전용)"
         },
         {
           "flag": "-t",
-          "desc": "각 보고서에 시각 표시"
+          "desc": "각 보고서에 시각 표시 (GNU/Linux 전용. AIX 는 -T)"
+        },
+        {
+          "flag": "-n",
+          "desc": "(Solaris) 장치를 c0t0d0 같은 논리 이름으로 표시"
+        },
+        {
+          "flag": "-E",
+          "desc": "(Solaris) 장치별 오류 통계와 벤더·모델·시리얼"
+        },
+        {
+          "flag": "-D",
+          "desc": "(AIX) 확장 디스크 통계 (읽기·쓰기 서비스 시간, 큐 대기)"
+        },
+        {
+          "flag": "-l",
+          "desc": "(AIX) 장치 하나를 한 줄로 길게 표시 (-D 와 함께)"
+        },
+        {
+          "flag": "-a",
+          "desc": "(AIX) 어댑터별 처리량"
         }
       ],
       "examples": [
         {
           "title": "1초 간격 디스크 확장 통계",
-          "command": "iostat -xz 1"
+          "command": "iostat -xz 1",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "LVM 이름으로 5초 간격 3회 (MB 단위)",
-          "command": "iostat -xmdN -t 5 3"
+          "command": "iostat -xmdN -t 5 3",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "디스크 확장 통계 5초 간격 (Solaris)",
+          "command": "iostat -xnz 5 3",
+          "platforms": [
+            "solaris"
+          ]
+        },
+        {
+          "title": "디스크 오류 누적 확인 (Solaris)",
+          "command": "iostat -En",
+          "platforms": [
+            "solaris"
+          ],
+          "note": "Hard Errors·Transport Errors 가 늘어나면 디스크·경로 점검이 필요합니다."
+        },
+        {
+          "title": "디스크 확장 통계 5초 간격 (AIX)",
+          "command": "iostat -Dl 5 3",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
       "cautions": [
@@ -2110,7 +2646,116 @@
         "sar",
         "mpstat",
         "lsblk"
-      ]
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 열 의미",
+          "type": "directive",
+          "note": "열 이름은 OS·버전마다 다릅니다. 판단은 응답 시간(await·asvc_t·avgserv)과 큐 길이를 함께 봅니다.",
+          "items": [
+            {
+              "cmd": "r/s / w/s",
+              "desc": "초당 읽기 / 쓰기 요청 수"
+            },
+            {
+              "cmd": "rkB/s / wkB/s",
+              "desc": "초당 읽기 / 쓰기 양 (KB)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "r_await / w_await",
+              "desc": "요청 하나의 평균 처리 시간 ms (큐 대기 포함). 구버전 sysstat 은 await 하나",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "aqu-sz",
+              "desc": "평균 큐 길이 (구버전 avgqu-sz)",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "%util",
+              "desc": "장치가 바빴던 시간 비율. SSD·RAID·SAN 은 100% 라도 포화가 아닐 수 있음",
+              "platforms": [
+                "rhel",
+                "debian"
+              ]
+            },
+            {
+              "cmd": "kr/s / kw/s",
+              "desc": "초당 읽기 / 쓰기 KB",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "wait / actv",
+              "desc": "대기 중 / 장치에서 처리 중인 요청 수",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "wsvc_t / asvc_t",
+              "desc": "큐 대기 시간 / 장치 서비스 시간 ms",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "%w / %b",
+              "desc": "대기 큐에 요청이 있던 시간 % / 장치가 바빴던 시간 %",
+              "platforms": [
+                "solaris"
+              ]
+            },
+            {
+              "cmd": "% tm_act",
+              "desc": "디스크가 활성이었던 시간 % (기본 출력)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "avgserv / avgtime",
+              "desc": "읽기·쓰기 평균 서비스 시간 / 큐 평균 대기 시간 ms (-D)",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "sqfull",
+              "desc": "서비스 큐가 가득 찬 횟수 (-D). 계속 늘면 hdisk 의 queue_depth 검토",
+              "platforms": [
+                "aix"
+              ]
+            },
+            {
+              "cmd": "bps / sps / msps",
+              "desc": "초당 KB / 초당 탐색 / 탐색당 ms (기본 출력)",
+              "platforms": [
+                "hpux"
+              ]
+            }
+          ]
+        }
+      ],
+      "platformNotes": {
+        "aix": "기본 출력 열은 % tm_act, Kbps, tps, Kb_read, Kb_wrtn 입니다. 확장 통계는 -D (-l 로 한 줄 표시), 어댑터별은 -a, 시각 표시는 -T 입니다.",
+        "hpux": "출력이 bps, sps, msps 정도로 단순하고 -x 가 없습니다. 디스크 대기·서비스 시간은 sar -d (avwait, avserv, %busy) 로 확인합니다.",
+        "solaris": "-x 확장 통계, -n 논리 장치 이름, -z 0 생략, -E 오류 통계를 씁니다. %util 대신 %b, await 대신 asvc_t·wsvc_t 를 봅니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "mpstat",
@@ -2121,7 +2766,9 @@
       "task": "system.perf-stats",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "solaris"
       ],
       "level": "frequent",
       "risk": "safe",
@@ -2129,42 +2776,72 @@
       "summary": "CPU 코어별 사용률 통계",
       "description": "CPU 전체 또는 코어별 사용률을 usr, sys, iowait, irq, soft, steal, idle 로 나누어 출력합니다. 특정 코어만 100% 인 단일 스레드 병목이나 인터럽트(soft) 쏠림을 확인할 때 사용합니다.",
       "syntax": [
-        "mpstat [-P {{CPU}} | ALL] [{{INTERVAL}} [{{COUNT}}]]"
+        "mpstat [-P {{CPU}} | ALL] [{{INTERVAL}} [{{COUNT}}]]",
+        "mpstat {{INTERVAL}} {{COUNT}}"
       ],
       "options": [
         {
+          "flag": "{{INTERVAL}} {{COUNT}}",
+          "desc": "간격(초)과 횟수 (모든 OS 공통)"
+        },
+        {
           "flag": "-P ALL",
-          "desc": "모든 코어별 통계"
+          "desc": "모든 코어별 통계 (GNU/Linux 전용. AIX·Solaris 는 기본이 CPU 별 출력)"
         },
         {
           "flag": "-P {{CPU}}",
-          "desc": "특정 코어만 (0부터)"
+          "desc": "특정 코어만, 0부터 (GNU/Linux 전용)"
         },
         {
           "flag": "-u",
-          "desc": "CPU 사용률 (기본)"
+          "desc": "CPU 사용률, 기본 (GNU/Linux 전용)"
         },
         {
           "flag": "-I SUM|CPU|ALL",
-          "desc": "인터럽트 통계"
+          "desc": "인터럽트 통계 (GNU/Linux 전용)"
         },
         {
-          "flag": "{{INTERVAL}} {{COUNT}}",
-          "desc": "간격(초)과 횟수"
+          "flag": "-s",
+          "desc": "(AIX) SMT 스레드별 사용률"
         }
       ],
       "examples": [
         {
           "title": "코어별 사용률 1초 간격 5회",
-          "command": "mpstat -P ALL 1 5"
+          "command": "mpstat -P ALL 1 5",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "VM 의 CPU steal 확인",
           "command": "mpstat 1 10",
-          "note": "%steal 이 높으면 호스트 CPU 경합"
+          "note": "%steal 이 높으면 호스트 CPU 경합",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "CPU 별 사용률 5초 간격 3회 (AIX·Solaris)",
+          "command": "mpstat 5 3",
+          "platforms": [
+            "aix",
+            "solaris"
+          ]
+        },
+        {
+          "title": "SMT 스레드별 사용률 (AIX)",
+          "command": "mpstat -s 5 3",
+          "platforms": [
+            "aix"
+          ]
         }
       ],
-      "cautions": [],
+      "cautions": [
+        "HP-UX 에는 mpstat 가 없습니다. CPU 별 사용률은 sar -uM 5 3 으로 확인합니다."
+      ],
       "install": {
         "rhel": {
           "package": "sysstat",
@@ -2192,7 +2869,14 @@
         "sar",
         "top",
         "lscpu"
-      ]
+      ],
+      "platformNotes": {
+        "aix": "옵션 없이 논리 CPU 별로 출력합니다. -s 는 SMT 스레드별 사용률입니다. LPAR 전체의 물리 CPU 사용량은 lparstat 가 편합니다.",
+        "solaris": "옵션 없이 CPU 별로 출력합니다. 열은 usr sys wt idl 이며 Solaris 10 이상에서 wt 는 항상 0 입니다. smtx(뮤텍스 경합), xcal(교차 호출), csw 도 함께 봅니다."
+      },
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "sar",
@@ -2203,7 +2887,10 @@
       "task": "system.perf-stats",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "aix",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "safe",
@@ -2217,39 +2904,47 @@
       "options": [
         {
           "flag": "-u",
-          "desc": "CPU 사용률 (기본)"
-        },
-        {
-          "flag": "-r",
-          "desc": "메모리 사용량"
-        },
-        {
-          "flag": "-S / -W",
-          "desc": "스왑 사용량 / 스왑 입출력"
+          "desc": "CPU 사용률, 기본 (모든 OS 공통. Unix 는 %wio 열 포함)"
         },
         {
           "flag": "-q",
-          "desc": "실행 큐·load average"
+          "desc": "실행 큐 (모든 OS 공통)"
         },
         {
-          "flag": "-b / -d",
-          "desc": "전체 I/O / 디스크별 I/O (-p 로 장치 이름)"
+          "flag": "-d",
+          "desc": "디스크별 I/O (모든 OS 공통. Linux 는 -p 로 장치 이름)"
+        },
+        {
+          "flag": "-b",
+          "desc": "Linux: 전체 I/O 속도 / Unix: 버퍼 캐시 활동 (의미가 다름)"
+        },
+        {
+          "flag": "-r",
+          "desc": "Linux: 메모리 사용량 / Solaris: freemem·freeswap / AIX: 페이징 통계 (HP-UX 없음)"
+        },
+        {
+          "flag": "-S / -W",
+          "desc": "스왑 사용량 / 스왑 입출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-n DEV / -n EDEV",
-          "desc": "NIC 별 트래픽 / 오류"
+          "desc": "NIC 별 트래픽 / 오류 (GNU/Linux 전용)"
+        },
+        {
+          "flag": "-P ALL",
+          "desc": "CPU 별 통계 (Linux·AIX. HP-UX 는 -uM)"
         },
         {
           "flag": "-f {{SA_FILE}}",
-          "desc": "지정 날짜 이력 파일 조회"
+          "desc": "지정 날짜 이력 파일 조회 (모든 OS 공통)"
         },
         {
           "flag": "-s {{START}} -e {{END}}",
-          "desc": "조회 시간 범위 (HH:MM:SS)"
+          "desc": "조회 시간 범위 HH:MM[:SS] (모든 OS 공통)"
         },
         {
           "flag": "-A",
-          "desc": "모든 통계"
+          "desc": "모든 통계 (모든 OS 공통)"
         }
       ],
       "examples": [
@@ -2273,11 +2968,21 @@
         },
         {
           "title": "NIC 트래픽 실시간 1초 간격",
-          "command": "sar -n DEV 1 5"
+          "command": "sar -n DEV 1 5",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
-          "title": "디스크별 I/O 이력 (장치 이름 표시)",
-          "command": "sar -d -p"
+          "title": "특정 날짜 14~15시 CPU·디스크 이력 (Unix)",
+          "command": "sar -u -f /var/adm/sa/sa{{DD}} -s 14:00 -e 15:00\nsar -d -f /var/adm/sa/sa{{DD}} -s 14:00 -e 15:00",
+          "platforms": [
+            "aix",
+            "hpux",
+            "solaris"
+          ],
+          "note": "디스크별 I/O 이력은 Linux 에서는 sar -d -p 로 장치 이름과 함께 봅니다."
         }
       ],
       "cautions": [
@@ -2298,7 +3003,10 @@
       },
       "platformNotes": {
         "rhel": "이력 파일 경로는 /var/log/sa/saDD 입니다.",
-        "debian": "이력 파일 경로는 /var/log/sysstat/saDD 이며, 설치 후 수집이 기본 비활성일 수 있습니다."
+        "debian": "이력 파일 경로는 /var/log/sysstat/saDD 이며, 설치 후 수집이 기본 비활성일 수 있습니다.",
+        "aix": "이력 파일은 /var/adm/sa/saDD 입니다. adm 사용자 crontab 의 sa1·sa2 줄 주석을 해제해야 수집이 시작됩니다. -r 은 페이징 통계라 Linux 와 의미가 다릅니다.",
+        "hpux": "이력 파일은 /var/adm/sa/saDD 이며 adm 사용자 crontab 의 sa1 로 수집합니다. 메모리(-r)·네트워크(-n) 통계는 없습니다. 디스크는 sar -d (avwait, avserv, %busy), CPU 별은 sar -uM 으로 봅니다.",
+        "solaris": "이력 파일은 /var/adm/sa/saDD 입니다. Solaris 10 이상은 svcadm enable sar 후 sys 사용자 crontab 의 sa1·sa2 줄을 활성화해야 수집됩니다. -r 은 freemem(페이지)·freeswap(디스크 블록), -g/-p 는 페이징 통계입니다."
       },
       "help": "man sar",
       "keywords": [
@@ -2315,7 +3023,10 @@
         "mpstat",
         "vmstat",
         "free"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "typeperf",
@@ -2399,7 +3110,10 @@
       "related": [
         "get-counter",
         "perfmon"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "get-counter",
@@ -2483,7 +3197,10 @@
         "perfmon",
         "get-process",
         "get-ciminstance"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     },
     {
       "id": "dmesg",
@@ -2494,7 +3211,9 @@
       "task": "system.kernel-log",
       "platforms": [
         "rhel",
-        "debian"
+        "debian",
+        "hpux",
+        "solaris"
       ],
       "level": "critical",
       "risk": "safe",
@@ -2502,67 +3221,92 @@
       "summary": "커널 메시지 확인 (OOM·디스크·NIC 오류)",
       "description": "커널 링 버퍼의 메시지를 출력합니다. OOM Killer 로 종료된 프로세스, 디스크 I/O 오류, 파일시스템 오류, NIC 링크 다운, 하드웨어 오류(MCE), 장치 인식 등 커널 수준 문제를 확인할 때 가장 먼저 봅니다. 재부팅하면 버퍼가 초기화되므로 이전 부팅 기록은 journalctl -k -b -1 로 봅니다.",
       "syntax": [
-        "dmesg [-T] [-l {{LEVEL}}] [-w]"
+        "dmesg [-T] [-l {{LEVEL}}] [-w]",
+        "dmesg | tail -50"
       ],
       "options": [
         {
           "flag": "-T",
-          "desc": "사람이 읽을 수 있는 시각 표시"
+          "desc": "사람이 읽을 수 있는 시각 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-H",
-          "desc": "페이지·색상 적용 사람 친화적 출력"
+          "desc": "페이지·색상 적용 사람 친화적 출력 (GNU/Linux 전용)"
         },
         {
           "flag": "-w",
-          "desc": "새 메시지 실시간 대기 (tail -f 처럼)"
+          "desc": "새 메시지 실시간 대기 (tail -f 처럼) (GNU/Linux 전용)"
         },
         {
           "flag": "-l err,warn",
-          "desc": "로그 레벨 필터 (emerg, alert, crit, err, warn, notice, info, debug)"
+          "desc": "로그 레벨 필터 (emerg, alert, crit, err, warn, notice, info, debug) (GNU/Linux 전용)"
         },
         {
           "flag": "-x",
-          "desc": "facility·level 표시"
+          "desc": "facility·level 표시 (GNU/Linux 전용)"
         },
         {
           "flag": "-k",
-          "desc": "커널 메시지만"
+          "desc": "커널 메시지만 (GNU/Linux 전용)"
         },
         {
           "flag": "-c / -C",
-          "desc": "출력 후 버퍼 삭제 / 버퍼 삭제 (root)"
+          "desc": "출력 후 버퍼 삭제 / 버퍼 삭제 (root) (GNU/Linux 전용)"
         }
       ],
       "examples": [
         {
           "title": "OOM Killer 발생 확인",
-          "command": "dmesg -T | grep -i -E 'out of memory|oom-kill|killed process'"
+          "command": "dmesg -T | grep -i -E 'out of memory|oom-kill|killed process'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "오류·경고만 보기",
-          "command": "dmesg -T -l err,warn"
+          "command": "dmesg -T -l err,warn",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "디스크·파일시스템 오류 확인",
-          "command": "dmesg -T | grep -i -E 'i/o error|xfs|ext4-fs error|blk_update_request|scsi'"
-        },
-        {
-          "title": "NIC 링크 상태 변화 확인",
-          "command": "dmesg -T | grep -i -E 'link is (up|down)'"
+          "command": "dmesg -T | grep -i -E 'i/o error|xfs|ext4-fs error|blk_update_request|scsi'",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
         },
         {
           "title": "이전 부팅의 커널 메시지",
-          "command": "journalctl -k -b -1"
+          "command": "journalctl -k -b -1",
+          "platforms": [
+            "rhel",
+            "debian"
+          ]
+        },
+        {
+          "title": "최근 커널 메시지 (HP-UX·Solaris)",
+          "command": "dmesg | tail -50",
+          "platforms": [
+            "hpux",
+            "solaris"
+          ],
+          "note": "시각 표시 옵션이 없습니다. 시각이 필요하면 /var/adm/messages (Solaris), /var/adm/syslog/syslog.log (HP-UX) 를 봅니다."
         }
       ],
       "cautions": [
         "-T 시각은 부팅 시각 기준 계산값이라 절전·VM 일시정지 후에는 실제 시각과 어긋날 수 있습니다.",
-        "dmesg -c 는 버퍼를 지워 다른 사람이 이후 분석할 수 없게 되므로 장애 중에는 사용하지 마세요."
+        "dmesg -c 는 버퍼를 지워 다른 사람이 이후 분석할 수 없게 되므로 장애 중에는 사용하지 마세요.",
+        "AIX 에는 dmesg 가 없습니다. 하드웨어·커널 오류는 errpt (상세는 errpt -a), 부팅 메시지는 alog -o -t boot 로 확인합니다."
       ],
       "platformNotes": {
         "rhel": "기본 설정(kernel.dmesg_restrict=0)에서는 일반 사용자도 조회할 수 있습니다.",
-        "debian": "kernel.dmesg_restrict=1 이 기본이라 일반 사용자는 sudo dmesg 로 실행해야 합니다."
+        "debian": "kernel.dmesg_restrict=1 이 기본이라 일반 사용자는 sudo dmesg 로 실행해야 합니다.",
+        "hpux": "옵션 없이 커널 메시지 버퍼를 출력합니다. 지난 기록은 /var/adm/syslog/syslog.log, 직전 부팅분은 /var/adm/syslog/OLDsyslog.log 에 있습니다.",
+        "solaris": "옵션 없이 최근 시스템 메시지를 출력합니다. 전체 기록은 /var/adm/messages (순환본 messages.0, .1 ...) 입니다. 하드웨어 장애는 fmadm faulty, fmdump 로도 확인합니다."
       },
       "help": "man dmesg",
       "keywords": [
@@ -2579,7 +3323,10 @@
         "get-winevent",
         "free",
         "lsblk"
-      ]
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
     }
   ]
 }

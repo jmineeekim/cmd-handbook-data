@@ -1,0 +1,1050 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "system",
+  "commands": [
+    {
+      "id": "hpux-machinfo",
+      "name": "machinfo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "CPU·메모리·펌웨어·시리얼·OS 릴리스 한 번에 확인",
+      "description": "HP-UX Integrity(Itanium) 서버의 CPU 종류·개수·클럭, 메모리 총량, 펌웨어 버전, 플랫폼 정보(모델, 시리얼 번호), OS 릴리스(B.11.31)를 한 화면에 보여 줍니다. 서버 현황 조사나 HPE 지원 요청 때 가장 먼저 수집하는 정보입니다.",
+      "syntax": [
+        "machinfo [-v]"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "CPU 소켓·코어·스레드 구성 등 자세한 정보"
+        }
+      ],
+      "examples": [
+        {
+          "title": "서버 하드웨어 요약",
+          "command": "machinfo"
+        },
+        {
+          "title": "메모리와 시리얼만 추려 보기",
+          "command": "machinfo | grep -i -E 'memory|serial'"
+        },
+        {
+          "title": "점검 보고서용 정보 모으기",
+          "command": "uname -a\nmodel\nmachinfo\nswlist -l bundle | grep -i OE"
+        }
+      ],
+      "cautions": [
+        "machinfo 는 Itanium(Integrity) 서버용입니다. PA-RISC 서버는 model, ioscan, print_manifest 등으로 확인합니다.",
+        "HP-UX 11i v3 는 HPE 표준 지원이 2025년 12월 종료되었습니다. 펌웨어·패치 수준을 기록해 두고 연장 지원 계약 여부와 이전 계획을 확인하세요."
+      ],
+      "help": "man machinfo",
+      "keywords": [
+        "하드웨어 정보",
+        "CPU",
+        "메모리 총량",
+        "시리얼 번호",
+        "machinfo",
+        "펌웨어",
+        "Integrity"
+      ],
+      "related": [
+        "hpux-model",
+        "hpux-print-manifest",
+        "hpux-getconf",
+        "hpux-ioscan",
+        "uname"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-model",
+      "name": "model",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "서버 모델명 한 줄 출력",
+      "description": "서버의 하드웨어 모델 문자열을 한 줄로 출력합니다. 스크립트에서 기종별로 분기하거나 자산 목록을 만들 때 씁니다. 더 자세한 정보는 machinfo 를 봅니다.",
+      "syntax": [
+        "model"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "모델명 확인",
+          "command": "model"
+        },
+        {
+          "title": "호스트명과 함께 기록",
+          "command": "echo \"$(hostname) $(model) $(uname -r)\""
+        }
+      ],
+      "cautions": [],
+      "help": "man model",
+      "keywords": [
+        "서버 모델",
+        "기종",
+        "model",
+        "하드웨어"
+      ],
+      "related": [
+        "hpux-machinfo",
+        "hpux-getconf",
+        "uname"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-print-manifest",
+      "name": "print_manifest",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.hardware",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "시스템 구성 명세서 출력 (Ignite-UX)",
+      "description": "Ignite-UX 에 포함된 도구로, 모델·CPU·메모리·디스크·VG/LV 구성·설치 소프트웨어·커널 파라미터 등 서버 구성 전체를 문서 형태로 출력합니다. 작업 전후 구성 비교나 인수인계 자료로 유용합니다.",
+      "syntax": [
+        "/opt/ignite/bin/print_manifest"
+      ],
+      "options": [],
+      "examples": [
+        {
+          "title": "구성 명세서를 파일로 저장",
+          "command": "/opt/ignite/bin/print_manifest > /var/tmp/manifest_$(hostname)_$(date +%Y%m%d).txt"
+        }
+      ],
+      "cautions": [
+        "Ignite-UX 가 설치되지 않은 서버에는 없습니다."
+      ],
+      "install": {
+        "hpux": {
+          "package": "Ignite-UX",
+          "preinstalled": false,
+          "note": "Ignite-UX 설치 시 /opt/ignite/bin 에 포함"
+        }
+      },
+      "help": "man print_manifest",
+      "keywords": [
+        "구성 명세",
+        "시스템 구성",
+        "print_manifest",
+        "Ignite",
+        "인수인계",
+        "자산"
+      ],
+      "related": [
+        "hpux-machinfo",
+        "hpux-make-tape-recovery",
+        "hpux-swlist"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-getconf",
+      "name": "getconf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.os-version",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "커널 비트 수·CPU 지원 비트·모델 등 시스템 값 조회",
+      "description": "시스템 구성 값을 조회합니다. HP-UX 에서는 KERNEL_BITS(실행 중인 커널이 32/64비트인지), HW_CPU_SUPP_BITS(CPU 가 지원하는 비트), MACHINE_MODEL, CPU_VERSION 같은 HP-UX 전용 변수를 자주 확인합니다.",
+      "syntax": [
+        "getconf {{VARIABLE}}"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 변수",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "KERNEL_BITS",
+              "desc": "실행 중인 커널 비트 수 (11i v3 는 64)"
+            },
+            {
+              "cmd": "HW_CPU_SUPP_BITS",
+              "desc": "CPU 가 지원하는 비트 수"
+            },
+            {
+              "cmd": "MACHINE_MODEL",
+              "desc": "서버 모델 문자열"
+            },
+            {
+              "cmd": "CPU_VERSION",
+              "desc": "CPU 아키텍처 버전 번호 (PA-RISC/Itanium 구분)"
+            },
+            {
+              "cmd": "ARG_MAX",
+              "desc": "명령 인수 최대 길이 (POSIX 공통)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "64비트 커널인지 확인",
+          "command": "getconf KERNEL_BITS"
+        },
+        {
+          "title": "소프트웨어 설치 전 요건 확인",
+          "command": "getconf KERNEL_BITS\ngetconf HW_CPU_SUPP_BITS\nuname -r"
+        }
+      ],
+      "cautions": [],
+      "help": "man getconf",
+      "keywords": [
+        "커널 비트",
+        "64비트",
+        "getconf",
+        "KERNEL_BITS",
+        "시스템 변수"
+      ],
+      "related": [
+        "hpux-machinfo",
+        "hpux-model",
+        "uname"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-ioscan",
+      "name": "ioscan",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "하드웨어·장치 검색과 상태 확인 (디스크·NIC·HBA)",
+      "description": "서버에 연결된 하드웨어를 검색하고 하드웨어 경로, 드라이버, 상태(CLAIMED 등), 장치 파일을 보여 줍니다. 새 LUN 인식, 장애 디스크 확인, 영구(agile) 장치 /dev/disk/diskN 과 레거시 /dev/dsk/cXtYdZ 의 대응 확인에 씁니다. -k 없이 실행하면 실제로 버스를 다시 검색합니다.",
+      "syntax": [
+        "ioscan -fnNC {{CLASS}}",
+        "ioscan -fnNkC {{CLASS}}",
+        "ioscan -m dsf [/dev/disk/{{DISK}}]",
+        "ioscan -P health -C {{CLASS}}"
+      ],
+      "options": [
+        {
+          "flag": "-f",
+          "desc": "전체 정보(클래스, 인스턴스, 하드웨어 경로, 드라이버, 상태) 표시"
+        },
+        {
+          "flag": "-n",
+          "desc": "장치 파일 이름 함께 표시"
+        },
+        {
+          "flag": "-N",
+          "desc": "영구(agile) 보기: /dev/disk/diskN 기준 (11i v3)"
+        },
+        {
+          "flag": "-C {{CLASS}}",
+          "desc": "클래스 지정: disk, tape, lan, fc, processor 등"
+        },
+        {
+          "flag": "-k",
+          "desc": "다시 검색하지 않고 커널에 저장된 정보만 표시 (빠름)"
+        },
+        {
+          "flag": "-u",
+          "desc": "사용 가능한(CLAIMED) 장치만"
+        },
+        {
+          "flag": "-H {{HW_PATH}}",
+          "desc": "특정 하드웨어 경로만"
+        },
+        {
+          "flag": "-m dsf",
+          "desc": "영구 DSF ↔ 레거시 DSF 대응표 (11i v3)"
+        },
+        {
+          "flag": "-m lun",
+          "desc": "LUN 별 경로(lunpath) 목록 (11i v3)"
+        },
+        {
+          "flag": "-P health",
+          "desc": "장치 상태(online, offline, limited 등) 표시 (11i v3)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "S/W State 의미",
+          "type": "directive",
+          "items": [
+            {
+              "cmd": "CLAIMED",
+              "desc": "드라이버가 장치를 인식·사용 중 (정상)"
+            },
+            {
+              "cmd": "UNCLAIMED",
+              "desc": "장치는 보이나 맞는 드라이버가 없음"
+            },
+            {
+              "cmd": "NO_HW",
+              "desc": "예전에 있던 장치가 지금은 응답 없음 (제거·경로 장애)"
+            },
+            {
+              "cmd": "ERROR",
+              "desc": "장치 오류"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "디스크 목록 (영구 장치 기준)",
+          "command": "ioscan -fnNC disk"
+        },
+        {
+          "title": "새로 할당된 LUN 검색 후 장치 파일 생성",
+          "command": "ioscan -fnNC disk\ninsf -e -C disk\nioscan -fnNkC disk"
+        },
+        {
+          "title": "영구 장치와 레거시 장치 대응 확인",
+          "command": "ioscan -m dsf /dev/disk/{{DISK}}"
+        },
+        {
+          "title": "NO_HW·오류 장치 찾기",
+          "command": "ioscan -fnkC disk | grep -E 'NO_HW|ERROR'\nioscan -P health -C disk"
+        },
+        {
+          "title": "NIC·FC HBA 확인",
+          "command": "ioscan -fnkC lan\nioscan -fnkC fc"
+        }
+      ],
+      "cautions": [
+        "-k 없는 ioscan 은 버스를 실제로 검색해 시간이 걸릴 수 있습니다. 장애 중 상태만 볼 때는 -k 를 쓰세요.",
+        "11i v3 는 레거시 DSF 와 영구 DSF 가 함께 존재할 수 있습니다. LVM·DB 설정이 어느 쪽 이름을 쓰는지 확인하고 섞어 쓰지 마세요."
+      ],
+      "help": "man ioscan",
+      "keywords": [
+        "장치 검색",
+        "디스크 인식",
+        "ioscan",
+        "LUN 스캔",
+        "CLAIMED",
+        "NO_HW",
+        "agile DSF",
+        "하드웨어 경로"
+      ],
+      "related": [
+        "hpux-insf",
+        "hpux-rmsf",
+        "hpux-scsimgr",
+        "hpux-diskinfo",
+        "hpux-pvcreate",
+        "hpux-lanscan"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-insf",
+      "name": "insf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "새로 인식된 장치의 장치 파일(/dev) 생성",
+      "description": "ioscan 으로 인식된 장치에 대해 /dev 아래 장치 파일(DSF)을 만듭니다. 새 디스크·테이프를 연결한 뒤 ioscan 다음에 실행합니다. 장치 파일 정보는 lssf 로 확인할 수 있습니다.",
+      "syntax": [
+        "insf -e [-C {{CLASS}}]",
+        "insf -e -H {{HW_PATH}}"
+      ],
+      "options": [
+        {
+          "flag": "-e",
+          "desc": "기존 장치 파일이 있어도 다시 생성(누락분 보충)"
+        },
+        {
+          "flag": "-C {{CLASS}}",
+          "desc": "클래스 지정 (disk, tape 등)"
+        },
+        {
+          "flag": "-H {{HW_PATH}}",
+          "desc": "특정 하드웨어 경로만"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 디스크 장치 파일 생성",
+          "command": "ioscan -fnNC disk\ninsf -e -C disk\nls -l /dev/disk /dev/rdisk"
+        },
+        {
+          "title": "장치 파일의 드라이버·경로 확인",
+          "command": "lssf /dev/rdisk/{{DISK}}"
+        }
+      ],
+      "cautions": [
+        "insf -e 는 권한이 바뀐 기존 장치 파일을 기본값으로 되돌릴 수 있습니다. DB 가 raw 장치 권한(oracle:dba 등)을 쓰는 경우 실행 후 권한을 확인하세요."
+      ],
+      "help": "man insf · man lssf",
+      "keywords": [
+        "장치 파일 생성",
+        "insf",
+        "lssf",
+        "DSF",
+        "새 디스크",
+        "/dev/disk"
+      ],
+      "related": [
+        "hpux-ioscan",
+        "hpux-rmsf",
+        "hpux-pvcreate"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-rmsf",
+      "name": "rmsf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "destructive",
+      "requiresAdmin": true,
+      "summary": "장치 파일·장치 정의 제거 (NO_HW 정리)",
+      "description": "더 이상 쓰지 않는 장치의 장치 파일과 커널 I/O 구성 항목을 제거합니다. LUN 회수 후 남은 NO_HW 항목을 정리할 때 씁니다. 11i v3 에서는 -x 로 사라진(stale) 장치 항목을 한꺼번에 정리할 수 있습니다.",
+      "syntax": [
+        "rmsf -H {{HW_PATH}}",
+        "rmsf -a /dev/disk/{{DISK}}",
+        "rmsf -x"
+      ],
+      "options": [
+        {
+          "flag": "-H {{HW_PATH}}",
+          "desc": "하드웨어 경로의 장치 정의와 장치 파일 제거"
+        },
+        {
+          "flag": "-a",
+          "desc": "지정한 장치 파일과 같은 장치의 장치 파일 모두 제거"
+        },
+        {
+          "flag": "-x",
+          "desc": "NO_HW 상태(stale) 항목 일괄 제거 (11i v3)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "회수한 LUN 의 장치 정리",
+          "command": "ioscan -fnNkC disk | grep NO_HW\nstrings /etc/lvmtab /etc/lvmtab_p | grep {{DISK}}\nrmsf -a /dev/disk/{{DISK}}\nioscan -fnNkC disk",
+          "note": "lvmtab 에 남아 있으면 먼저 vgreduce 로 VG 에서 제거하세요."
+        }
+      ],
+      "cautions": [
+        "사용 중인 장치(VG 소속, 스왑, 덤프 장치)의 장치 파일을 지우면 서비스 장애가 납니다.",
+        "일시적인 경로 장애로 NO_HW 가 된 장치를 rmsf -x 로 지우지 마세요. 스토리지·SAN 상태를 먼저 확인합니다.",
+        "rmsf -L(레거시 DSF 전체 제거)은 레거시 이름을 쓰는 설정이 모두 깨지므로 충분한 검토 없이 실행하지 마세요."
+      ],
+      "help": "man rmsf",
+      "keywords": [
+        "장치 제거",
+        "rmsf",
+        "NO_HW 정리",
+        "LUN 회수",
+        "stale 장치",
+        "DSF 삭제"
+      ],
+      "related": [
+        "hpux-ioscan",
+        "hpux-insf",
+        "hpux-vgreduce"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-scsimgr",
+      "name": "scsimgr",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "LUN WWID·경로·멀티패스 상태 확인 (11i v3)",
+      "description": "11i v3 의 대용량 스토리지 스택(내장 멀티패스) 관리 도구입니다. LUN 의 WWID, 상태, 경로(lunpath) 목록, I/O 통계, 로드밸런싱 정책을 확인하고 바꿀 수 있습니다. 스토리지 담당자와 LUN 을 대조할 때 WWID 확인에 씁니다.",
+      "syntax": [
+        "scsimgr get_info -D /dev/rdisk/{{DISK}}",
+        "scsimgr lun_map -D /dev/rdisk/{{DISK}}",
+        "scsimgr get_stat -D /dev/rdisk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-D /dev/rdisk/{{DISK}}",
+          "desc": "대상 장치 (문자 장치)"
+        },
+        {
+          "flag": "-a {{ATTRIBUTE}}",
+          "desc": "get_attr 등에서 특정 속성 지정 (예: load_bal_policy)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "주요 서브명령",
+          "type": "subcommand",
+          "items": [
+            {
+              "cmd": "scsimgr get_info -D /dev/rdisk/{{DISK}}",
+              "desc": "WWID, 장치 상태, 벤더·제품 정보"
+            },
+            {
+              "cmd": "scsimgr lun_map -D /dev/rdisk/{{DISK}}",
+              "desc": "LUN 의 모든 경로와 경로별 상태"
+            },
+            {
+              "cmd": "scsimgr get_stat -D /dev/rdisk/{{DISK}}",
+              "desc": "I/O·오류 통계"
+            },
+            {
+              "cmd": "scsimgr get_attr -D /dev/rdisk/{{DISK}} -a load_bal_policy",
+              "desc": "멀티패스 로드밸런싱 정책 조회"
+            },
+            {
+              "cmd": "scsimgr replace_wwid -D /dev/rdisk/{{DISK}}",
+              "desc": "디스크 교체 후 새 WWID 를 기존 DSF 에 연결 (교체 절차 중에만)"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "LUN WWID 확인 (스토리지와 대조)",
+          "command": "scsimgr get_info -D /dev/rdisk/{{DISK}} | grep -i wwid"
+        },
+        {
+          "title": "멀티패스 경로 상태 점검",
+          "command": "scsimgr lun_map -D /dev/rdisk/{{DISK}}\nioscan -m lun /dev/disk/{{DISK}}"
+        }
+      ],
+      "cautions": [
+        "set_attr·replace_wwid 등 변경 서브명령은 디스크 교체·성능 튜닝 절차에 따라서만 실행하세요."
+      ],
+      "versions": {
+        "hpux": "11i v3 이상"
+      },
+      "help": "man scsimgr",
+      "keywords": [
+        "멀티패스",
+        "WWID",
+        "LUN 경로",
+        "scsimgr",
+        "lunpath",
+        "스토리지"
+      ],
+      "related": [
+        "hpux-ioscan",
+        "hpux-diskinfo",
+        "hpux-vgcfgrestore"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-diskinfo",
+      "name": "diskinfo",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.devices",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "디스크 용량·벤더·제품 ID 확인",
+      "description": "디스크(LUN)의 벤더, 제품 ID, 크기(KB), 섹터 크기를 보여 줍니다. 새로 할당받은 LUN 이 요청한 용량과 맞는지 pvcreate 전에 확인할 때 씁니다. 문자 장치를 인자로 줍니다.",
+      "syntax": [
+        "diskinfo [-v] /dev/rdisk/{{DISK}}"
+      ],
+      "options": [
+        {
+          "flag": "-v",
+          "desc": "자세한 정보"
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 LUN 용량 확인",
+          "command": "diskinfo /dev/rdisk/{{DISK}}"
+        },
+        {
+          "title": "모든 디스크 용량 한 번에 보기",
+          "command": "for d in /dev/rdisk/disk*; do echo $d; diskinfo $d | grep size; done"
+        }
+      ],
+      "cautions": [],
+      "help": "man diskinfo",
+      "keywords": [
+        "디스크 용량",
+        "LUN 크기",
+        "diskinfo",
+        "디스크 정보"
+      ],
+      "related": [
+        "hpux-ioscan",
+        "hpux-pvcreate",
+        "hpux-scsimgr"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-bdf",
+      "name": "bdf",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.disk-usage",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "basic",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "파일시스템 사용량 확인 (HP-UX 의 df -k)",
+      "description": "마운트된 파일시스템의 크기, 사용량, 남은 공간, 사용률을 KB 단위로 보여 줍니다. HP-UX 의 df 는 출력 형식이 달라 실무에서는 bdf 를 주로 씁니다. 장치 이름이 길면 한 항목이 두 줄로 나뉘어 출력됩니다.",
+      "syntax": [
+        "bdf [-i] [-l] [-t {{FSTYPE}}] [{{MOUNT_POINT}}]"
+      ],
+      "options": [
+        {
+          "flag": "-i",
+          "desc": "inode 사용량도 표시"
+        },
+        {
+          "flag": "-l",
+          "desc": "로컬 파일시스템만 (NFS 제외)"
+        },
+        {
+          "flag": "-t {{FSTYPE}}",
+          "desc": "특정 유형만 (vxfs, nfs 등)"
+        }
+      ],
+      "examples": [
+        {
+          "title": "전체 사용량",
+          "command": "bdf"
+        },
+        {
+          "title": "특정 파일시스템",
+          "command": "bdf {{MOUNT_POINT}}"
+        },
+        {
+          "title": "사용률 80% 이상만 찾기",
+          "command": "bdf -l | awk 'NF==1{dev=$1;next} NF==5{print dev,$0;next} {print}' | awk '$(NF-1)+0>=80'",
+          "note": "두 줄로 나뉜 항목을 한 줄로 합친 뒤 사용률을 비교합니다."
+        }
+      ],
+      "cautions": [
+        "장치 이름이 긴 항목은 두 줄로 출력되므로 awk 로 열 번호를 고정해 파싱하면 틀립니다.",
+        "NFS 서버가 응답하지 않으면 bdf 가 멈출 수 있습니다. 이때는 bdf -l 을 쓰세요."
+      ],
+      "help": "man bdf",
+      "keywords": [
+        "디스크 용량",
+        "파일시스템 사용량",
+        "bdf",
+        "df",
+        "남은 공간",
+        "inode"
+      ],
+      "related": [
+        "df",
+        "du",
+        "hpux-vgdisplay",
+        "hpux-lvextend",
+        "hpux-fsadm"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-glance",
+      "name": "glance",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.perf-stats",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "GlancePlus 실시간 성능 모니터 (별도 라이선스)",
+      "description": "HP-UX 용 대화형 성능 모니터로 CPU·메모리·디스크·네트워크·프로세스를 화면을 바꿔 가며 볼 수 있습니다. top 보다 자세하며 장애 분석 때 많이 씁니다. GlancePlus 는 별도 라이선스 제품이라 설치돼 있지 않은 서버가 많습니다.",
+      "syntax": [
+        "glance [-j {{INTERVAL_SEC}}]"
+      ],
+      "options": [
+        {
+          "flag": "-j {{INTERVAL_SEC}}",
+          "desc": "화면 갱신 간격(초)"
+        }
+      ],
+      "commandGroups": [
+        {
+          "title": "화면 전환 키",
+          "type": "keys",
+          "items": [
+            {
+              "cmd": "g",
+              "desc": "프로세스 목록 (기본 화면)"
+            },
+            {
+              "cmd": "c",
+              "desc": "CPU 상세"
+            },
+            {
+              "cmd": "a",
+              "desc": "CPU 별 사용률"
+            },
+            {
+              "cmd": "m",
+              "desc": "메모리 상세"
+            },
+            {
+              "cmd": "d",
+              "desc": "디스크 I/O 요약"
+            },
+            {
+              "cmd": "u",
+              "desc": "디스크(장치)별 I/O"
+            },
+            {
+              "cmd": "v",
+              "desc": "논리 볼륨별 I/O"
+            },
+            {
+              "cmd": "l",
+              "desc": "네트워크 인터페이스별"
+            },
+            {
+              "cmd": "w",
+              "desc": "스왑 공간"
+            },
+            {
+              "cmd": "t",
+              "desc": "시스템 테이블 사용률 (nproc, nfile 등 커널 한계)"
+            },
+            {
+              "cmd": "s",
+              "desc": "PID 를 입력해 특정 프로세스 상세"
+            },
+            {
+              "cmd": "?",
+              "desc": "명령 키 목록"
+            },
+            {
+              "cmd": "q",
+              "desc": "종료"
+            }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "5초 간격으로 실행",
+          "command": "glance -j 5"
+        },
+        {
+          "title": "설치 여부 확인",
+          "command": "swlist -l product | grep -i glance"
+        }
+      ],
+      "cautions": [
+        "glance 자체도 자원을 쓰므로 장애 중에는 갱신 간격을 너무 짧게 잡지 마세요."
+      ],
+      "install": {
+        "hpux": {
+          "package": "GlancePlus",
+          "preinstalled": false,
+          "note": "별도 라이선스 제품 (HP-UX 상위 OE 또는 Operations Agent 에 포함되는 경우가 있음). 없으면 sar, vmstat, top 사용"
+        }
+      },
+      "help": "man glance · 실행 중 ?",
+      "keywords": [
+        "성능 모니터",
+        "glance",
+        "GlancePlus",
+        "CPU",
+        "메모리",
+        "디스크 I/O",
+        "실시간 모니터링"
+      ],
+      "related": [
+        "top",
+        "sar",
+        "vmstat",
+        "iostat",
+        "hpux-swapinfo",
+        "hpux-kcusage"
+      ],
+      "review": {
+        "status": "ai-draft",
+        "note": "단축키는 GlancePlus 버전에 따라 다를 수 있음"
+      }
+    },
+    {
+      "id": "hpux-parstatus",
+      "name": "parstatus",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.virtualization",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "nPartition(하드 파티션) 구성·셀 상태 확인",
+      "description": "Superdome·rx8640 등 셀 기반 서버의 nPartition 구성을 보여 줍니다. 파티션 목록, 셀 보드 상태, 현재 서버가 몇 번 파티션인지 확인합니다. 셀 기반이 아닌 서버에서는 지원되지 않습니다.",
+      "syntax": [
+        "parstatus [-w | -P | -C | -V -p {{PARTITION_NO}}]"
+      ],
+      "options": [
+        {
+          "flag": "-w",
+          "desc": "현재 OS 가 실행 중인 파티션 번호"
+        },
+        {
+          "flag": "-P",
+          "desc": "모든 파티션 목록"
+        },
+        {
+          "flag": "-C",
+          "desc": "셀 보드 목록과 상태"
+        },
+        {
+          "flag": "-V -p {{PARTITION_NO}}",
+          "desc": "특정 파티션 상세"
+        }
+      ],
+      "examples": [
+        {
+          "title": "현재 파티션과 전체 구성 확인",
+          "command": "parstatus -w\nparstatus -P\nparstatus -C"
+        }
+      ],
+      "cautions": [],
+      "help": "man parstatus",
+      "keywords": [
+        "nPartition",
+        "하드 파티션",
+        "parstatus",
+        "셀 보드",
+        "Superdome",
+        "파티션"
+      ],
+      "related": [
+        "hpux-vparstatus",
+        "hpux-hpvmstatus",
+        "hpux-machinfo"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-vparstatus",
+      "name": "vparstatus",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.virtualization",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "vPar(가상 파티션) 상태·자원 확인",
+      "description": "HP-UX Virtual Partitions(vPars) 환경에서 vPar 목록, 실행 상태, 할당된 CPU·메모리·I/O 를 보여 줍니다. 현재 OS 가 어느 vPar 인지도 확인할 수 있습니다. vPars 제품이 설치된 환경에서만 있습니다.",
+      "syntax": [
+        "vparstatus [-w | -A | -v -p {{VPAR}}]"
+      ],
+      "options": [
+        {
+          "flag": "-w",
+          "desc": "현재 실행 중인 vPar 이름"
+        },
+        {
+          "flag": "-A",
+          "desc": "할당되지 않은(사용 가능한) 자원"
+        },
+        {
+          "flag": "-v",
+          "desc": "자세한 정보"
+        },
+        {
+          "flag": "-p {{VPAR}}",
+          "desc": "특정 vPar 지정"
+        }
+      ],
+      "examples": [
+        {
+          "title": "vPar 목록과 상태",
+          "command": "vparstatus"
+        },
+        {
+          "title": "현재 vPar 와 상세 자원",
+          "command": "vparstatus -w\nvparstatus -v -p {{VPAR}}"
+        }
+      ],
+      "cautions": [],
+      "install": {
+        "hpux": {
+          "package": "vPars",
+          "preinstalled": false,
+          "note": "HP-UX vPars(및 vPars and Integrity VM v6) 제품 설치 환경에서만"
+        }
+      },
+      "help": "man vparstatus",
+      "keywords": [
+        "vPar",
+        "가상 파티션",
+        "vparstatus",
+        "파티션 자원",
+        "가상화"
+      ],
+      "related": [
+        "hpux-parstatus",
+        "hpux-hpvmstatus",
+        "hpux-machinfo"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    },
+    {
+      "id": "hpux-hpvmstatus",
+      "name": "hpvmstatus",
+      "kind": "command",
+      "shell": "sh",
+      "category": "system",
+      "task": "system.virtualization",
+      "platforms": [
+        "hpux"
+      ],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "Integrity VM 게스트 목록·상태 확인 (VM 호스트)",
+      "description": "HP Integrity Virtual Machines(HPVM) 호스트에서 게스트 VM 목록과 상태(On/Off), vCPU·메모리 할당을 보여 줍니다. -P 로 특정 게스트의 디스크·네트워크 구성까지 확인합니다. 게스트 안에서는 hpvminfo 로 자신이 VM 인지 확인합니다.",
+      "syntax": [
+        "hpvmstatus [-P {{VM_NAME}}] [-V]"
+      ],
+      "options": [
+        {
+          "flag": "-P {{VM_NAME}}",
+          "desc": "특정 게스트 상세"
+        },
+        {
+          "flag": "-V",
+          "desc": "자세한 출력"
+        }
+      ],
+      "examples": [
+        {
+          "title": "게스트 목록",
+          "command": "hpvmstatus"
+        },
+        {
+          "title": "게스트 구성 상세",
+          "command": "hpvmstatus -V -P {{VM_NAME}}"
+        }
+      ],
+      "cautions": [
+        "게스트 시작·정지(hpvmstart, hpvmstop)는 게스트 OS 를 먼저 정상 종료한 뒤 하세요."
+      ],
+      "install": {
+        "hpux": {
+          "package": "Integrity VM",
+          "preinstalled": false,
+          "note": "VM 호스트에 Integrity VM 제품이 설치돼 있어야 함"
+        }
+      },
+      "help": "man hpvmstatus",
+      "keywords": [
+        "Integrity VM",
+        "HPVM",
+        "게스트",
+        "hpvmstatus",
+        "가상 머신",
+        "가상화"
+      ],
+      "related": [
+        "hpux-vparstatus",
+        "hpux-parstatus"
+      ],
+      "review": {
+        "status": "ai-draft"
+      }
+    }
+  ]
+}

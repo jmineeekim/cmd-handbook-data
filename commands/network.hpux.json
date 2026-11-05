@@ -1,0 +1,365 @@
+{
+  "$schema": "../schema/commands.schema.json",
+  "schemaVersion": 1,
+  "category": "network",
+  "commands": [
+    {
+      "id": "hpux-lanscan",
+      "name": "lanscan",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.nic",
+      "platforms": ["hpux"],
+      "level": "critical",
+      "risk": "safe",
+      "requiresAdmin": false,
+      "summary": "NIC 목록·MAC 주소·하드웨어 상태·PPA 번호 확인",
+      "description": "서버의 LAN 카드 목록을 하드웨어 경로, MAC(Station Address), 하드웨어 상태(UP/DOWN), 인터페이스 이름(lan0 등)과 PPA 번호와 함께 보여 줍니다. lanadmin·linkloop 에 넘길 PPA 번호와 MAC 을 여기서 확인합니다.",
+      "syntax": [
+        "lanscan [-v] [-a | -i | -p]"
+      ],
+      "options": [
+        { "flag": "-v", "desc": "자세히 (드라이버, 확장 정보)" },
+        { "flag": "-a", "desc": "MAC 주소만" },
+        { "flag": "-i", "desc": "인터페이스 이름만" },
+        { "flag": "-p", "desc": "PPA 번호만" },
+        { "flag": "-q", "desc": "APA(링크 집합) 구성 포트 정보" }
+      ],
+      "examples": [
+        { "title": "NIC 목록과 상태", "command": "lanscan" },
+        { "title": "NIC 목록과 IP 설정 함께 보기", "command": "lanscan\nnetstat -in\nfor i in $(lanscan -i | awk '{print $1}'); do ifconfig $i; done" }
+      ],
+      "cautions": [
+        "Hdw State 가 UP 이어도 케이블·스위치 링크가 정상이라는 뜻은 아닙니다. 속도·링크 상태는 nwmgr 또는 lanadmin -x 로 확인하세요."
+      ],
+      "help": "man lanscan",
+      "keywords": ["NIC 목록", "MAC 주소", "lanscan", "PPA", "랜카드", "네트워크 인터페이스"],
+      "related": ["hpux-lanadmin", "hpux-nwmgr", "hpux-linkloop", "ifconfig", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-lanadmin",
+      "name": "lanadmin",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.nic",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "NIC 속도·듀플렉스·MTU 확인·설정과 통계 (구형)",
+      "description": "LAN 카드의 속도·듀플렉스, MTU, MAC 주소를 확인하거나 바꾸고 송수신·오류 통계를 봅니다. 인자로 PPA 번호(lanscan 에서 확인)를 줍니다. 11i v3 에서는 nwmgr 가 권장 도구이고 lanadmin 은 호환용으로 남아 있습니다.",
+      "syntax": [
+        "lanadmin -x {{PPA}}",
+        "lanadmin -X {{SETTING}} {{PPA}}",
+        "lanadmin"
+      ],
+      "options": [
+        { "flag": "-x {{PPA}}", "desc": "현재 속도·듀플렉스·자동협상 상태 표시" },
+        { "flag": "-X {{SETTING}} {{PPA}}", "desc": "속도·듀플렉스 설정 (예: AUTO_ON, 1000FD, 100FD — 드라이버마다 허용값 다름)" },
+        { "flag": "-a {{PPA}}", "desc": "MAC 주소 표시" },
+        { "flag": "-m {{PPA}}", "desc": "MTU 표시" }
+      ],
+      "commandGroups": [
+        {
+          "title": "대화형 모드 (통계 확인)",
+          "type": "interactive",
+          "note": "lanadmin 만 입력하면 메뉴가 나옵니다. lan 으로 들어가 PPA 를 고른 뒤 display 로 통계를 봅니다.",
+          "items": [
+            { "cmd": "lan", "desc": "LAN 인터페이스 메뉴로 이동" },
+            { "cmd": "ppa", "desc": "대상 PPA 번호 선택" },
+            { "cmd": "display", "desc": "송수신 패킷·오류·충돌 통계 표시" },
+            { "cmd": "clear", "desc": "통계 초기화 (장애 분석 중에는 지우기 전에 기록)" },
+            { "cmd": "quit", "desc": "종료" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "lan0(PPA 0) 속도·듀플렉스 확인", "command": "lanadmin -x 0" },
+        { "title": "MAC·MTU 확인", "command": "lanadmin -a 0\nlanadmin -m 0" }
+      ],
+      "cautions": [
+        "-X 로 속도를 바꾸면 링크가 잠깐 끊깁니다. 스위치 포트 설정(자동협상/고정)과 맞추지 않으면 듀플렉스 불일치로 성능이 크게 떨어집니다.",
+        "-X 설정은 재부팅 시 유지되지 않으므로 /etc/rc.config.d 아래의 드라이버별 설정 파일도 함께 반영해야 합니다."
+      ],
+      "help": "man lanadmin",
+      "keywords": ["NIC 속도", "듀플렉스", "lanadmin", "MTU", "LAN 통계", "자동협상"],
+      "related": ["hpux-lanscan", "hpux-nwmgr", "hpux-linkloop", "ethtool"],
+      "review": { "status": "ai-draft", "note": "-X 허용값과 드라이버별 설정 파일 이름은 NIC 드라이버마다 다름" }
+    },
+    {
+      "id": "hpux-nwmgr",
+      "name": "nwmgr",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.nic",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "11i v3 통합 네트워크 인터페이스 관리 도구",
+      "description": "HP-UX 11i v3 에서 lanscan·lanadmin 을 대신하는 통합 NIC 관리 명령입니다. 인자 없이 실행하면 모든 인터페이스의 상태, MAC, 드라이버, 링크 상태를 한 번에 보여 주고, -c 로 특정 인터페이스를 지정해 자세한 속성을 봅니다.",
+      "syntax": [
+        "nwmgr",
+        "nwmgr -c {{INTERFACE}}",
+        "nwmgr -g -v -c {{INTERFACE}}"
+      ],
+      "options": [
+        { "flag": "-c {{INTERFACE}}", "desc": "대상 인터페이스 (예: lan0)" },
+        { "flag": "-g", "desc": "속성 조회(get)" },
+        { "flag": "-v", "desc": "자세히" },
+        { "flag": "-h", "desc": "도움말" }
+      ],
+      "examples": [
+        { "title": "모든 NIC 상태 요약", "command": "nwmgr" },
+        { "title": "lan0 속도·링크·속성 자세히", "command": "nwmgr -g -v -c lan0" }
+      ],
+      "cautions": [
+        "설정 변경(-s) 하위 옵션은 드라이버마다 다르므로 man nwmgr_{{DRIVER}} 를 확인한 뒤 사용하세요."
+      ],
+      "versions": { "hpux": "11i v3 이상" },
+      "help": "man nwmgr · nwmgr -h",
+      "keywords": ["NIC 상태", "nwmgr", "링크 상태", "네트워크 인터페이스", "11i v3"],
+      "related": ["hpux-lanscan", "hpux-lanadmin", "ifconfig"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-etc-rc-config-d-netconf",
+      "name": "/etc/rc.config.d/netconf",
+      "kind": "file",
+      "category": "network",
+      "task": "network.config",
+      "platforms": ["hpux"],
+      "level": "critical",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "호스트명·IP·서브넷·기본 게이트웨이 영구 설정 파일",
+      "description": "부팅 때 네트워크 인터페이스와 라우팅을 구성하는 HP-UX 의 핵심 설정 파일입니다. 인터페이스마다 [0], [1] 같은 배열 번호로 IP·서브넷 마스크를 적고, 라우트도 번호별로 적습니다. 파일만 고치면 다음 부팅부터 적용되므로 운영 중에는 ifconfig·route 로 즉시 반영하고 이 파일로 영구화합니다. IPv6 는 netconf-ipv6 에 따로 있습니다.",
+      "syntax": [
+        "/etc/rc.config.d/netconf"
+      ],
+      "options": [],
+      "commandGroups": [
+        {
+          "title": "인터페이스 항목",
+          "type": "directive",
+          "note": "같은 인터페이스의 값은 같은 번호를 씁니다. 번호는 0 부터 빈틈없이 이어지게 합니다.",
+          "items": [
+            { "cmd": "HOSTNAME=\"{{HOSTNAME}}\"", "desc": "호스트명 (/etc/hosts 도 함께 맞출 것)" },
+            { "cmd": "INTERFACE_NAME[0]=\"lan0\"", "desc": "인터페이스 이름 (lanscan 의 이름, 보조 IP 는 lan0:1)" },
+            { "cmd": "IP_ADDRESS[0]=\"{{IP}}\"", "desc": "IP 주소" },
+            { "cmd": "SUBNET_MASK[0]=\"{{NETMASK}}\"", "desc": "서브넷 마스크 (예: 255.255.255.0)" },
+            { "cmd": "BROADCAST_ADDRESS[0]=\"\"", "desc": "브로드캐스트 주소 (비우면 자동 계산)" },
+            { "cmd": "INTERFACE_STATE[0]=\"\"", "desc": "up/down 초기 상태 (비우면 up)" },
+            { "cmd": "DHCP_ENABLE[0]=0", "desc": "DHCP 사용 여부 (서버는 0)" }
+          ]
+        },
+        {
+          "title": "라우팅 항목",
+          "type": "directive",
+          "items": [
+            { "cmd": "ROUTE_DESTINATION[0]=\"default\"", "desc": "목적지 (default 또는 net {{NETWORK}}, host {{IP}})" },
+            { "cmd": "ROUTE_MASK[0]=\"\"", "desc": "목적지 네트워크 마스크 (default 는 비움)" },
+            { "cmd": "ROUTE_GATEWAY[0]=\"{{GATEWAY}}\"", "desc": "게이트웨이 IP" },
+            { "cmd": "ROUTE_COUNT[0]=\"1\"", "desc": "게이트웨이가 다른 장비면 1, 자기 인터페이스면 0" },
+            { "cmd": "ROUTE_ARGS[0]=\"\"", "desc": "route 명령 추가 인자" }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "새 NIC(lan1)에 IP 추가 — 즉시 반영 + 영구 설정",
+          "steps": [
+            { "prompt": "#", "cmd": "cp -p /etc/rc.config.d/netconf /etc/rc.config.d/netconf.$(date +%Y%m%d)", "desc": "원본 백업" },
+            { "prompt": "#", "cmd": "lanscan\nnetstat -in", "desc": "인터페이스 이름과 현재 IP 확인" },
+            { "prompt": "#", "cmd": "ifconfig lan1 {{IP}} netmask {{NETMASK}} up", "desc": "즉시 적용" },
+            { "prompt": "#", "cmd": "vi /etc/rc.config.d/netconf", "desc": "INTERFACE_NAME[1]=\"lan1\", IP_ADDRESS[1], SUBNET_MASK[1] 추가 (부팅 시 적용)" },
+            { "prompt": "#", "cmd": "sh -n /etc/rc.config.d/netconf", "desc": "셸 문법 오류 확인" },
+            { "prompt": "#", "cmd": "netstat -in\nping {{GATEWAY}}", "desc": "결과 확인" }
+          ]
+        },
+        {
+          "title": "정적 라우트 추가 — 즉시 반영 + 영구 설정",
+          "steps": [
+            { "prompt": "#", "cmd": "route add net {{NETWORK}} netmask {{NETMASK}} {{GATEWAY}} 1", "desc": "즉시 적용 (마지막 1 은 hop count)" },
+            { "prompt": "#", "cmd": "vi /etc/rc.config.d/netconf", "desc": "ROUTE_DESTINATION[1]=\"net {{NETWORK}}\", ROUTE_MASK[1], ROUTE_GATEWAY[1], ROUTE_COUNT[1]=\"1\" 추가" },
+            { "prompt": "#", "cmd": "netstat -rn", "desc": "라우팅 테이블 확인" }
+          ]
+        },
+        { "title": "현재 설정 값만 보기", "command": "grep -v '^#' /etc/rc.config.d/netconf | grep -v '^$'" }
+      ],
+      "cautions": [
+        "배열 번호가 중복되거나 따옴표가 빠지면 부팅 때 네트워크가 올라오지 않을 수 있습니다. 수정 후 sh -n 으로 점검하고 가능하면 콘솔(MP/iLO) 접속 경로를 확보한 상태에서 작업하세요.",
+        "/sbin/init.d/net 을 원격 세션에서 stop/start 하면 접속이 끊깁니다. 운영 중 변경은 ifconfig·route 로 하고 파일은 영구화 용도로 고칩니다.",
+        "Serviceguard 의 가상(패키지) IP 는 netconf 에 넣지 않습니다. 패키지 설정에서 관리합니다."
+      ],
+      "help": "man netconf · /etc/rc.config.d/netconf 파일 안의 주석",
+      "keywords": ["IP 설정", "netconf", "고정 IP", "기본 게이트웨이", "정적 라우트", "호스트명", "HP-UX 네트워크"],
+      "related": ["hpux-etc-rc-config-d", "hpux-lanscan", "ifconfig", "route", "netstat", "etc-hosts"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-nettl",
+      "name": "nettl",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.capture",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "HP-UX 기본 패킷 캡처(트레이스) — netfmt 로 해석",
+      "description": "HP-UX 에 기본으로 있는 네트워크 트레이스·로깅 도구입니다. tcpdump 가 없는 서버에서 패킷을 캡처할 때 씁니다. nettl 로 바이너리 트레이스 파일을 만들고, netfmt 로 사람이 읽을 수 있게 변환합니다. 시스템 네트워크 로그(/var/adm/nettl.LOG000)도 netfmt 로 봅니다.",
+      "syntax": [
+        "nettl -tn pduin pduout -e ns_ls_ip -f {{TRACE_FILE}}",
+        "nettl -tf -e all",
+        "netfmt -N -n -f {{TRACE_FILE}}.TRC000 > {{OUTPUT_FILE}}"
+      ],
+      "options": [
+        { "flag": "-tn pduin pduout", "desc": "트레이스 시작: 들어오고 나가는 패킷(PDU) 수집" },
+        { "flag": "-e ns_ls_ip", "desc": "수집 대상 계층(엔터티): IP 계층" },
+        { "flag": "-f {{TRACE_FILE}}", "desc": "트레이스 파일 이름 앞부분 (.TRC 번호가 붙어 생성)" },
+        { "flag": "-tf -e all", "desc": "모든 트레이스 중지" },
+        { "flag": "-status", "desc": "현재 로깅·트레이스 상태" }
+      ],
+      "commandGroups": [
+        {
+          "title": "netfmt (트레이스 해석) 옵션",
+          "type": "subcommand",
+          "items": [
+            { "cmd": "netfmt -N -n -f {{TRACE_FILE}}.TRC000", "desc": "-N 보기 좋은 형식, -n 이름 해석 안 함(빠름)" },
+            { "cmd": "netfmt -c {{FILTER_FILE}} -f {{TRACE_FILE}}.TRC000", "desc": "필터 파일로 원하는 패킷만 출력" },
+            { "cmd": "netfmt -f /var/adm/nettl.LOG000", "desc": "시스템 네트워크 로그 보기" }
+          ]
+        }
+      ],
+      "examples": [
+        {
+          "title": "통신 장애 시 패킷 캡처",
+          "steps": [
+            { "prompt": "#", "cmd": "bdf /var/tmp", "desc": "트레이스 파일을 쓸 공간 확인" },
+            { "prompt": "#", "cmd": "nettl -tn pduin pduout -e ns_ls_ip -f /var/tmp/trace01", "desc": "캡처 시작" },
+            { "prompt": "#", "cmd": "ping {{TARGET_IP}}", "desc": "문제 상황 재현 (다른 창에서 업무 재현)" },
+            { "prompt": "#", "cmd": "nettl -tf -e all", "desc": "캡처 중지 (반드시 실행)" },
+            { "prompt": "#", "cmd": "ls -l /var/tmp/trace01*", "desc": "생성된 파일 이름 확인 (.TRC000 등)" },
+            { "prompt": "#", "cmd": "netfmt -N -n -f /var/tmp/trace01.TRC000 > /var/tmp/trace01.txt", "desc": "텍스트로 변환 후 분석" }
+          ]
+        }
+      ],
+      "cautions": [
+        "트레이스를 중지(nettl -tf -e all)하지 않으면 계속 수집되어 성능과 디스크에 영향을 줍니다.",
+        "캡처 파일에는 평문 데이터(비밀번호, 고객 정보)가 포함될 수 있습니다. 분석 후 즉시 삭제하고 외부 반출은 보안 절차를 따르세요.",
+        "생성되는 파일 접미사(.TRC0 또는 .TRC000)는 버전에 따라 다르니 ls 로 확인하세요."
+      ],
+      "help": "man nettl · man netfmt",
+      "keywords": ["패킷 캡처", "nettl", "netfmt", "트레이스", "tcpdump 대체", "네트워크 로그"],
+      "related": ["tcpdump", "hpux-ndd", "hpux-lanscan", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-ndd",
+      "name": "ndd",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.config",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "caution",
+      "requiresAdmin": true,
+      "summary": "TCP/IP 커널 파라미터 조회·변경 (nddconf 로 영구화)",
+      "description": "TCP·IP·ARP 등 네트워크 스택 파라미터를 조회(-get)하고 바꿉니다(-set). -set 은 즉시 적용되지만 재부팅하면 사라지므로 /etc/rc.config.d/nddconf 에 같은 값을 적어 영구화합니다. TIME_WAIT 시간, keepalive, 연결 대기열 크기 조정에 주로 씁니다.",
+      "syntax": [
+        "ndd -get /dev/{{DRIVER}} {{PARAM}}",
+        "ndd -set /dev/{{DRIVER}} {{PARAM}} {{VALUE}}",
+        "ndd -h supported"
+      ],
+      "options": [
+        { "flag": "-get /dev/{{DRIVER}} {{PARAM}}", "desc": "값 조회 (DRIVER: tcp, ip, arp, udp 등)" },
+        { "flag": "-set /dev/{{DRIVER}} {{PARAM}} {{VALUE}}", "desc": "값 변경 (즉시 적용, 재부팅 시 초기화)" },
+        { "flag": "-h supported", "desc": "지원 파라미터 목록과 설명" },
+        { "flag": "-c", "desc": "/etc/rc.config.d/nddconf 의 값을 읽어 적용" }
+      ],
+      "commandGroups": [
+        {
+          "title": "자주 쓰는 파라미터",
+          "type": "directive",
+          "items": [
+            { "cmd": "/dev/tcp tcp_time_wait_interval", "desc": "TIME_WAIT 유지 시간 (ms)" },
+            { "cmd": "/dev/tcp tcp_keepalive_interval", "desc": "keepalive 첫 탐지까지 유휴 시간 (ms)" },
+            { "cmd": "/dev/tcp tcp_conn_request_max", "desc": "listen 연결 대기열 최대 크기" },
+            { "cmd": "/dev/tcp tcp_smallest_anon_port / tcp_largest_anon_port", "desc": "임시(클라이언트) 포트 범위" },
+            { "cmd": "/dev/ip ip_forwarding", "desc": "IP 포워딩 (서버는 보통 0)" }
+          ]
+        },
+        {
+          "title": "/etc/rc.config.d/nddconf 형식",
+          "type": "directive",
+          "note": "번호를 0 부터 이어서 씁니다. 파일 안의 주석 예시를 참고하세요.",
+          "items": [
+            { "cmd": "TRANSPORT_NAME[0]=tcp", "desc": "드라이버 이름" },
+            { "cmd": "NDD_NAME[0]=tcp_time_wait_interval", "desc": "파라미터 이름" },
+            { "cmd": "NDD_VALUE[0]=60000", "desc": "값" }
+          ]
+        }
+      ],
+      "examples": [
+        { "title": "TIME_WAIT 시간 확인", "command": "ndd -get /dev/tcp tcp_time_wait_interval" },
+        {
+          "title": "keepalive 시간 변경과 영구화",
+          "steps": [
+            { "prompt": "#", "cmd": "ndd -get /dev/tcp tcp_keepalive_interval", "desc": "현재 값 기록 (롤백용)" },
+            { "prompt": "#", "cmd": "ndd -set /dev/tcp tcp_keepalive_interval {{VALUE_MS}}", "desc": "즉시 변경" },
+            { "prompt": "#", "cmd": "cp -p /etc/rc.config.d/nddconf /etc/rc.config.d/nddconf.bak\nvi /etc/rc.config.d/nddconf", "desc": "TRANSPORT_NAME/NDD_NAME/NDD_VALUE 항목 추가 (재부팅 후 유지)" },
+            { "prompt": "#", "cmd": "ndd -get /dev/tcp tcp_keepalive_interval", "desc": "적용 확인" }
+          ]
+        }
+      ],
+      "cautions": [
+        "값 단위(ms, 개수)를 확인하고 바꾸세요. 잘못된 값은 모든 접속에 영향을 줍니다.",
+        "-set 만 하면 재부팅 때 원래대로 돌아갑니다. 반대로 nddconf 만 고치면 재부팅 전까지 적용되지 않습니다."
+      ],
+      "help": "man ndd · ndd -h supported",
+      "keywords": ["TCP 파라미터", "ndd", "nddconf", "TIME_WAIT", "keepalive", "네트워크 튜닝"],
+      "related": ["sysctl", "hpux-kctune", "hpux-etc-rc-config-d", "netstat"],
+      "review": { "status": "ai-draft" }
+    },
+    {
+      "id": "hpux-linkloop",
+      "name": "linkloop",
+      "kind": "command",
+      "shell": "sh",
+      "category": "network",
+      "task": "network.ping",
+      "platforms": ["hpux"],
+      "level": "frequent",
+      "risk": "safe",
+      "requiresAdmin": true,
+      "summary": "MAC 주소로 2계층(링크) 연결 확인",
+      "description": "IP 를 쓰지 않고 MAC 주소로 같은 LAN 세그먼트의 상대 NIC 에 링크 계층 루프백 시험을 합니다. IP 설정 전 케이블·스위치·VLAN 연결을 확인하거나, Serviceguard 의 하트비트·대기 LAN 이 같은 서브넷에 붙었는지 점검할 때 씁니다.",
+      "syntax": [
+        "linkloop -i {{PPA}} {{MAC}}"
+      ],
+      "options": [
+        { "flag": "-i {{PPA}}", "desc": "시험할 로컬 NIC 의 PPA 번호" },
+        { "flag": "-n {{COUNT}}", "desc": "시험 횟수" },
+        { "flag": "-t {{TIMEOUT}}", "desc": "응답 대기 시간(초)" },
+        { "flag": "-v", "desc": "자세히" }
+      ],
+      "examples": [
+        { "title": "상대 서버 NIC 와 링크 연결 확인", "command": "lanscan\nlinkloop -i 1 0x{{REMOTE_MAC}}", "note": "상대 서버에서 lanscan 으로 확인한 Station Address(0x 로 시작)를 씁니다." }
+      ],
+      "cautions": [
+        "라우터를 넘어서는 시험할 수 없습니다(같은 L2 세그먼트만)."
+      ],
+      "help": "man linkloop",
+      "keywords": ["링크 확인", "linkloop", "MAC 테스트", "L2 연결", "하트비트 점검", "케이블 점검"],
+      "related": ["hpux-lanscan", "hpux-lanadmin", "ping"],
+      "review": { "status": "ai-draft" }
+    }
+  ]
+}
