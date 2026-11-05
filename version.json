@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "dataVersion": "2026.11.04.2352",
-  "generatedAt": "2026-11-04T23:52:42Z",
-  "commandCount": 393,
+  "dataVersion": "2026.11.05.1437",
+  "generatedAt": "2026-11-05T14:37:30Z",
+  "commandCount": 662,
   "categoryCount": 15,
   "bundle": "dist/handbook.json",
-  "bundleBytes": 785748,
-  "sha256": "e147ff2c84649534e6bd670f254f28fea999acd4dc4164a4e2730af999971d13"
+  "bundleBytes": 1663858,
+  "sha256": "34471ddd6c1b0d61054f32063f536cdd8dffaa5e5425f766792683bc5da90107"
 }
