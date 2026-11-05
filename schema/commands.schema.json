@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/cmd-handbook-data/schema/commands.schema.json",
   "title": "Command category file",
-  "description": "commands/<category>.json 한 파일 = 한 카테고리의 명령어 목록",
+  "description": "commands/<category>.json 또는 commands/<category>.<os>.json — 한 파일 = 한 카테고리의 명령어 목록",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -34,6 +34,9 @@
       "enum": [
         "rhel",
         "debian",
+        "aix",
+        "hpux",
+        "solaris",
         "windows"
       ]
     },
@@ -244,6 +247,10 @@
                     }
                   }
                 }
+              },
+              "version": {
+                "type": "string",
+                "description": "이 예시가 특정 버전에만 해당할 때 (예: Solaris 11 이상)"
               }
             },
             "oneOf": [
@@ -278,6 +285,15 @@
             },
             "windows": {
               "$ref": "#/$defs/install"
+            },
+            "aix": {
+              "$ref": "#/$defs/install"
+            },
+            "hpux": {
+              "$ref": "#/$defs/install"
+            },
+            "solaris": {
+              "$ref": "#/$defs/install"
             }
           }
         },
@@ -292,6 +308,15 @@
               "type": "string"
             },
             "windows": {
+              "type": "string"
+            },
+            "aix": {
+              "type": "string"
+            },
+            "hpux": {
+              "type": "string"
+            },
+            "solaris": {
               "type": "string"
             }
           }
@@ -364,6 +389,53 @@
               }
             }
           }
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "플랫폼별 버전 조건 (예: {\"solaris\": \"11 이상\", \"aix\": \"7.2 TL3 이상\"}). 해당 버전에서만 쓸 수 있을 때 기록",
+          "properties": {
+            "rhel": {
+              "type": "string"
+            },
+            "debian": {
+              "type": "string"
+            },
+            "aix": {
+              "type": "string"
+            },
+            "hpux": {
+              "type": "string"
+            },
+            "solaris": {
+              "type": "string"
+            },
+            "windows": {
+              "type": "string"
+            }
+          }
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "description": "작성 상태 (앱에는 표시하지 않음)",
+          "properties": {
+            "status": {
+              "enum": [
+                "ai-draft",
+                "field-verified"
+              ]
+            },
+            "note": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string"
+            }
+          }
         }
       },
       "allOf": [
@@ -417,6 +489,16 @@
         "right": {
           "$ref": "#/$defs/placeholderText",
           "description": "비교형에서 오른쪽 칸 명령"
+        },
+        "version": {
+          "type": "string"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platform"
+          },
+          "description": "이 항목이 특정 플랫폼에만 해당할 때"
         }
       },
       "oneOf": [
